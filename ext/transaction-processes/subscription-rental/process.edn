@@ -1,0 +1,107 @@
+{:format :v3,
+ :transitions
+ [{:name :transition/request-payment,
+   :actor :actor.role/customer,
+   :actions
+   [{:name :action/update-protected-data}
+    {:name :action/create-pending-booking, :config {:type :time}}
+    {:name :action/privileged-set-line-items}
+    {:name :action/stripe-create-payment-intent}],
+   :to :state/pending-payment,
+   :privileged? true}
+  {:name :transition/expire-payment,
+   :at
+   {:fn/plus
+    [{:fn/timepoint [:time/first-entered-state :state/pending-payment]}
+     {:fn/period ["PT15M"]}]},
+   :actions
+   [{:name :action/calculate-full-refund}
+    {:name :action/stripe-refund-payment}
+    {:name :action/decline-booking}],
+   :from :state/pending-payment,
+   :to :state/payment-expired}
+  {:name :transition/confirm-payment,
+   :actor :actor.role/customer,
+   :actions [{:name :action/stripe-confirm-payment-intent}],
+   :from :state/pending-payment,
+   :to :state/payment-confirmed}
+  {:name :transition/abort-subscription,
+   :actor :actor.role/operator,
+   :actions
+   [{:name :action/calculate-full-refund}
+    {:name :action/stripe-refund-payment}
+    {:name :action/decline-booking}],
+   :from :state/payment-confirmed,
+   :to :state/cancelled,
+   :privileged? true}
+  {:name :transition/confirm-subscription,
+   :actor :actor.role/operator,
+   :actions [{:name :action/accept-booking}],
+   :from :state/payment-confirmed,
+   :to :state/active,
+   :privileged? true}
+  {:name :transition/extend-subscription,
+   :actor :actor.role/operator,
+   :actions [{:name :action/update-booking}],
+   :from :state/active,
+   :to :state/active,
+   :privileged? true}
+  {:name :transition/payment-overdue,
+   :actor :actor.role/operator,
+   :actions [],
+   :from :state/active,
+   :to :state/payment-overdue,
+   :privileged? true}
+  {:name :transition/reactivate-subscription,
+   :actor :actor.role/operator,
+   :actions [{:name :action/update-booking}],
+   :from :state/payment-overdue,
+   :to :state/active,
+   :privileged? true}
+  {:name :transition/expire,
+   :actor :actor.role/operator,
+   :actions [{:name :action/cancel-booking}],
+   :from :state/payment-overdue,
+   :to :state/expired,
+   :privileged? true}
+  {:name :transition/cancel-subscription,
+   :actor :actor.role/operator,
+   :actions [{:name :action/cancel-booking}],
+   :from :state/active,
+   :to :state/cancelled,
+   :privileged? true}
+  {:name :transition/cancel-subscription-from-overdue,
+   :actor :actor.role/operator,
+   :actions [{:name :action/cancel-booking}],
+   :from :state/payment-overdue,
+   :to :state/cancelled,
+   :privileged? true}],
+ :notifications
+ [{:name :notification/subscription-confirmed-customer,
+   :on :transition/confirm-subscription,
+   :to :actor.role/customer,
+   :template :subscription-confirmed-customer}
+  {:name :notification/subscription-confirmed-provider,
+   :on :transition/confirm-subscription,
+   :to :actor.role/provider,
+   :template :subscription-confirmed-provider}
+  {:name :notification/subscription-payment-failed,
+   :on :transition/payment-overdue,
+   :to :actor.role/customer,
+   :template :subscription-payment-failed}
+  {:name :notification/subscription-cancelled-customer,
+   :on :transition/cancel-subscription,
+   :to :actor.role/customer,
+   :template :subscription-cancelled}
+  {:name :notification/subscription-cancelled-provider,
+   :on :transition/cancel-subscription,
+   :to :actor.role/provider,
+   :template :subscription-cancelled}
+  {:name :notification/subscription-expired-customer,
+   :on :transition/expire,
+   :to :actor.role/customer,
+   :template :subscription-expired}
+  {:name :notification/subscription-expired-provider,
+   :on :transition/expire,
+   :to :actor.role/provider,
+   :template :subscription-expired}]}

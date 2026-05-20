@@ -1,0 +1,1 @@
+{{set-translations (asset "content/email-texts.json")}}{{t "SubscriptionConfirmedCustomer.Subject" "Your subscription for {listingTitle} is active" listingTitle=transaction.listing.title}}

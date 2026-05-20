@@ -34,3 +34,15 @@ to define these in your listing type configuration.
 This process enables free messaging between customer and provider. Any payments etc. need to happen
 face-to-face or somehow outside of the marketplace. The initial inquiry message is saved to the
 protected data of the transaction.
+
+## Subscription rental process (`subscription-rental`)
+
+Monthly subscription rentals for Spotly. Stripe handles recurring billing (Option B); Sharetribe
+handles availability via booking actions.
+
+- **Process file:** `subscription-rental/process.edn`
+- **Docs:** `subscription-rental/README.md`
+- **Implementation log:** `../../sharetribe-subscription-implementation-phase1-log.md`
+
+Deploy with Sharetribe CLI (Dev first). Do not attach to a listing type until the Web Template
+supports this process (Phase 3).
