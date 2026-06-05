@@ -280,6 +280,20 @@ export const listingFields = [
  */
 
 export const listingTypes = [
+  {
+    listingType: 'monthly-subscription',
+    label: 'Monthly subscription',
+    transactionType: {
+      process: 'subscription-rental',
+      alias: 'subscription-rental/release-1',
+      unitType: 'day',
+    },
+    availabilityType: 'oneSeat',
+    defaultListingFields: {
+      location: true,
+      payoutDetails: true,
+    },
+  },
   // // Here are some examples of listingTypes
   // // TODO: SearchPage does not work well if both booking and product selling are used at the same time
   // {

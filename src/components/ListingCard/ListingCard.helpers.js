@@ -1,7 +1,7 @@
 import { displayPrice, isPriceVariationsEnabled } from '../../util/configHelpers';
 import { formatMoney } from '../../util/currency';
 import { richText } from '../../util/richText';
-import { isBookingProcessAlias } from '../../transactions/transaction';
+import { isBookingProcessAlias, isSubscriptionProcessAlias } from '../../transactions/transaction';
 
 import css from './ListingCard.module.css';
 
@@ -60,7 +60,9 @@ export const getListingCardTranslations = (listing, config, intl) => {
 
   const isPriceVariationsInUse = isPriceVariationsEnabled(publicData, listingTypeConfig);
   const hasMultiplePriceVariants = isPriceVariationsInUse && publicData?.priceVariants?.length > 1;
-  const isBookable = isBookingProcessAlias(publicData?.transactionProcessAlias);
+  const isBookable =
+    isBookingProcessAlias(publicData?.transactionProcessAlias) ||
+    isSubscriptionProcessAlias(publicData?.transactionProcessAlias);
 
   const priceMessageId = hasMultiplePriceVariants
     ? 'ListingCard.priceStartingFrom'

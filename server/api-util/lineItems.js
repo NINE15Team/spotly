@@ -5,6 +5,8 @@ const {
   getProviderCommissionMaybe,
   getCustomerCommissionMaybe,
 } = require('./lineItemHelpers');
+const { isSubscriptionProcess } = require('./subscriptionConstants');
+const { subscriptionTransactionLineItems } = require('./subscriptionLineItems');
 const { types } = require('sharetribe-flex-sdk');
 const { Money } = types;
 
@@ -136,6 +138,15 @@ const getDateRangeQuantityAndLineItems = (orderData, code) => {
  * @returns {Array} lineItems
  */
 exports.transactionLineItems = (listing, orderData, providerCommission, customerCommission) => {
+  if (isSubscriptionProcess(orderData?.processAlias)) {
+    return subscriptionTransactionLineItems(
+      listing,
+      orderData,
+      providerCommission,
+      customerCommission
+    );
+  }
+
   const publicData = listing.attributes.publicData;
   // Note: the unitType needs to be one of the following:
   // day, night, hour, fixed, or item (these are related to payment processes)

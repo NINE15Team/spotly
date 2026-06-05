@@ -1,0 +1,52 @@
+@import '../../styles/customMediaQueries.css';
+
+.content {
+  width: 100%;
+  margin: 0 0 48px 0;
+
+  @media (--viewportMedium) {
+    margin: 0 0 56px 0;
+  }
+}
+
+.heading {
+  margin: 0 0 24px 0;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.card {
+  border: 1px solid var(--colorGrey100);
+  border-radius: 8px;
+  padding: 16px 20px;
+}
+
+.cardTitle {
+  margin: 0 0 6px 0;
+}
+
+.cardMeta {
+  composes: marketplaceTinyFontStyles from global;
+  color: var(--colorGrey700);
+  margin: 0 0 12px 0;
+}
+
+.cardActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.error {
+  color: var(--colorFail);
+  margin-top: 12px;
+}
+
+.empty {
+  composes: marketplaceDefaultFontStyles from global;
+  color: var(--colorGrey700);
+}

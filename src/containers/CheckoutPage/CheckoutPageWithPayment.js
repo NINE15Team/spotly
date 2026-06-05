@@ -18,6 +18,7 @@ import {
   BOOKING_PROCESS_NAME,
   NEGOTIATION_PROCESS_NAME,
   PURCHASE_PROCESS_NAME,
+  SUBSCRIPTION_PROCESS_NAME,
 } from '../../transactions/transaction';
 
 // Import shared components
@@ -259,11 +260,13 @@ const handleSubmit = (values, process, props, stripe, submitting, setSubmitting)
     onConfirmCardPayment,
     onConfirmPayment,
     onSavePaymentMethod,
+    onActivateSubscription,
     onSubmitCallback,
     pageData,
     setPageData,
     sessionStorageKey,
     transactionFieldConfigs = [],
+    processName,
   } = props;
   const { card, message, paymentMethod: selectedPaymentMethod, formValues } = values;
   const { saveAfterOnetimePayment: saveAfterOnetimePaymentRaw } = formValues;
@@ -304,6 +307,8 @@ const handleSubmit = (values, process, props, stripe, submitting, setSubmitting)
     isPaymentFlowUseSavedCard: selectedPaymentFlow === USE_SAVED_CARD,
     isPaymentFlowPayAndSaveCard: selectedPaymentFlow === PAY_AND_SAVE_FOR_LATER_USE,
     setPageData,
+    isSubscriptionCheckout: processName === SUBSCRIPTION_PROCESS_NAME,
+    onActivateSubscription,
   };
 
   const shippingDetails = getShippingDetailsMaybe(formValues);

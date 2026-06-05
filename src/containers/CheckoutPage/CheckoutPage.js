@@ -16,10 +16,12 @@ import { hasPermissionToInitiateTransactions, isUserAuthorized } from '../../uti
 import { isErrorNoPermissionForInitiateTransactions } from '../../util/errors';
 import {
   INQUIRY_PROCESS_NAME,
+  SUBSCRIPTION_PROCESS_NAME,
   REQUEST,
   resolveLatestProcessName,
   isNegotiationProcess,
 } from '../../transactions/transaction';
+import { activateSubscription } from '../../util/api';
 import { requireListingImage } from '../../util/configHelpers';
 
 // Import global thunk functions
@@ -267,6 +269,7 @@ const mapDispatchToProps = dispatch => ({
     dispatch(confirmPayment(transactionId, transitionName, transitionParams)),
   onSavePaymentMethod: (stripeCustomer, stripePaymentMethodId) =>
     dispatch(savePaymentMethod(stripeCustomer, stripePaymentMethodId)),
+  onActivateSubscription: params => activateSubscription(params),
 });
 
 const CheckoutPage = compose(

@@ -20,7 +20,7 @@ module.exports = (req, res) => {
 
       const lineItems = transactionLineItems(
         listing,
-        orderData,
+        { ...orderData, processAlias: orderData?.processAlias },
         providerCommission,
         customerCommission
       );

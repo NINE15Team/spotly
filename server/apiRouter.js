@@ -24,6 +24,14 @@ const { authenticateGoogle, authenticateGoogleCallback } = require('./api/auth/g
 
 const router = express.Router();
 
+const stripeWebhooks = require('./api/stripe-webhooks');
+const activateSubscription = require('./api/activate-subscription');
+const cancelSubscription = require('./api/cancel-subscription');
+const billingPortal = require('./api/billing-portal');
+
+// Stripe webhooks require the raw request body for signature verification.
+router.post('/stripe-webhooks', bodyParser.raw({ type: 'application/json' }), stripeWebhooks);
+
 // ================ API router middleware: ================ //
 
 // Parse Transit body first to a string
@@ -56,6 +64,9 @@ router.post('/transaction-line-items', transactionLineItems);
 router.post('/initiate-privileged', initiatePrivileged);
 router.post('/transition-privileged', transitionPrivileged);
 router.post('/delete-account', deleteAccount);
+router.post('/activate-subscription', activateSubscription);
+router.post('/cancel-subscription', cancelSubscription);
+router.post('/billing-portal', billingPortal);
 
 // Create user with identity provider (e.g. Facebook or Google)
 // This endpoint is called to create a new user after user has confirmed

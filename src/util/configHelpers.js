@@ -1360,12 +1360,10 @@ const mergeListingConfig = (hostedConfig, defaultConfigs, categoriesInUse) => {
   const { listingTypes: defaultListingTypes, listingFields: defaultListingFields, ...rest } =
     defaultConfigs.listing || {};
 
-  // When debugging, include default configs by passing 'true' here.
-  // Otherwise, use listing types and fields from hosted assets.
+  // Merge hosted Console listing types with local configListing.js entries (e.g. subscription-rental).
+  // https://www.sharetribe.com/docs/template/configuration/hosted-and-local-configurations/
   const shouldMerge = mergeDefaultTypesAndFieldsForDebugging(false);
-  const listingTypes = shouldMerge
-    ? union(hostedListingTypes, defaultListingTypes, 'listingType')
-    : hostedListingTypes;
+  const listingTypes = union(hostedListingTypes, defaultListingTypes, 'listingType');
   const listingFields = shouldMerge
     ? union(hostedListingFields, defaultListingFields, 'key')
     : hostedListingFields;

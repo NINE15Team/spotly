@@ -1,0 +1,38 @@
+@import '../../../styles/customMediaQueries.css';
+
+.root {
+  display: flex;
+  flex-direction: column;
+}
+
+.bookingDates {
+  margin: 0 0 6px 0;
+}
+
+.info {
+  composes: marketplaceTinyFontStyles from global;
+  color: var(--colorGrey700);
+  margin: 0 0 18px 0;
+}
+
+.breakdownWrapper {
+  margin: 24px 0 0 0;
+}
+
+.bookingBreakdownTitle {
+  margin: 0 0 12px 0;
+}
+
+.totalDivider {
+  border: none;
+  border-top: 1px solid var(--colorGrey100);
+  margin: 0 0 12px 0;
+}
+
+.submitButton {
+  margin-top: 24px;
+
+  @media (--viewportMedium) {
+    margin-top: 32px;
+  }
+}

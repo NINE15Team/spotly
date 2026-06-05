@@ -132,6 +132,21 @@ export const transitionPrivileged = body => {
   return post('/api/transition-privileged', body);
 };
 
+// Activate Stripe subscription after Sharetribe confirm-payment (subscription-rental).
+export const activateSubscription = body => {
+  return post('/api/activate-subscription', body);
+};
+
+// Cancel subscription at end of billing period.
+export const cancelSubscription = body => {
+  return post('/api/cancel-subscription', body);
+};
+
+// Stripe Customer Portal URL for updating payment method.
+export const billingPortal = body => {
+  return post('/api/billing-portal', body);
+};
+
 // Create user with identity provider (e.g. Facebook or Google)
 //
 // If loginWithIdp api call fails and user can't authenticate to Marketplace API with idp

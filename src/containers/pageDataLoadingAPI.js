@@ -13,6 +13,7 @@ import { loadData as ListingPageLoader } from './ListingPage/ListingPage.duck';
 import { loadData as MakeOfferPageLoader } from './MakeOfferPage/MakeOfferPage.duck';
 import { loadData as ManageListingsPageLoader } from './ManageListingsPage/ManageListingsPage.duck';
 import { loadData as PaymentMethodsPageLoader } from './PaymentMethodsPage/PaymentMethodsPage.duck';
+import { loadData as SubscriptionsPageLoader } from './SubscriptionsPage/SubscriptionsPage.duck';
 import { loadData as PrivacyPolicyPageLoader } from './PrivacyPolicyPage/PrivacyPolicyPage.duck';
 import { loadData as ProfilePageLoader } from './ProfilePage/ProfilePage.duck';
 import { loadData as RequestQuotePageLoader } from './RequestQuotePage/RequestQuotePage.duck';
@@ -61,6 +62,9 @@ const getPageDataLoadingAPI = () => {
     },
     PaymentMethodsPage: {
       loadData: PaymentMethodsPageLoader,
+    },
+    SubscriptionsPage: {
+      loadData: SubscriptionsPageLoader,
     },
     PrivacyPolicyPage: {
       loadData: PrivacyPolicyPageLoader,

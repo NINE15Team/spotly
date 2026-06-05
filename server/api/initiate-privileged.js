@@ -66,7 +66,10 @@ module.exports = (req, res) => {
 
       lineItems = transactionLineItems(
         listing,
-        getFullOrderData(orderData, bodyParams, currency),
+        {
+          ...getFullOrderData(orderData, bodyParams, currency),
+          processAlias: bodyParams.processAlias,
+        },
         providerCommission,
         customerCommission
       );

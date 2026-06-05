@@ -16,7 +16,7 @@ import { storableError } from '../../util/errors';
 import * as log from '../../util/log';
 import { parse } from '../../util/urlHelpers';
 import { isUserAuthorized } from '../../util/userHelpers';
-import { isBookingProcessAlias } from '../../transactions/transaction';
+import { isBookingProcessAlias, isSubscriptionProcessAlias } from '../../transactions/transaction';
 
 import { addMarketplaceEntities } from '../../ducks/marketplaceData.duck';
 import {
@@ -901,7 +901,11 @@ export const loadData = (params, search, config) => (dispatch, getState, sdk) =>
         // so we need to pick the first one
         const listing = response[0]?.data?.data;
         const transactionProcessAlias = listing?.attributes?.publicData?.transactionProcessAlias;
-        if (listing && isBookingProcessAlias(transactionProcessAlias)) {
+        if (
+          listing &&
+          (isBookingProcessAlias(transactionProcessAlias) ||
+            isSubscriptionProcessAlias(transactionProcessAlias))
+        ) {
           fetchLoadDataExceptions(dispatch, listing, search, config.localization.firstDayOfWeek);
         }
       }

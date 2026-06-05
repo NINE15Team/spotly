@@ -30,6 +30,7 @@ import {
   REQUEST,
   getSupportedProcessesInfo,
   isBookingProcess,
+  isSubscriptionProcess,
   isNegotiationProcess,
   isInquiryProcess,
   isPurchaseProcess,
@@ -70,6 +71,10 @@ const NegotiationRequestQuoteForm = loadable(() =>
   import(
     /* webpackChunkName: "NegotiationRequestQuoteForm" */ './NegotiationRequestQuoteForm/NegotiationRequestQuoteForm'
   )
+);
+
+const SubscriptionOrderForm = loadable(() =>
+  import(/* webpackChunkName: "SubscriptionOrderForm" */ './SubscriptionOrderForm/SubscriptionOrderForm')
 );
 
 // This defines when ModalInMobile shows content as Modal
@@ -317,9 +322,10 @@ const OrderPanel = props => {
   const price = listing?.attributes?.price;
   const isInquiry = isInquiryProcess(processName);
   const isBooking = isBookingProcess(processName);
+  const isSubscription = isSubscriptionProcess(processName);
   const isPurchase = isPurchaseProcess(processName);
   const isNegotiation = isNegotiationProcess(processName);
-  const isPaymentProcess = isBooking || isPurchase || isNegotiation;
+  const isPaymentProcess = isBooking || isSubscription || isPurchase || isNegotiation;
 
   const showPriceMissing = isPaymentProcess && !isNegotiation && !price;
   const showInvalidCurrency =
@@ -338,6 +344,8 @@ const OrderPanel = props => {
   const shouldHaveBookingDates =
     isBooking && [LINE_ITEM_DAY, LINE_ITEM_NIGHT].includes(lineItemUnitType);
   const showBookingDatesForm = mounted && shouldHaveBookingDates && !isClosed && timeZone;
+
+  const showSubscriptionForm = mounted && isSubscription && !isClosed && timeZone && price;
 
   // The listing resource has a relationship: `currentStock`,
   // which you should include when making API calls.
@@ -400,6 +408,12 @@ const OrderPanel = props => {
   const showInvalidPriceVariantsMessage =
     isPriceVariationsInUse && !hasValidPriceVariants(priceVariants);
 
+  const fetchLineItemsWithProcessAlias = params =>
+    onFetchTransactionLineItems({
+      ...params,
+      processAlias: transactionProcessAlias,
+    });
+
   const sharedProps = {
     lineItemUnitType,
     onSubmit,
@@ -408,7 +422,7 @@ const OrderPanel = props => {
     listingId: listing.id,
     isOwnListing,
     marketplaceName,
-    onFetchTransactionLineItems,
+    onFetchTransactionLineItems: fetchLineItemsWithProcessAlias,
     lineItems,
     fetchLineItemsInProgress,
     fetchLineItemsError,
@@ -451,13 +465,26 @@ const OrderPanel = props => {
           </div>
         )}
 
-        <PriceMaybe
-          price={price}
-          publicData={publicData}
-          validListingTypes={validListingTypes}
-          intl={intl}
-          marketplaceCurrency={marketplaceCurrency}
-        />
+        {isSubscription ? (
+          <div className={css.priceContainer}>
+            <p className={css.price}>
+              <FormattedMessage
+                id="OrderPanel.subscriptionPrice"
+                values={{
+                  priceValue: formatMoneyIfSupportedCurrency(price, intl),
+                }}
+              />
+            </p>
+          </div>
+        ) : (
+          <PriceMaybe
+            price={price}
+            publicData={publicData}
+            validListingTypes={validListingTypes}
+            intl={intl}
+            marketplaceCurrency={marketplaceCurrency}
+          />
+        )}
 
         <div className={css.author}>
           <AvatarSmall user={author} className={css.providerAvatar} />
@@ -475,6 +502,15 @@ const OrderPanel = props => {
           <InvalidCurrency />
         ) : showInvalidPriceVariantsMessage ? (
           <InvalidPriceVariants />
+        ) : showSubscriptionForm ? (
+          <SubscriptionOrderForm
+            className={css.bookingForm}
+            formId="OrderPanelSubscriptionForm"
+            timeZone={timeZone}
+            dayCountAvailableForBooking={dayCountAvailableForBooking}
+            processName={processName}
+            {...sharedProps}
+          />
         ) : showBookingFixedDurationForm ? (
           <BookingFixedDurationForm
             seatsEnabled={seatsEnabled}

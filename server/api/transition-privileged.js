@@ -142,9 +142,15 @@ module.exports = (req, res) => {
       const { providerCommission, customerCommission } =
         commissionAsset?.type === 'jsonAsset' ? commissionAsset.attributes.data : {};
 
+      const processAlias =
+        listing?.attributes?.publicData?.transactionProcessAlias || orderData?.processAlias;
+
       lineItems = transactionLineItems(
         listing,
-        getFullOrderData(orderData, bodyParams, currency, existingOffers),
+        {
+          ...getFullOrderData(orderData, bodyParams, currency, existingOffers),
+          processAlias,
+        },
         providerCommission,
         customerCommission
       );

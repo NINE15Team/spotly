@@ -26,6 +26,8 @@ import {
   resolveLatestProcessName,
   getProcess,
   isBookingProcess,
+  isSubscriptionProcess,
+  SUBSCRIPTION_PROCESS_NAME,
   NEGOTIATION_PROCESS_NAME,
   OFFER,
   isPurchaseProcess,
@@ -52,6 +54,7 @@ import {
 import TopbarContainer from '../../containers/TopbarContainer/TopbarContainer';
 import FooterContainer from '../../containers/FooterContainer/FooterContainer';
 
+import { cancelSubscription, billingPortal } from '../../util/api';
 import { getStateData } from './TransactionPage.stateData';
 import ActionButtons, {
   ACTION_BUTTON_1_ID,
@@ -75,6 +78,7 @@ import {
   fetchMoreMessages,
   fetchTimeSlots,
   fetchTransactionLineItems,
+  fetchTransaction,
 } from './TransactionPage.duck';
 import css from './TransactionPage.module.css';
 import { getCurrentUserTypeRoles, hasPermissionToViewData } from '../../util/userHelpers.js';
@@ -270,6 +274,10 @@ export const TransactionPageComponent = props => {
   const [isMakeCounterOfferModalOpen, setMakeCounterOfferModalOpen] = useState(false);
   const [counterOfferSubmitted, setCounterOfferSubmitted] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [subscriptionCancelInProgress, setSubscriptionCancelInProgress] = useState(false);
+  const [subscriptionCancelError, setSubscriptionCancelError] = useState(null);
+  const [subscriptionPortalInProgress, setSubscriptionPortalInProgress] = useState(false);
+  const [subscriptionPortalError, setSubscriptionPortalError] = useState(null);
 
   useEffect(() => {
     setMounted(true);
@@ -303,6 +311,7 @@ export const TransactionPageComponent = props => {
     transitionInProgress,
     transitionError,
     onTransition,
+    onFetchTransaction,
     nextTransitions,
     callSetInitialValues,
     onInitializeCardPaymentData,
@@ -571,6 +580,42 @@ export const TransactionPageComponent = props => {
     routes: routeConfiguration,
   });
 
+  const subscriptionHandlers =
+    processName === SUBSCRIPTION_PROCESS_NAME && isCustomerRole && transaction?.id
+      ? {
+          cancelInProgress: subscriptionCancelInProgress,
+          cancelError: subscriptionCancelError,
+          portalInProgress: subscriptionPortalInProgress,
+          portalError: subscriptionPortalError,
+          onCancelSubscription: () => {
+            setSubscriptionCancelInProgress(true);
+            setSubscriptionCancelError(null);
+            return cancelSubscription({ transactionId: transaction.id })
+              .then(() => onFetchTransaction(transaction.id, transactionRole, config))
+              .catch(e => {
+                setSubscriptionCancelError(e);
+                throw e;
+              })
+              .finally(() => setSubscriptionCancelInProgress(false));
+          },
+          onOpenBillingPortal: () => {
+            setSubscriptionPortalInProgress(true);
+            setSubscriptionPortalError(null);
+            return billingPortal({ transactionId: transaction.id })
+              .then(res => {
+                if (res?.url) {
+                  window.location.href = res.url;
+                }
+              })
+              .catch(e => {
+                setSubscriptionPortalError(e);
+                throw e;
+              })
+              .finally(() => setSubscriptionPortalInProgress(false));
+          },
+        }
+      : {};
+
   const stateData = isDataAvailable
     ? getStateData(
         {
@@ -587,6 +632,7 @@ export const TransactionPageComponent = props => {
           onOpenMakeCounterOfferModal,
           onCheckoutRedirect: handleSubmitOrderRequest,
           onMakeOfferRedirect: onMakeOffer,
+          subscriptionHandlers,
           intl,
         },
         process
@@ -637,9 +683,12 @@ export const TransactionPageComponent = props => {
 
   // The location of the booking can be shown if fuzzy location, and if
   // the listing type actually includes a location field.
+  const subscriptionActive =
+    isSubscriptionProcess(processName) && process?.getState(transaction) === process?.states?.ACTIVE;
   const showBookingLocation =
-    isBookingProcess(stateData.processName) &&
-    process?.hasPassedState(process?.states?.ACCEPTED, transaction) &&
+    ((isBookingProcess(stateData.processName) &&
+      process?.hasPassedState(process?.states?.ACCEPTED, transaction)) ||
+      subscriptionActive) &&
     foundListingTypeConfig?.defaultListingFields.location;
 
   const isNegotiationProcess = processName === NEGOTIATION_PROCESS_NAME;
@@ -988,6 +1037,8 @@ const mapDispatchToProps = dispatch => {
       dispatch(fetchTransactionLineItems(orderData, listingId, isOwnListing)), // for OrderPanel
     onFetchTimeSlots: (listingId, start, end, timeZone, options) =>
       dispatch(fetchTimeSlots(listingId, start, end, timeZone, options)), // for OrderPanel
+    onFetchTransaction: (id, txRole, marketplaceConfig) =>
+      dispatch(fetchTransaction(id, txRole, marketplaceConfig)),
   };
 };
 

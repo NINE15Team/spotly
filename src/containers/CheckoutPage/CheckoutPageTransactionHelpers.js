@@ -192,6 +192,8 @@ export const processCheckoutWithPayment = (orderParams, extraPaymentParams) => {
     sessionStorageKey,
     stripeCustomer,
     stripePaymentMethodId,
+    onActivateSubscription,
+    isSubscriptionCheckout,
   } = extraPaymentParams;
   const storedTx = ensureTransaction(pageData.transaction);
 
@@ -332,12 +334,26 @@ export const processCheckoutWithPayment = (orderParams, extraPaymentParams) => {
   //   .then(result => fnConfirmPayment({...result}))
   const applyAsync = (acc, val) => acc.then(val);
   const composeAsync = (...funcs) => x => funcs.reduce(applyAsync, Promise.resolve(x));
-  const handlePaymentIntentCreation = composeAsync(
-    fnRequestPayment,
-    fnConfirmCardPayment,
-    fnConfirmPayment,
-    fnSavePaymentMethod
-  );
+  /////////////////////////////////////////////////
+  // Step 3b: activate Stripe subscription (subscription-rental only)
+  /////////////////////////////////////////////////
+  const fnActivateSubscription = fnParams => {
+    const orderId = fnParams?.orderId || fnParams?.id;
+    if (!isSubscriptionCheckout || !onActivateSubscription) {
+      return Promise.resolve(fnParams);
+    }
+    return onActivateSubscription({ transactionId: orderId }).then(() => fnParams);
+  };
+
+  const handlePaymentIntentCreation = isSubscriptionCheckout
+    ? composeAsync(
+        fnRequestPayment,
+        fnConfirmCardPayment,
+        fnConfirmPayment,
+        fnActivateSubscription,
+        fnSavePaymentMethod
+      )
+    : composeAsync(fnRequestPayment, fnConfirmCardPayment, fnConfirmPayment, fnSavePaymentMethod);
 
   return handlePaymentIntentCreation(orderParams);
 };
