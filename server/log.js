@@ -84,3 +84,17 @@ exports.devLogger = (...args) => {
     console.log(...args); // eslint-disable-line no-console
   }
 };
+
+/**
+ * Info-level logging for operational events (subscription activation, etc.).
+ *
+ * @param {string} message
+ * @param {Object} [data]
+ */
+exports.info = (message, data) => {
+  if (data !== undefined) {
+    console.log(message, data); // eslint-disable-line no-console
+  } else {
+    console.log(message); // eslint-disable-line no-console
+  }
+};

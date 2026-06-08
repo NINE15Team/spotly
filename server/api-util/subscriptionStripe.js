@@ -50,6 +50,21 @@ const getPaymentIntentIdFromProtectedData = protectedData => {
  * @param {string} paymentIntentId
  * @returns {Promise<string|null>} payment method id
  */
+/**
+ * Capture a preauthorized PaymentIntent if still at requires_capture.
+ * Safe to call after confirm-subscription (no-op if already captured).
+ *
+ * @param {string} paymentIntentId
+ */
+const capturePaymentIntentIfNeeded = async paymentIntentId => {
+  const stripe = getStripe();
+  const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+  if (paymentIntent.status === 'requires_capture') {
+    return stripe.paymentIntents.capture(paymentIntentId);
+  }
+  return paymentIntent;
+};
+
 const getPaymentMethodIdFromPaymentIntent = async paymentIntentId => {
   const stripe = getStripe();
   const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
@@ -146,6 +161,7 @@ const createBillingPortalSession = async ({ customerId, returnUrl }) => {
 module.exports = {
   getPaymentIntentIdFromClientSecret,
   getPaymentIntentIdFromProtectedData,
+  capturePaymentIntentIfNeeded,
   getPaymentMethodIdFromPaymentIntent,
   createStripeCustomer,
   createMonthlyStripePrice,

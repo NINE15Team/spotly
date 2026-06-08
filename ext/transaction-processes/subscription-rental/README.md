@@ -28,13 +28,24 @@ owns the transaction record and listing availability.
 | Transition | Actor | Notes |
 |------------|-------|-------|
 | `request-payment` | Customer | Creates pending booking + PaymentIntent |
-| `confirm-payment` | Customer | Confirms PaymentIntent (3DS) |
-| `confirm-subscription` | Operator (server) | Accepts booking → `active` |
+| `confirm-payment` | Customer | Confirms PaymentIntent (3DS) → `payment-confirmed` (preauthorized, `requires_capture`) |
+| `confirm-subscription` | Operator (server) | Accepts booking + **captures** first PaymentIntent → `active` |
 | `extend-subscription` | Operator (server) | Extends booking on `invoice.paid` |
 | `payment-overdue` | Operator (server) | On `invoice.payment_failed` |
 | `reactivate-subscription` | Operator (server) | After successful retry |
 | `cancel-subscription` | Operator (server) | Releases booking at period end |
 | `expire` | Operator (server) | After all retries fail |
+
+## Payment capture (vs default-booking)
+
+Sharetribe **default-booking** preauthorizes on `confirm-payment` (`preauthorized` state). The
+**provider** must `accept` before `stripe-capture-payment-intent` runs.
+
+For subscriptions, the **server** runs `confirm-subscription` (operator) after checkout. That
+transition must include both `accept-booking` and `stripe-capture-payment-intent` — otherwise the
+first PaymentIntent stays at `requires_capture` and funds are never transferred.
+
+See: [Sharetribe booking acceptance](https://www.sharetribe.com/docs/concepts/payments/payments-with-stripe/#provider-acceptance)
 
 ## Deploy (Dev)
 

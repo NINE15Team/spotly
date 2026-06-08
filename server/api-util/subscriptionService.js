@@ -8,6 +8,7 @@ const {
 } = require('./integrationSdk');
 const {
   getPaymentIntentIdFromProtectedData,
+  capturePaymentIntentIfNeeded,
   getPaymentMethodIdFromPaymentIntent,
   createStripeCustomer,
   createMonthlyStripePrice,
@@ -131,6 +132,9 @@ const activateSubscription = async (transactionId, options = {}) => {
     transactionId: transaction.id,
     transition: TRANSITIONS.CONFIRM_SUBSCRIPTION,
   });
+
+  // Capture first payment if process version lacks stripe-capture on confirm-subscription.
+  await capturePaymentIntentIfNeeded(paymentIntentId);
 
   log.info('Subscription activated', {
     transactionId: transaction.id.uuid,

@@ -36,7 +36,9 @@
    :privileged? true}
   {:name :transition/confirm-subscription,
    :actor :actor.role/operator,
-   :actions [{:name :action/accept-booking}],
+   :actions
+   [{:name :action/accept-booking}
+    {:name :action/stripe-capture-payment-intent}],
    :from :state/payment-confirmed,
    :to :state/active,
    :privileged? true}
