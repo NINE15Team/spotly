@@ -9,7 +9,7 @@ import { FormattedMessage, useIntl } from '../../../../util/reactIntl';
 import * as validators from '../../../../util/validators';
 import { formatMoney } from '../../../../util/currency';
 import { types as sdkTypes } from '../../../../util/sdkLoader';
-import { FIXED, isBookingProcess } from '../../../../transactions/transaction';
+import { FIXED, isBookingProcess, isSubscriptionProcess } from '../../../../transactions/transaction';
 
 // Import shared components
 import { Button, Form, FieldCurrencyInput } from '../../../../components';
@@ -132,6 +132,7 @@ export const EditListingPricingForm = props => (
       const { transactionType } = listingTypeConfig || {};
       const { process } = transactionType || {};
       const isBooking = isBookingProcess(process);
+      const isSubscription = isSubscriptionProcess(process?.name);
 
       const isFixedLengthBooking = isBooking && unitType === FIXED;
       const isBookingPriceVariationsInUse = isBooking && isPriceVariationsInUse;
@@ -159,10 +160,11 @@ export const EditListingPricingForm = props => (
               name="price"
               className={css.input}
               autoFocus={autoFocus}
-              label={intl.formatMessage(
-                { id: 'EditListingPricingForm.pricePerProduct' },
-                { unitType }
-              )}
+              label={
+                isSubscription
+                  ? intl.formatMessage({ id: 'EditListingPricingForm.pricePerMonth' })
+                  : intl.formatMessage({ id: 'EditListingPricingForm.pricePerProduct' }, { unitType })
+              }
               placeholder={intl.formatMessage({
                 id: 'EditListingPricingForm.priceInputPlaceholder',
               })}

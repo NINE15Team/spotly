@@ -5,6 +5,7 @@ import { FormattedMessage } from '../../util/reactIntl';
 import { propTypes } from '../../util/types';
 import { createSlug } from '../../util/urlHelpers';
 import { formatMoney } from '../../util/currency';
+import { getListingPricePerUnitLabel } from '../../util/listingPriceLabels';
 
 import {
   AspectRatioWrapper,
@@ -50,7 +51,14 @@ const DetailsSideCard = props => {
   } = props;
 
   const { price, publicData } = listing?.attributes || {};
-  const unitType = publicData.unitType || 'unknown';
+  const { unitType, transactionProcessAlias } = publicData || {};
+  const perUnitLabel = getListingPricePerUnitLabel(
+    intl,
+    transactionProcessAlias,
+    unitType,
+    'CheckoutPageWithInquiryProcess.perUnit',
+    'CheckoutPageWithInquiryProcess.subscriptionPerUnit'
+  );
 
   const { aspectWidth = 1, aspectHeight = 1, variantPrefix = 'listing-card' } =
     layoutListingImageConfig || {};
@@ -92,12 +100,7 @@ const DetailsSideCard = props => {
           {showPrice ? (
             <div className={css.priceContainer}>
               <p className={css.price}>{formatMoney(intl, price)}</p>
-              <div className={css.perUnit}>
-                <FormattedMessage
-                  id="CheckoutPageWithInquiryProcess.perUnit"
-                  values={{ unitType }}
-                />
-              </div>
+              {perUnitLabel ? <div className={css.perUnit}>{perUnitLabel}</div> : null}
             </div>
           ) : null}
         </div>

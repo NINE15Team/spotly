@@ -6,6 +6,7 @@ import {
   isPurchaseProcessAlias,
   isBookingProcessAlias,
   isNegotiationProcessAlias,
+  isSubscriptionProcessAlias,
 } from '../transactions/transaction';
 import {
   EXTENDED_DATA_SCHEMA_TYPES,
@@ -234,7 +235,8 @@ export const isValidCurrencyForTransactionProcess = (
   const isStripeRelatedProcess =
     isPurchaseProcessAlias(transactionProcessAlias) ||
     isBookingProcessAlias(transactionProcessAlias) ||
-    isNegotiationProcessAlias(transactionProcessAlias);
+    isNegotiationProcessAlias(transactionProcessAlias) ||
+    isSubscriptionProcessAlias(transactionProcessAlias);
 
   // Determine if the listing currency is supported by Stripe
   const isStripeSupportedCurrency = stripeSupportedCurrencies.includes(listingCurrency);

@@ -6,6 +6,7 @@ import { propTypes } from '../../../util/types';
 import { formatMoney } from '../../../util/currency';
 import { ensureListing } from '../../../util/data';
 import { isPriceVariationsEnabled, requireListingImage } from '../../../util/configHelpers';
+import { getListingPricePerUnitLabel } from '../../../util/listingPriceLabels';
 
 import { AspectRatioWrapper, ResponsiveImage, ListingCardThumbnail } from '../../../components';
 
@@ -34,9 +35,12 @@ const ListingCard = props => {
     ? Object.keys(firstImage?.attributes?.variants).filter(k => k.startsWith(variantPrefix))
     : [];
 
-  const pricePerUnit = intl.formatMessage(
-    { id: 'SearchMapInfoCard.perUnit' },
-    { unitType: publicData?.unitType }
+  const pricePerUnit = getListingPricePerUnitLabel(
+    intl,
+    publicData?.transactionProcessAlias,
+    publicData?.unitType,
+    'SearchMapInfoCard.perUnit',
+    'SearchMapInfoCard.subscriptionPerUnit'
   );
   const priceValue = formattedPrice ? formattedPrice : '';
 

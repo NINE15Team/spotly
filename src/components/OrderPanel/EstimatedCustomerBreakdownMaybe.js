@@ -122,7 +122,9 @@ const estimatedCustomerTransaction = (
 
 const EstimatedCustomerBreakdownMaybe = props => {
   const { breakdownData = {}, lineItems, timeZone, currency, marketplaceName, processName } = props;
-  const { startDate, endDate } = breakdownData;
+  const { startDate, endDate, bookingStart, bookingEnd } = breakdownData;
+  const resolvedStartDate = startDate || bookingStart;
+  const resolvedEndDate = endDate || bookingEnd;
 
   let process = null;
   try {
@@ -141,14 +143,14 @@ const EstimatedCustomerBreakdownMaybe = props => {
   const lineItemUnitType = unitLineItem?.code;
   const shouldHaveBooking = [LINE_ITEM_DAY, LINE_ITEM_NIGHT].includes(lineItemUnitType);
   const hasLineItems = lineItems && lineItems.length > 0;
-  const hasRequiredBookingData = !shouldHaveBooking || (startDate && endDate);
+  const hasRequiredBookingData = !shouldHaveBooking || (resolvedStartDate && resolvedEndDate);
 
   const tx =
     hasLineItems && hasRequiredBookingData
       ? estimatedCustomerTransaction(
           lineItems,
-          startDate,
-          endDate,
+          resolvedStartDate,
+          resolvedEndDate,
           lineItemUnitType,
           timeZone,
           process,

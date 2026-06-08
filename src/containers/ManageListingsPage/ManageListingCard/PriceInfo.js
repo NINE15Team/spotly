@@ -4,6 +4,7 @@ import { FormattedMessage, useIntl } from '../../../util/reactIntl';
 import { displayPrice, isPriceVariationsEnabled } from '../../../util/configHelpers';
 import { useConfiguration } from '../../../context/configurationContext';
 import { formatMoney } from '../../../util/currency';
+import { getListingPricePerUnitLabel } from '../../../util/listingPriceLabels';
 
 import css from './ManageListingCard.module.css';
 
@@ -67,13 +68,17 @@ const PriceInfo = props => {
   const isPriceVariationsInUse = isPriceVariationsEnabled(publicData, listingTypeConfig);
   const hasMultiplePriceVariants = isPriceVariationsInUse && publicData?.priceVariants?.length > 1;
 
-  const perUnitString =
-    isBookable && publicData?.unitType
-      ? intl.formatMessage({ id: 'ManageListingCard.perUnit' }, { unitType: publicData.unitType })
-      : '';
+  const { transactionProcessAlias, unitType } = publicData || {};
+  const perUnitString = getListingPricePerUnitLabel(
+    intl,
+    transactionProcessAlias,
+    unitType,
+    'ManageListingCard.perUnit',
+    'ManageListingCard.subscriptionPerUnit'
+  );
 
   const priceValue = <span className={css.priceValue}>{formattedPrice}</span>;
-  const pricePerUnit = isBookable ? <span className={css.perUnit}>{perUnitString}</span> : '';
+  const pricePerUnit = perUnitString ? <span className={css.perUnit}>{perUnitString}</span> : '';
 
   return (
     <div className={css.price}>

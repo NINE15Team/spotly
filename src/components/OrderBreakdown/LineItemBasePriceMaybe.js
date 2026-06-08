@@ -10,6 +10,7 @@ import {
   LINE_ITEM_REQUEST,
   propTypes,
 } from '../../util/types';
+import { isSubscriptionProcess } from '../../transactions/transaction';
 
 import css from './OrderBreakdown.module.css';
 
@@ -24,14 +25,17 @@ import css from './OrderBreakdown.module.css';
  * @returns {JSX.Element}
  */
 const LineItemBasePriceMaybe = props => {
-  const { lineItems, code, intl } = props;
+  const { lineItems, code, intl, processName } = props;
+  const isSubscription = isSubscriptionProcess(processName);
   const isNightly = code === LINE_ITEM_NIGHT;
   const isDaily = code === LINE_ITEM_DAY;
   const isHourly = code === LINE_ITEM_HOUR;
   const isFixed = code === LINE_ITEM_FIXED;
   const isRequest = code === LINE_ITEM_REQUEST;
   const isOffer = code === LINE_ITEM_OFFER;
-  const translationKey = isNightly
+  const translationKey = isSubscription
+    ? 'OrderBreakdown.baseUnitSubscription'
+    : isNightly
     ? 'OrderBreakdown.baseUnitNight'
     : isDaily
     ? 'OrderBreakdown.baseUnitDay'
@@ -58,16 +62,19 @@ const LineItemBasePriceMaybe = props => {
   const unitPrice = unitPurchase ? formatMoney(intl, unitPurchase.unitPrice) : null;
   const total = unitPurchase ? formatMoney(intl, unitPurchase.lineTotal) : null;
 
-  const message = unitPurchase?.seats ? (
-    <FormattedMessage
-      id={`${translationKey}Seats`}
-      values={{ unitPrice, quantity, seats: unitPurchase.seats }}
-    />
-  ) : (
-    <FormattedMessage id={translationKey} values={{ unitPrice, quantity }} />
-  );
+  const message =
+    isSubscription && total ? (
+      <FormattedMessage id={translationKey} values={{ total }} />
+    ) : unitPurchase?.seats ? (
+      <FormattedMessage
+        id={`${translationKey}Seats`}
+        values={{ unitPrice, quantity, seats: unitPurchase.seats }}
+      />
+    ) : (
+      <FormattedMessage id={translationKey} values={{ unitPrice, quantity }} />
+    );
 
-  return quantity && total ? (
+  return (isSubscription ? total : quantity && total) ? (
     <div className={css.lineItem}>
       <span className={css.itemLabel}>{message}</span>
       <span className={css.itemValue}>{total}</span>

@@ -96,8 +96,8 @@ const SubscriptionOrderForm = props => {
         const breakdownData =
           start && end
             ? {
-                bookingStart: start,
-                bookingEnd: end,
+                startDate: start,
+                endDate: end,
               }
             : null;
 

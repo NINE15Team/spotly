@@ -2,6 +2,7 @@ import { displayPrice, isPriceVariationsEnabled } from '../../util/configHelpers
 import { formatMoney } from '../../util/currency';
 import { richText } from '../../util/richText';
 import { isBookingProcessAlias, isSubscriptionProcessAlias } from '../../transactions/transaction';
+import { getListingPricePerUnitLabel } from '../../util/listingPriceLabels';
 
 import css from './ListingCard.module.css';
 
@@ -69,7 +70,13 @@ export const getListingCardTranslations = (listing, config, intl) => {
     : 'ListingCard.price';
 
   const perUnitString = isBookable
-    ? intl.formatMessage({ id: 'ListingCard.perUnit' }, { unitType: publicData?.unitType })
+    ? getListingPricePerUnitLabel(
+        intl,
+        publicData?.transactionProcessAlias,
+        publicData?.unitType,
+        'ListingCard.perUnit',
+        'ListingCard.subscriptionPerUnit'
+      )
     : '';
 
   // Single formatted price line (amount + per-unit if applicable); used for both card aria and price block
