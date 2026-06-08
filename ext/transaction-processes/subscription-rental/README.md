@@ -11,16 +11,32 @@ owns the transaction record and listing availability.
 | Billing cycle | 1st of every month |
 | Trial period | None |
 
+## Merchant approval
+
+Like Sharetribe **default-booking**, the first payment is only **preauthorized** at checkout. The
+subscription does **not** go live until the **provider (merchant) approves** the request. After
+`confirm-payment` the transaction waits in `payment-confirmed` until one of:
+
+- the **provider** accepts (`accept-subscription`) → `active`, OR
+- the **provider** declines (`decline-subscription`) → `cancelled` (refund), OR
+- the **acceptance window expires** (`expire-acceptance`, system) → `expired` (refund), OR
+- an **operator** accepts/declines on the provider's behalf (`confirm-subscription` /
+  `abort-subscription`).
+
+The acceptance window (`expire-acceptance`) fires at the earliest of *(entered `payment-confirmed`
++ 6 days)* or *booking start*, mirroring default-booking so the card authorization cannot lapse
+unanswered.
+
 ## States
 
 | State | Purpose |
 |-------|---------|
 | `pending-payment` | Checkout started; awaiting first PaymentIntent |
-| `payment-confirmed` | Customer confirmed payment; server must create Stripe Subscription |
-| `active` | Subscription live; booking blocks availability |
+| `payment-confirmed` | First payment **preauthorized** (`requires_capture`); **awaiting provider approval** |
+| `active` | Provider approved; subscription live; booking blocks availability |
 | `payment-overdue` | Renewal charge failed (Stripe retrying) |
-| `cancelled` | Ended (cancel at period end or operator cancel) |
-| `expired` | All payment retries exhausted |
+| `cancelled` | Ended (provider/operator decline, cancel at period end, or operator cancel) |
+| `expired` | Acceptance window lapsed **or** all renewal retries exhausted |
 | `payment-expired` | Checkout not completed within 15 minutes |
 
 ## Key transitions
@@ -29,21 +45,39 @@ owns the transaction record and listing availability.
 |------------|-------|-------|
 | `request-payment` | Customer | Creates pending booking + PaymentIntent |
 | `confirm-payment` | Customer | Confirms PaymentIntent (3DS) → `payment-confirmed` (preauthorized, `requires_capture`) |
-| `confirm-subscription` | Operator (server) | Accepts booking + **captures** first PaymentIntent → `active` |
+| `accept-subscription` | **Provider** | Approves request: accepts booking + **captures** first payment → `active` |
+| `decline-subscription` | **Provider** | Rejects request: full refund → `cancelled` |
+| `expire-acceptance` | System (`:at`) | Provider did not respond in time: full refund → `expired` |
+| `confirm-subscription` | Operator | Operator-accept fallback (Console / server) → `active` |
+| `abort-subscription` | Operator | Operator-decline fallback: full refund → `cancelled` |
 | `extend-subscription` | Operator (server) | Extends booking on `invoice.paid` |
 | `payment-overdue` | Operator (server) | On `invoice.payment_failed` |
 | `reactivate-subscription` | Operator (server) | After successful retry |
 | `cancel-subscription` | Operator (server) | Releases booking at period end |
-| `expire` | Operator (server) | After all retries fail |
+| `expire` | Operator (server) | After all renewal retries fail |
 
-## Payment capture (vs default-booking)
+## Who runs the transition (Integration API vs Marketplace API)
 
-Sharetribe **default-booking** preauthorizes on `confirm-payment` (`preauthorized` state). The
-**provider** must `accept` before `stripe-capture-payment-intent` runs.
+The Integration API can only run **operator** transitions
+([docs](https://www.sharetribe.com/docs/concepts/transactions/privileged-transitions/#operator-transitions-in-the-integration-api)).
+So the provider-actor transitions are run with the **provider's own Marketplace SDK** from
+provider-gated server endpoints:
 
-For subscriptions, the **server** runs `confirm-subscription` (operator) after checkout. That
-transition must include both `accept-booking` and `stripe-capture-payment-intent` — otherwise the
-first PaymentIntent stays at `requires_capture` and funds are never transferred.
+- `POST /api/accept-subscription` — provider auth → creates the Stripe Subscription (Integration
+  API + Stripe), then runs `accept-subscription` via the provider's SDK (captures the first
+  payment). Stripe billing creation is **idempotent**.
+- `POST /api/decline-subscription` — provider auth → runs `decline-subscription` via the provider's
+  SDK (refunds the preauthorization).
+
+The Stripe **recurring subscription is created only on acceptance** — never at checkout. The
+operator fallback (`confirm-subscription`) still runs via the Integration API
+(`POST /api/activate-subscription`) and is wired for Console/back-office use.
+
+## Email templates
+
+`subscription-requested-provider` notifies the provider on `confirm-payment` that a request awaits
+approval. Acceptance reuses `subscription-confirmed-customer`; decline reuses `subscription-cancelled`;
+the acceptance timeout reuses `subscription-expired`.
 
 See: [Sharetribe booking acceptance](https://www.sharetribe.com/docs/concepts/payments/payments-with-stripe/#provider-acceptance)
 

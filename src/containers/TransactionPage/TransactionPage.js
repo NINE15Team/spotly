@@ -54,7 +54,12 @@ import {
 import TopbarContainer from '../../containers/TopbarContainer/TopbarContainer';
 import FooterContainer from '../../containers/FooterContainer/FooterContainer';
 
-import { cancelSubscription, billingPortal } from '../../util/api';
+import {
+  cancelSubscription,
+  billingPortal,
+  acceptSubscription,
+  declineSubscription,
+} from '../../util/api';
 import { getStateData } from './TransactionPage.stateData';
 import ActionButtons, {
   ACTION_BUTTON_1_ID,
@@ -278,6 +283,10 @@ export const TransactionPageComponent = props => {
   const [subscriptionCancelError, setSubscriptionCancelError] = useState(null);
   const [subscriptionPortalInProgress, setSubscriptionPortalInProgress] = useState(false);
   const [subscriptionPortalError, setSubscriptionPortalError] = useState(null);
+  const [subscriptionAcceptInProgress, setSubscriptionAcceptInProgress] = useState(false);
+  const [subscriptionAcceptError, setSubscriptionAcceptError] = useState(null);
+  const [subscriptionDeclineInProgress, setSubscriptionDeclineInProgress] = useState(false);
+  const [subscriptionDeclineError, setSubscriptionDeclineError] = useState(null);
 
   useEffect(() => {
     setMounted(true);
@@ -580,8 +589,10 @@ export const TransactionPageComponent = props => {
     routes: routeConfiguration,
   });
 
-  const subscriptionHandlers =
-    processName === SUBSCRIPTION_PROCESS_NAME && isCustomerRole && transaction?.id
+  const isSubscriptionTx = processName === SUBSCRIPTION_PROCESS_NAME && !!transaction?.id;
+
+  const customerSubscriptionHandlers =
+    isSubscriptionTx && isCustomerRole
       ? {
           cancelInProgress: subscriptionCancelInProgress,
           cancelError: subscriptionCancelError,
@@ -615,6 +626,40 @@ export const TransactionPageComponent = props => {
           },
         }
       : {};
+
+  const providerSubscriptionHandlers =
+    isSubscriptionTx && isProviderRole
+      ? {
+          acceptInProgress: subscriptionAcceptInProgress,
+          acceptError: subscriptionAcceptError,
+          declineInProgress: subscriptionDeclineInProgress,
+          declineError: subscriptionDeclineError,
+          onAcceptSubscription: () => {
+            setSubscriptionAcceptInProgress(true);
+            setSubscriptionAcceptError(null);
+            return acceptSubscription({ transactionId: transaction.id })
+              .then(() => onFetchTransaction(transaction.id, transactionRole, config))
+              .catch(e => {
+                setSubscriptionAcceptError(e);
+                throw e;
+              })
+              .finally(() => setSubscriptionAcceptInProgress(false));
+          },
+          onDeclineSubscription: () => {
+            setSubscriptionDeclineInProgress(true);
+            setSubscriptionDeclineError(null);
+            return declineSubscription({ transactionId: transaction.id })
+              .then(() => onFetchTransaction(transaction.id, transactionRole, config))
+              .catch(e => {
+                setSubscriptionDeclineError(e);
+                throw e;
+              })
+              .finally(() => setSubscriptionDeclineInProgress(false));
+          },
+        }
+      : {};
+
+  const subscriptionHandlers = { ...customerSubscriptionHandlers, ...providerSubscriptionHandlers };
 
   const stateData = isDataAvailable
     ? getStateData(

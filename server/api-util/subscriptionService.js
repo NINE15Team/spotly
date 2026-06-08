@@ -1,5 +1,5 @@
 const log = require('../log');
-const { TRANSITIONS, METADATA_KEYS } = require('./subscriptionConstants');
+const { TRANSITIONS, ACTIVE_ENTRY_TRANSITIONS, METADATA_KEYS } = require('./subscriptionConstants');
 const { getSubunitAmountFromMoneyLike } = require('./currency');
 const {
   transitionTransaction,
@@ -91,13 +91,48 @@ const assertLastTransition = (transaction, expectedTransition) => {
 };
 
 /**
- * After customer confirm-payment: create Stripe subscription and activate Sharetribe booking.
+ * Run a process transition. Provider/customer transitions must use the requester's
+ * Marketplace SDK (the Integration API can only run operator transitions); operator
+ * transitions fall back to the Integration API.
+ *
+ * @param {Object} args
+ * @param {Object} [args.marketplaceSdk] - logged-in user's SDK for provider/customer transitions
+ * @param {UUID} args.transactionId
+ * @param {string} args.transition
+ * @param {Object} [args.params]
+ */
+const runProcessTransition = ({ marketplaceSdk, transactionId, transition, params }) => {
+  if (marketplaceSdk) {
+    return marketplaceSdk.transactions.transition(
+      { id: transactionId, transition, params: params || {} },
+      { expand: true }
+    );
+  }
+  return transitionTransaction({ transactionId, transition, params });
+};
+
+/**
+ * Approve a subscription request: create the Stripe subscription and move the
+ * Sharetribe transaction to `active` (which captures the first payment).
+ *
+ * This runs when the provider accepts (transition/accept-subscription via the
+ * provider's Marketplace SDK) or as an operator-accept fallback
+ * (transition/confirm-subscription via the Integration API).
+ *
+ * Stripe billing creation is idempotent: if the subscription already exists on
+ * the transaction metadata (e.g. a prior attempt captured billing but failed to
+ * transition), it is reused instead of re-created.
  *
  * @param {UUID|string} transactionId
  * @param {Object} [options]
- * @param {string} [options.paymentIntentId] - optional fallback from checkout (Stripe PI id)
+ * @param {string} [options.paymentIntentId] - optional fallback PI id
+ * @param {string} [options.transition] - transition to run (defaults to operator confirm)
+ * @param {Object} [options.marketplaceSdk] - requester SDK for provider transitions
  */
 const activateSubscription = async (transactionId, options = {}) => {
+  const transition = options.transition || TRANSITIONS.CONFIRM_SUBSCRIPTION;
+  const marketplaceSdk = options.marketplaceSdk || null;
+
   const txResponse = await showTransaction(transactionId);
   const apiData = txResponse.data;
   const transaction = apiData.data;
@@ -108,12 +143,6 @@ const activateSubscription = async (transactionId, options = {}) => {
   const metadata = transaction.attributes.metadata || {};
   const payinTotal = transaction.attributes.payinTotal;
 
-  if (metadata[METADATA_KEYS.STRIPE_SUBSCRIPTION_ID]) {
-    const error = new Error('Subscription already activated for this transaction.');
-    error.status = 409;
-    throw error;
-  }
-
   const paymentIntentId =
     options.paymentIntentId || getPaymentIntentIdFromProtectedData(protectedData);
   if (!paymentIntentId) {
@@ -122,81 +151,115 @@ const activateSubscription = async (transactionId, options = {}) => {
     throw error;
   }
 
-  const paymentMethodId = await getPaymentMethodIdFromPaymentIntent(paymentIntentId);
-  if (!paymentMethodId) {
-    const error = new Error('Payment method not found on PaymentIntent.');
-    error.status = 400;
-    throw error;
-  }
-
-  const customerRef = transaction.relationships?.customer?.data;
-  const listingRef = transaction.relationships?.listing?.data;
-  const customer = getRelationship(apiData.included, 'user', customerRef);
-  const { listing, monthlyAmount } = await resolveListingForTransaction(apiData, listingRef);
-  const booking = getBookingFromTransactionResponse(apiData);
-
-  const bookingStart = booking?.attributes?.start;
-  const bookingEnd = booking?.attributes?.end || getFirstPeriodEnd(bookingStart);
-
-  const customerEmail = customer?.attributes?.email;
-  const customerName = customer?.attributes?.profile?.displayName;
-  const sharetribeUserId = customer?.id?.uuid;
-
   let stripeCustomerId = metadata[METADATA_KEYS.STRIPE_CUSTOMER_ID];
-  if (!stripeCustomerId) {
-    const stripeCustomer = await createStripeCustomer({
-      email: customerEmail,
-      name: customerName,
-      sharetribeUserId,
+  let stripeSubscriptionId = metadata[METADATA_KEYS.STRIPE_SUBSCRIPTION_ID];
+
+  // Create Stripe billing only if it has not been created yet (idempotent).
+  if (!stripeSubscriptionId) {
+    const paymentMethodId = await getPaymentMethodIdFromPaymentIntent(paymentIntentId);
+    if (!paymentMethodId) {
+      const error = new Error('Payment method not found on PaymentIntent.');
+      error.status = 400;
+      throw error;
+    }
+
+    const customerRef = transaction.relationships?.customer?.data;
+    const listingRef = transaction.relationships?.listing?.data;
+    const customer = getRelationship(apiData.included, 'user', customerRef);
+    const { listing, monthlyAmount } = await resolveListingForTransaction(apiData, listingRef);
+    const booking = getBookingFromTransactionResponse(apiData);
+
+    const bookingStart = booking?.attributes?.start;
+
+    const customerEmail = customer?.attributes?.email;
+    const customerName = customer?.attributes?.profile?.displayName;
+    const sharetribeUserId = customer?.id?.uuid;
+
+    if (!stripeCustomerId) {
+      const stripeCustomer = await createStripeCustomer({
+        email: customerEmail,
+        name: customerName,
+        sharetribeUserId,
+      });
+      stripeCustomerId = stripeCustomer.id;
+    }
+
+    const currency = payinTotal?.currency || listing?.attributes?.price?.currency;
+    const listingTitle = listing?.attributes?.title || 'Subscription';
+
+    if (!monthlyAmount) {
+      const error = new Error('Listing monthly price not found for Stripe subscription.');
+      error.status = 400;
+      throw error;
+    }
+
+    const stripePrice = await createMonthlyStripePrice({
+      amount: monthlyAmount,
+      currency,
+      productName: listingTitle,
+      listingId: getUuidFromRef(listing?.id),
     });
-    stripeCustomerId = stripeCustomer.id;
+
+    const stripeSubscription = await createStripeSubscription({
+      customerId: stripeCustomerId,
+      priceId: stripePrice.id,
+      paymentMethodId,
+      bookingStart,
+      sharetribeTransactionId: transaction.id.uuid,
+    });
+    stripeSubscriptionId = stripeSubscription.id;
+
+    await updateTransactionMetadata(transaction.id, {
+      [METADATA_KEYS.STRIPE_CUSTOMER_ID]: stripeCustomerId,
+      [METADATA_KEYS.STRIPE_SUBSCRIPTION_ID]: stripeSubscriptionId,
+      [METADATA_KEYS.STRIPE_PRICE_ID]: stripePrice.id,
+    });
   }
 
-  const currency = payinTotal?.currency || listing?.attributes?.price?.currency;
-  const listingTitle = listing?.attributes?.title || 'Subscription';
-
-  if (!monthlyAmount) {
-    const error = new Error('Listing monthly price not found for Stripe subscription.');
-    error.status = 400;
-    throw error;
-  }
-
-  const stripePrice = await createMonthlyStripePrice({
-    amount: monthlyAmount,
-    currency,
-    productName: listingTitle,
-    listingId: getUuidFromRef(listing?.id),
-  });
-
-  const stripeSubscription = await createStripeSubscription({
-    customerId: stripeCustomerId,
-    priceId: stripePrice.id,
-    paymentMethodId,
-    bookingStart,
-    sharetribeTransactionId: transaction.id.uuid,
-  });
-
-  await updateTransactionMetadata(transaction.id, {
-    [METADATA_KEYS.STRIPE_CUSTOMER_ID]: stripeCustomerId,
-    [METADATA_KEYS.STRIPE_SUBSCRIPTION_ID]: stripeSubscription.id,
-    [METADATA_KEYS.STRIPE_PRICE_ID]: stripePrice.id,
-  });
-
-  await transitionTransaction({
+  await runProcessTransition({
+    marketplaceSdk,
     transactionId: transaction.id,
-    transition: TRANSITIONS.CONFIRM_SUBSCRIPTION,
+    transition,
   });
 
-  // Capture first payment if process version lacks stripe-capture on confirm-subscription.
+  // Capture first payment if process version lacks stripe-capture on the transition.
   await capturePaymentIntentIfNeeded(paymentIntentId);
 
   log.info('Subscription activated', {
     transactionId: transaction.id.uuid,
-    stripeSubscriptionId: stripeSubscription.id,
-    bookingEnd,
+    stripeSubscriptionId,
+    transition,
   });
 
-  return { stripeSubscriptionId: stripeSubscription.id, stripeCustomerId };
+  return { stripeSubscriptionId, stripeCustomerId };
+};
+
+/**
+ * Decline a subscription request (provider). Runs transition/decline-subscription
+ * via the provider's Marketplace SDK, which refunds the preauthorized first payment.
+ * No Stripe subscription exists yet at this point (it is created only on acceptance).
+ *
+ * @param {UUID|string} transactionId
+ * @param {Object} [options]
+ * @param {Object} [options.marketplaceSdk] - provider's SDK (required for the provider transition)
+ */
+const declineSubscription = async (transactionId, options = {}) => {
+  const marketplaceSdk = options.marketplaceSdk || null;
+
+  const txResponse = await showTransaction(transactionId);
+  const transaction = txResponse.data.data;
+
+  assertLastTransition(transaction, TRANSITIONS.CONFIRM_PAYMENT);
+
+  await runProcessTransition({
+    marketplaceSdk,
+    transactionId: transaction.id,
+    transition: TRANSITIONS.DECLINE_SUBSCRIPTION,
+  });
+
+  log.info('Subscription request declined', { transactionId: transaction.id.uuid });
+
+  return { declined: true };
 };
 
 /**
@@ -244,10 +307,7 @@ const handleInvoicePaid = async stripeSubscriptionId => {
     return;
   }
 
-  if (
-    lastTransition === TRANSITIONS.CONFIRM_SUBSCRIPTION ||
-    lastTransition === TRANSITIONS.EXTEND_SUBSCRIPTION
-  ) {
+  if (ACTIVE_ENTRY_TRANSITIONS.includes(lastTransition)) {
     await extendSubscriptionPeriod(transaction);
     log.info('Subscription period extended', { transactionId: transaction.id.uuid });
   }
@@ -265,10 +325,7 @@ const handleInvoicePaymentFailed = async stripeSubscriptionId => {
     return;
   }
 
-  if (
-    lastTransition === TRANSITIONS.CONFIRM_SUBSCRIPTION ||
-    lastTransition === TRANSITIONS.EXTEND_SUBSCRIPTION
-  ) {
+  if (ACTIVE_ENTRY_TRANSITIONS.includes(lastTransition)) {
     await transitionTransaction({
       transactionId: transaction.id,
       transition: TRANSITIONS.PAYMENT_OVERDUE,
@@ -327,6 +384,7 @@ const requestCancelAtPeriodEnd = async transactionId => {
 
   const lastTransition = transaction.attributes.lastTransition;
   const allowed = [
+    TRANSITIONS.ACCEPT_SUBSCRIPTION,
     TRANSITIONS.CONFIRM_SUBSCRIPTION,
     TRANSITIONS.EXTEND_SUBSCRIPTION,
     TRANSITIONS.PAYMENT_OVERDUE,
@@ -344,6 +402,7 @@ const requestCancelAtPeriodEnd = async transactionId => {
 
 module.exports = {
   activateSubscription,
+  declineSubscription,
   handleInvoicePaid,
   handleInvoicePaymentFailed,
   handleSubscriptionDeleted,

@@ -38,6 +38,7 @@ const integrationSdk = require('./integrationSdk');
 const subscriptionStripe = require('./subscriptionStripe');
 const {
   activateSubscription,
+  declineSubscription,
   handleInvoicePaid,
   handleInvoicePaymentFailed,
   handleSubscriptionDeleted,
@@ -163,14 +164,49 @@ describe('activateSubscription', () => {
     );
   });
 
-  it('throws when the subscription is already activated', async () => {
+  it('is idempotent: reuses existing Stripe subscription without re-creating it', async () => {
     mockShowTransaction(
-      buildTransaction({ attributes: { metadata: { [METADATA_KEYS.STRIPE_SUBSCRIPTION_ID]: 'sub_existing' } } })
+      buildTransaction({
+        attributes: {
+          metadata: {
+            [METADATA_KEYS.STRIPE_SUBSCRIPTION_ID]: 'sub_existing',
+            [METADATA_KEYS.STRIPE_CUSTOMER_ID]: 'cus_existing',
+          },
+        },
+      })
     );
 
-    await expect(activateSubscription({ uuid: 'tx-1' })).rejects.toThrow(
-      /already activated/
+    const result = await activateSubscription({ uuid: 'tx-1' });
+
+    // Billing creation is skipped, but the activating transition still runs.
+    expect(subscriptionStripe.createStripeSubscription).not.toHaveBeenCalled();
+    expect(subscriptionStripe.createMonthlyStripePrice).not.toHaveBeenCalled();
+    expect(integrationSdk.transitionTransaction).toHaveBeenCalledWith(
+      expect.objectContaining({ transition: TRANSITIONS.CONFIRM_SUBSCRIPTION })
     );
+    expect(result).toEqual({
+      stripeSubscriptionId: 'sub_existing',
+      stripeCustomerId: 'cus_existing',
+    });
+  });
+
+  it('runs the provider accept transition via the requester Marketplace SDK', async () => {
+    mockShowTransaction(buildTransaction());
+    const marketplaceSdk = { transactions: { transition: jest.fn().mockResolvedValue({}) } };
+
+    await activateSubscription(
+      { uuid: 'tx-1' },
+      { transition: TRANSITIONS.ACCEPT_SUBSCRIPTION, marketplaceSdk }
+    );
+
+    // Provider transitions cannot run on the Integration API.
+    expect(integrationSdk.transitionTransaction).not.toHaveBeenCalled();
+    expect(marketplaceSdk.transactions.transition).toHaveBeenCalledWith(
+      expect.objectContaining({ transition: TRANSITIONS.ACCEPT_SUBSCRIPTION }),
+      expect.anything()
+    );
+    // Billing is still created on first acceptance.
+    expect(subscriptionStripe.createStripeSubscription).toHaveBeenCalledTimes(1);
   });
 
   it('throws when no PaymentIntent can be resolved', async () => {
@@ -215,12 +251,56 @@ describe('activateSubscription', () => {
   });
 });
 
+// --- declineSubscription -----------------------------------------------------
+describe('declineSubscription', () => {
+  it('runs the decline transition via the requester Marketplace SDK', async () => {
+    mockShowTransaction(buildTransaction());
+    const marketplaceSdk = { transactions: { transition: jest.fn().mockResolvedValue({}) } };
+
+    const result = await declineSubscription({ uuid: 'tx-1' }, { marketplaceSdk });
+
+    expect(integrationSdk.transitionTransaction).not.toHaveBeenCalled();
+    expect(marketplaceSdk.transactions.transition).toHaveBeenCalledWith(
+      expect.objectContaining({ transition: TRANSITIONS.DECLINE_SUBSCRIPTION }),
+      expect.anything()
+    );
+    // No Stripe subscription is created on decline.
+    expect(subscriptionStripe.createStripeSubscription).not.toHaveBeenCalled();
+    expect(result).toEqual({ declined: true });
+  });
+
+  it('throws when the transaction is not awaiting provider approval', async () => {
+    mockShowTransaction(
+      buildTransaction({ attributes: { lastTransition: TRANSITIONS.ACCEPT_SUBSCRIPTION } })
+    );
+    const marketplaceSdk = { transactions: { transition: jest.fn() } };
+
+    await expect(declineSubscription({ uuid: 'tx-1' }, { marketplaceSdk })).rejects.toThrow(
+      /Invalid transaction state/
+    );
+  });
+});
+
 // --- handleInvoicePaid -------------------------------------------------------
 describe('handleInvoicePaid', () => {
   it('extends the period when the subscription is active', async () => {
     integrationSdk.findTransactionByStripeSubscriptionId.mockResolvedValue({
       id: { uuid: 'tx-1' },
       attributes: { lastTransition: TRANSITIONS.CONFIRM_SUBSCRIPTION },
+    });
+    mockShowTransaction(buildTransaction());
+
+    await handleInvoicePaid('sub_123');
+
+    expect(integrationSdk.transitionTransaction).toHaveBeenCalledWith(
+      expect.objectContaining({ transition: TRANSITIONS.EXTEND_SUBSCRIPTION })
+    );
+  });
+
+  it('extends the period when the subscription was provider-accepted', async () => {
+    integrationSdk.findTransactionByStripeSubscriptionId.mockResolvedValue({
+      id: { uuid: 'tx-1' },
+      attributes: { lastTransition: TRANSITIONS.ACCEPT_SUBSCRIPTION },
     });
     mockShowTransaction(buildTransaction());
 

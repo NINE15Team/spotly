@@ -21,10 +21,14 @@ export const getStateDataForSubscriptionProcess = (txInfo, processInfo) => {
       processState,
       actionNeeded: true,
     }))
-    .cond([states.PAYMENT_CONFIRMED, CUSTOMER], () => ({
+    .cond([states.PAYMENT_CONFIRMED, PROVIDER], () => ({
       processName,
       processState,
       actionNeeded: true,
+    }))
+    .cond([states.PAYMENT_CONFIRMED, CUSTOMER], () => ({
+      processName,
+      processState,
     }))
     .cond([states.PAYMENT_EXPIRED, _], () => ({
       processName,

@@ -20,9 +20,22 @@ describe('getStateDataForSubscriptionProcess (InboxPage)', () => {
     it.each([
       ['PENDING_PAYMENT', states.PENDING_PAYMENT],
       ['PAYMENT_OVERDUE', states.PAYMENT_OVERDUE],
-      ['PAYMENT_CONFIRMED', states.PAYMENT_CONFIRMED],
     ])('%s → actionNeeded', (_label, processState) => {
       const result = resolve(processState, CUSTOMER);
+      expect(result.actionNeeded).toBe(true);
+      expect(result.isFinal).toBeUndefined();
+    });
+
+    it('PAYMENT_CONFIRMED is not actionNeeded for the customer (awaiting provider)', () => {
+      const result = resolve(states.PAYMENT_CONFIRMED, CUSTOMER);
+      expect(result.actionNeeded).toBeUndefined();
+      expect(result.isFinal).toBeUndefined();
+    });
+  });
+
+  describe('actionNeeded for the provider', () => {
+    it('PAYMENT_CONFIRMED → provider must accept or decline', () => {
+      const result = resolve(states.PAYMENT_CONFIRMED, PROVIDER);
       expect(result.actionNeeded).toBe(true);
       expect(result.isFinal).toBeUndefined();
     });

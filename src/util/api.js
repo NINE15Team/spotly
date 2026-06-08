@@ -137,6 +137,16 @@ export const activateSubscription = body => {
   return post('/api/activate-subscription', body);
 };
 
+// Provider approves a subscription request (creates Stripe subscription + captures first payment).
+export const acceptSubscription = body => {
+  return post('/api/accept-subscription', body);
+};
+
+// Provider declines a subscription request (refunds the first payment).
+export const declineSubscription = body => {
+  return post('/api/decline-subscription', body);
+};
+
 // Cancel subscription at end of billing period.
 export const cancelSubscription = body => {
   return post('/api/cancel-subscription', body);

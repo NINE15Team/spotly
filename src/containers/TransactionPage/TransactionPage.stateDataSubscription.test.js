@@ -21,6 +21,15 @@ const buildHandlers = () => ({
   onOpenBillingPortal: jest.fn(),
 });
 
+const buildProviderHandlers = () => ({
+  acceptInProgress: false,
+  acceptError: null,
+  declineInProgress: false,
+  declineError: null,
+  onAcceptSubscription: jest.fn(),
+  onDeclineSubscription: jest.fn(),
+});
+
 describe('getStateDataForSubscriptionProcess (TransactionPage)', () => {
   describe('[ACTIVE, CUSTOMER]', () => {
     it('exposes cancel as primary and portal as secondary when handlers are present', () => {
@@ -83,6 +92,42 @@ describe('getStateDataForSubscriptionProcess (TransactionPage)', () => {
       expect(result.showDetailCardHeadings).toBe(true);
       expect(result.showExtraInfo).toBe(true);
       expect(result.showActionButtons).toBeUndefined();
+    });
+  });
+
+  describe('[PAYMENT_CONFIRMED, PROVIDER]', () => {
+    it('exposes accept as primary and decline as secondary when handlers are present', () => {
+      const txInfo = {
+        transactionRole: PROVIDER,
+        intl: fakeIntl,
+        subscriptionHandlers: buildProviderHandlers(),
+      };
+      const result = getStateDataForSubscriptionProcess(
+        txInfo,
+        buildProcessInfo(states.PAYMENT_CONFIRMED)
+      );
+
+      expect(result.showActionButtons).toBe(true);
+      expect(result.showExtraInfo).toBe(true);
+      expect(result.primaryButtonProps.onAction).toEqual(expect.any(Function));
+      expect(result.primaryButtonProps.buttonText).toBe(
+        'TransactionPage.subscription-rental.provider.acceptSubscription'
+      );
+      expect(result.secondaryButtonProps.buttonText).toBe(
+        'TransactionPage.subscription-rental.provider.declineSubscription'
+      );
+    });
+
+    it('shows no action buttons when provider handlers are absent', () => {
+      const txInfo = { transactionRole: PROVIDER, intl: fakeIntl, subscriptionHandlers: {} };
+      const result = getStateDataForSubscriptionProcess(
+        txInfo,
+        buildProcessInfo(states.PAYMENT_CONFIRMED)
+      );
+
+      expect(result.showActionButtons).toBe(false);
+      expect(result.primaryButtonProps).toBeNull();
+      expect(result.secondaryButtonProps).toBeNull();
     });
   });
 

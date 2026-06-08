@@ -197,8 +197,6 @@ export const processCheckoutWithPayment = (orderParams, extraPaymentParams) => {
     sessionStorageKey,
     stripeCustomer,
     stripePaymentMethodId,
-    onActivateSubscription,
-    isSubscriptionCheckout,
   } = extraPaymentParams;
   const storedTx = ensureTransaction(pageData.transaction);
 
@@ -340,28 +338,17 @@ export const processCheckoutWithPayment = (orderParams, extraPaymentParams) => {
   //   .then(result => fnConfirmPayment({...result}))
   const applyAsync = (acc, val) => acc.then(val);
   const composeAsync = (...funcs) => x => funcs.reduce(applyAsync, Promise.resolve(x));
-  /////////////////////////////////////////////////
-  // Step 3b: activate Stripe subscription (subscription-rental only)
-  /////////////////////////////////////////////////
-  const fnActivateSubscription = fnParams => {
-    const orderId = fnParams?.orderId || fnParams?.id;
-    const transactionId = orderId?.uuid || orderId;
-    const paymentIntentId = createdPaymentIntent?.id;
-    if (!isSubscriptionCheckout || !onActivateSubscription || !transactionId) {
-      return Promise.resolve(fnParams);
-    }
-    return onActivateSubscription({ transactionId, paymentIntentId }).then(() => fnParams);
-  };
 
-  const handlePaymentIntentCreation = isSubscriptionCheckout
-    ? composeAsync(
-        fnRequestPayment,
-        fnConfirmCardPayment,
-        fnConfirmPayment,
-        fnActivateSubscription,
-        fnSavePaymentMethod
-      )
-    : composeAsync(fnRequestPayment, fnConfirmCardPayment, fnConfirmPayment, fnSavePaymentMethod);
+  // For subscription-rental the transaction stops at `payment-confirmed` after the
+  // customer confirms payment. The Stripe subscription is created only when the
+  // provider approves the request (transition/accept-subscription), so checkout
+  // uses the same sequence as other processes — no auto-activation here.
+  const handlePaymentIntentCreation = composeAsync(
+    fnRequestPayment,
+    fnConfirmCardPayment,
+    fnConfirmPayment,
+    fnSavePaymentMethod
+  );
 
   return handlePaymentIntentCreation(orderParams);
 };

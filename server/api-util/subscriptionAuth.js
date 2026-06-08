@@ -9,7 +9,15 @@ const { isSubscriptionProcess } = require('./subscriptionConstants');
  * @param {Object} res
  * @param {UUID|string} transactionId
  */
-const assertCustomerOnTransaction = async (req, res, transactionId) => {
+/**
+ * Ensure the logged-in user has the given role on the subscription transaction.
+ *
+ * @param {Object} req
+ * @param {Object} res
+ * @param {UUID|string} transactionId
+ * @param {'customer'|'provider'} role
+ */
+const assertRoleOnTransaction = async (req, res, transactionId, role) => {
   const sdk = getSdk(req, res);
   const currentUserResponse = await sdk.currentUser.show();
   const currentUserId = currentUserResponse?.data?.data?.id?.uuid;
@@ -22,13 +30,13 @@ const assertCustomerOnTransaction = async (req, res, transactionId) => {
 
   const txResponse = await sdk.transactions.show({
     id: normalizeUuid(transactionId),
-    include: ['customer', 'listing'],
+    include: ['customer', 'provider', 'listing'],
   });
 
   const transaction = txResponse.data.data;
-  const customerId = transaction.relationships?.customer?.data?.id?.uuid;
+  const partyId = transaction.relationships?.[role]?.data?.id?.uuid;
 
-  if (customerId !== currentUserId) {
+  if (partyId !== currentUserId) {
     const error = new Error('Not authorized for this transaction.');
     error.status = 403;
     throw error;
@@ -49,6 +57,19 @@ const assertCustomerOnTransaction = async (req, res, transactionId) => {
   return { transaction, sdk };
 };
 
+/**
+ * Ensure the logged-in user is the customer on the transaction.
+ */
+const assertCustomerOnTransaction = (req, res, transactionId) =>
+  assertRoleOnTransaction(req, res, transactionId, 'customer');
+
+/**
+ * Ensure the logged-in user is the provider on the transaction.
+ */
+const assertProviderOnTransaction = (req, res, transactionId) =>
+  assertRoleOnTransaction(req, res, transactionId, 'provider');
+
 module.exports = {
   assertCustomerOnTransaction,
+  assertProviderOnTransaction,
 };

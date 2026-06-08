@@ -34,6 +34,39 @@
    :from :state/payment-confirmed,
    :to :state/cancelled,
    :privileged? true}
+  ;; Provider approves the subscription request (captures the first payment).
+  {:name :transition/accept-subscription,
+   :actor :actor.role/provider,
+   :actions
+   [{:name :action/accept-booking}
+    {:name :action/stripe-capture-payment-intent}],
+   :from :state/payment-confirmed,
+   :to :state/active}
+  ;; Provider rejects the subscription request (refunds the first payment).
+  {:name :transition/decline-subscription,
+   :actor :actor.role/provider,
+   :actions
+   [{:name :action/calculate-full-refund}
+    {:name :action/stripe-refund-payment}
+    {:name :action/decline-booking}],
+   :from :state/payment-confirmed,
+   :to :state/cancelled}
+  ;; Acceptance window: expire & refund if the provider does not respond.
+  ;; Fires at the earliest of (entered payment-confirmed + 6 days) or booking start.
+  {:name :transition/expire-acceptance,
+   :at
+   {:fn/min
+    [{:fn/plus
+      [{:fn/timepoint [:time/first-entered-state :state/payment-confirmed]}
+       {:fn/period ["P6D"]}]}
+     {:fn/timepoint [:time/booking-start]}]},
+   :actions
+   [{:name :action/calculate-full-refund}
+    {:name :action/stripe-refund-payment}
+    {:name :action/decline-booking}],
+   :from :state/payment-confirmed,
+   :to :state/expired}
+  ;; Operator-accept fallback (Console / server on behalf of the provider).
   {:name :transition/confirm-subscription,
    :actor :actor.role/operator,
    :actions
@@ -79,7 +112,23 @@
    :to :state/cancelled,
    :privileged? true}],
  :notifications
- [{:name :notification/subscription-confirmed-customer,
+ [{:name :notification/subscription-requested-provider,
+   :on :transition/confirm-payment,
+   :to :actor.role/provider,
+   :template :subscription-requested-provider}
+  {:name :notification/subscription-accepted-customer,
+   :on :transition/accept-subscription,
+   :to :actor.role/customer,
+   :template :subscription-confirmed-customer}
+  {:name :notification/subscription-declined-customer,
+   :on :transition/decline-subscription,
+   :to :actor.role/customer,
+   :template :subscription-cancelled}
+  {:name :notification/subscription-acceptance-expired-customer,
+   :on :transition/expire-acceptance,
+   :to :actor.role/customer,
+   :template :subscription-expired}
+  {:name :notification/subscription-confirmed-customer,
    :on :transition/confirm-subscription,
    :to :actor.role/customer,
    :template :subscription-confirmed-customer}

@@ -19,9 +19,45 @@ export const getStateDataForSubscriptionProcess = (txInfo, processInfo) => {
     portalError,
     onCancelSubscription,
     onOpenBillingPortal,
+    acceptInProgress,
+    declineInProgress,
+    acceptError,
+    declineError,
+    onAcceptSubscription,
+    onDeclineSubscription,
   } = subscriptionHandlers;
 
   const { processName, processState, states } = processInfo;
+
+  const acceptButtonProps =
+    onAcceptSubscription && intl
+      ? {
+          inProgress: acceptInProgress,
+          error: acceptError,
+          onAction: onAcceptSubscription,
+          buttonText: intl.formatMessage({
+            id: 'TransactionPage.subscription-rental.provider.acceptSubscription',
+          }),
+          errorText: intl.formatMessage({
+            id: 'TransactionPage.subscription-rental.provider.acceptSubscriptionError',
+          }),
+        }
+      : null;
+
+  const declineButtonProps =
+    onDeclineSubscription && intl
+      ? {
+          inProgress: declineInProgress,
+          error: declineError,
+          onAction: onDeclineSubscription,
+          buttonText: intl.formatMessage({
+            id: 'TransactionPage.subscription-rental.provider.declineSubscription',
+          }),
+          errorText: intl.formatMessage({
+            id: 'TransactionPage.subscription-rental.provider.declineSubscriptionError',
+          }),
+        }
+      : null;
 
   const cancelButtonProps =
     onCancelSubscription && intl
@@ -75,6 +111,15 @@ export const getStateDataForSubscriptionProcess = (txInfo, processInfo) => {
       processState,
       showDetailCardHeadings: true,
       showExtraInfo: true,
+    }))
+    .cond([states.PAYMENT_CONFIRMED, PROVIDER], () => ({
+      processName,
+      processState,
+      showDetailCardHeadings: true,
+      showExtraInfo: true,
+      showActionButtons: !!(acceptButtonProps || declineButtonProps),
+      primaryButtonProps: acceptButtonProps,
+      secondaryButtonProps: declineButtonProps,
     }))
     .cond([states.ACTIVE, PROVIDER], () => ({
       processName,

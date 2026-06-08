@@ -26,6 +26,8 @@ const router = express.Router();
 
 const stripeWebhooks = require('./api/stripe-webhooks');
 const activateSubscription = require('./api/activate-subscription');
+const acceptSubscription = require('./api/accept-subscription');
+const declineSubscription = require('./api/decline-subscription');
 const cancelSubscription = require('./api/cancel-subscription');
 const billingPortal = require('./api/billing-portal');
 
@@ -65,6 +67,8 @@ router.post('/initiate-privileged', initiatePrivileged);
 router.post('/transition-privileged', transitionPrivileged);
 router.post('/delete-account', deleteAccount);
 router.post('/activate-subscription', activateSubscription);
+router.post('/accept-subscription', acceptSubscription);
+router.post('/decline-subscription', declineSubscription);
 router.post('/cancel-subscription', cancelSubscription);
 router.post('/billing-portal', billingPortal);
 

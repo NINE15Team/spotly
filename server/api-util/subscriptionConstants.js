@@ -9,6 +9,12 @@ const SUBSCRIPTION_PROCESS_ALIAS = `${SUBSCRIPTION_PROCESS_NAME}/release-1`;
 const TRANSITIONS = {
   REQUEST_PAYMENT: 'transition/request-payment',
   CONFIRM_PAYMENT: 'transition/confirm-payment',
+  // Provider approves/declines the subscription request.
+  ACCEPT_SUBSCRIPTION: 'transition/accept-subscription',
+  DECLINE_SUBSCRIPTION: 'transition/decline-subscription',
+  // Acceptance window timed out (system).
+  EXPIRE_ACCEPTANCE: 'transition/expire-acceptance',
+  // Operator-accept fallback (Console / server on behalf of provider).
   CONFIRM_SUBSCRIPTION: 'transition/confirm-subscription',
   EXTEND_SUBSCRIPTION: 'transition/extend-subscription',
   PAYMENT_OVERDUE: 'transition/payment-overdue',
@@ -18,6 +24,13 @@ const TRANSITIONS = {
   EXPIRE: 'transition/expire',
   ABORT_SUBSCRIPTION: 'transition/abort-subscription',
 };
+
+// Transitions whose resulting state is an active (live-billing) subscription.
+const ACTIVE_ENTRY_TRANSITIONS = [
+  TRANSITIONS.ACCEPT_SUBSCRIPTION,
+  TRANSITIONS.CONFIRM_SUBSCRIPTION,
+  TRANSITIONS.EXTEND_SUBSCRIPTION,
+];
 
 const STATES = {
   PENDING_PAYMENT: 'state/pending-payment',
@@ -48,6 +61,7 @@ module.exports = {
   SUBSCRIPTION_PROCESS_NAME,
   SUBSCRIPTION_PROCESS_ALIAS,
   TRANSITIONS,
+  ACTIVE_ENTRY_TRANSITIONS,
   STATES,
   METADATA_KEYS,
   BILLING_DAY_OF_MONTH,

@@ -7,6 +7,10 @@ export const transitions = {
   REQUEST_PAYMENT: 'transition/request-payment',
   EXPIRE_PAYMENT: 'transition/expire-payment',
   CONFIRM_PAYMENT: 'transition/confirm-payment',
+  // Provider approval step.
+  ACCEPT_SUBSCRIPTION: 'transition/accept-subscription',
+  DECLINE_SUBSCRIPTION: 'transition/decline-subscription',
+  EXPIRE_ACCEPTANCE: 'transition/expire-acceptance',
   ABORT_SUBSCRIPTION: 'transition/abort-subscription',
   CONFIRM_SUBSCRIPTION: 'transition/confirm-subscription',
   EXTEND_SUBSCRIPTION: 'transition/extend-subscription',
@@ -46,6 +50,9 @@ export const graph = {
     [states.PAYMENT_EXPIRED]: {},
     [states.PAYMENT_CONFIRMED]: {
       on: {
+        [transitions.ACCEPT_SUBSCRIPTION]: states.ACTIVE,
+        [transitions.DECLINE_SUBSCRIPTION]: states.CANCELLED,
+        [transitions.EXPIRE_ACCEPTANCE]: states.EXPIRED,
         [transitions.ABORT_SUBSCRIPTION]: states.CANCELLED,
         [transitions.CONFIRM_SUBSCRIPTION]: states.ACTIVE,
       },
@@ -72,6 +79,9 @@ export const graph = {
 export const isRelevantPastTransition = transition => {
   return [
     transitions.CONFIRM_PAYMENT,
+    transitions.ACCEPT_SUBSCRIPTION,
+    transitions.DECLINE_SUBSCRIPTION,
+    transitions.EXPIRE_ACCEPTANCE,
     transitions.CONFIRM_SUBSCRIPTION,
     transitions.EXTEND_SUBSCRIPTION,
     transitions.PAYMENT_OVERDUE,
@@ -99,10 +109,12 @@ export const isCompleted = transition => {
 export const isRefunded = transition => {
   return [
     transitions.EXPIRE_PAYMENT,
+    transitions.DECLINE_SUBSCRIPTION,
+    transitions.EXPIRE_ACCEPTANCE,
     transitions.ABORT_SUBSCRIPTION,
     transitions.EXPIRE,
   ].includes(transition);
 };
 
-export const statesNeedingProviderAttention = [];
+export const statesNeedingProviderAttention = [states.PAYMENT_CONFIRMED];
 export const statesNeedingCustomerAttention = [states.PAYMENT_OVERDUE];
