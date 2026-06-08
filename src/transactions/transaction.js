@@ -390,6 +390,63 @@ export const isSubscriptionProcessAlias = processAlias => {
 };
 
 /**
+ * Resolve the first payment-related transition for checkout (speculate + initiate).
+ *
+ * @param {Object} process - return value of getProcess()
+ * @param {Object} [tx] - existing transaction entity
+ * @param {String} [processName] - resolved process name
+ * @returns {String|null} transition name, e.g. 'transition/request-payment'
+ */
+export const getRequestPaymentTransition = (process, tx, processName) => {
+  if (!process?.transitions) {
+    return null;
+  }
+
+  const { transitions, states } = process;
+  const lastTransition = tx?.attributes?.lastTransition;
+  const state = tx?.attributes?.state;
+
+  if (isSubscriptionProcess(processName)) {
+    return transitions.REQUEST_PAYMENT || null;
+  }
+
+  if (lastTransition === transitions.INQUIRE && transitions.REQUEST_PAYMENT_AFTER_INQUIRY) {
+    return transitions.REQUEST_PAYMENT_AFTER_INQUIRY;
+  }
+
+  const resolvedName = resolveLatestProcessName(processName);
+  if (
+    resolvedName === NEGOTIATION_PROCESS_NAME &&
+    state === `state/${states?.OFFER_PENDING}` &&
+    transitions.REQUEST_PAYMENT_TO_ACCEPT_OFFER
+  ) {
+    return transitions.REQUEST_PAYMENT_TO_ACCEPT_OFFER;
+  }
+
+  return transitions.REQUEST_PAYMENT || null;
+};
+
+/**
+ * Whether the request-payment transition must go through the privileged server endpoint.
+ *
+ * @param {Object} process - return value of getProcess()
+ * @param {String} transition - transition name
+ * @param {String} [processName] - resolved process name
+ * @returns {boolean}
+ */
+export const isPrivilegedRequestPaymentTransition = (process, transition, processName) => {
+  if (!transition || !process) {
+    return false;
+  }
+
+  if (isSubscriptionProcess(processName)) {
+    return transition === process.transitions?.REQUEST_PAYMENT;
+  }
+
+  return typeof process.isPrivileged === 'function' ? process.isPrivileged(transition) : false;
+};
+
+/**
  * Check from unit type if full days should be used.
  * E.g. unit type is day or night
  * This is mainly used for availability management.

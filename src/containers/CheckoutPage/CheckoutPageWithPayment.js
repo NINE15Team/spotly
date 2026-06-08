@@ -13,7 +13,9 @@ import { createSlug } from '../../util/urlHelpers';
 import { isTransactionInitiateListingNotFoundError } from '../../util/errors';
 import {
   getProcess,
+  getRequestPaymentTransition,
   isBookingProcessAlias,
+  isPrivilegedRequestPaymentTransition,
   resolveLatestProcessName,
   BOOKING_PROCESS_NAME,
   NEGOTIATION_PROCESS_NAME,
@@ -178,21 +180,21 @@ const fetchSpeculatedTransactionIfNeeded = (orderParams, pageData, fetchSpeculat
     !hasTransactionPassedPendingPayment(tx, process);
 
   if (shouldFetchSpeculatedTransaction) {
-    const processAlias = pageData.listing.attributes.publicData?.transactionProcessAlias;
+    const { transactionProcessAlias } = pageData.listing.attributes.publicData || {};
+    const processAlias =
+      transactionProcessAlias || (processName ? `${processName}/release-1` : null);
     const transactionId = tx ? tx.id : null;
-    const isInquiryInPaymentProcess =
-      tx?.attributes?.lastTransition === process.transitions.INQUIRE;
-    const resolvedProcessName = resolveLatestProcessName(processName);
-    const isOfferPendingInNegotiationProcess =
-      resolvedProcessName === NEGOTIATION_PROCESS_NAME &&
-      tx.attributes.state === `state/${process.states.OFFER_PENDING}`;
+    const requestTransition = getRequestPaymentTransition(process, tx, processName);
 
-    const requestTransition = isInquiryInPaymentProcess
-      ? process.transitions.REQUEST_PAYMENT_AFTER_INQUIRY
-      : isOfferPendingInNegotiationProcess
-      ? process.transitions.REQUEST_PAYMENT_TO_ACCEPT_OFFER
-      : process.transitions.REQUEST_PAYMENT;
-    const isPrivileged = process.isPrivileged(requestTransition);
+    if (!requestTransition || !processAlias) {
+      return;
+    }
+
+    const isPrivileged = isPrivilegedRequestPaymentTransition(
+      process,
+      requestTransition,
+      processName
+    );
 
     fetchSpeculatedTransaction(
       orderParams,

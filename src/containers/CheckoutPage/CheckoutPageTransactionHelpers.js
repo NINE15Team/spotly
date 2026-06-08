@@ -3,7 +3,12 @@ import { findRouteByRouteName } from '../../util/routes';
 import { ensureStripeCustomer, ensureTransaction } from '../../util/data';
 import { minutesBetween } from '../../util/dates';
 import { formatMoney } from '../../util/currency';
-import { NEGOTIATION_PROCESS_NAME, resolveLatestProcessName } from '../../transactions/transaction';
+import {
+  getRequestPaymentTransition,
+  isPrivilegedRequestPaymentTransition,
+  NEGOTIATION_PROCESS_NAME,
+  resolveLatestProcessName,
+} from '../../transactions/transaction';
 import { storeData } from './CheckoutPageSessionHelpers';
 
 /**
@@ -210,17 +215,18 @@ export const processCheckoutWithPayment = (orderParams, extraPaymentParams) => {
     // fnParams should be { listingId, deliveryMethod?, quantity?, bookingDates?, paymentMethod?.setupPaymentMethodForSaving?, protectedData }
     const hasPaymentIntents = storedTx.attributes.protectedData?.stripePaymentIntents;
 
-    const isOfferPendingInNegotiationProcess =
-      resolveLatestProcessName(processAlias.split('/')[0]) === NEGOTIATION_PROCESS_NAME &&
-      storedTx.attributes.state === `state/${process.states.OFFER_PENDING}`;
+    const processName = resolveLatestProcessName(processAlias?.split('/')[0]);
+    const requestTransition = getRequestPaymentTransition(process, storedTx, processName);
 
-    const requestTransition =
-      storedTx?.attributes?.lastTransition === process.transitions.INQUIRE
-        ? process.transitions.REQUEST_PAYMENT_AFTER_INQUIRY
-        : isOfferPendingInNegotiationProcess
-        ? process.transitions.REQUEST_PAYMENT_TO_ACCEPT_OFFER
-        : process.transitions.REQUEST_PAYMENT;
-    const isPrivileged = process.isPrivileged(requestTransition);
+    if (!requestTransition) {
+      return Promise.reject(new Error('Missing request-payment transition for checkout.'));
+    }
+
+    const isPrivileged = isPrivilegedRequestPaymentTransition(
+      process,
+      requestTransition,
+      processName
+    );
 
     // If paymentIntent exists, order has been initiated previously.
     const orderPromise = hasPaymentIntents

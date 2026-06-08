@@ -24,7 +24,10 @@ const initiateOrderPayloadCreator = (
   const bookingParamsMaybe = bookingDates || {};
 
   // Parameters only for client app's server
-  const orderData = deliveryMethod ? { deliveryMethod } : {};
+  const orderData = {
+    ...(deliveryMethod ? { deliveryMethod } : {}),
+    processAlias,
+  };
 
   // Parameters for Marketplace API
   const transitionParams = {
@@ -32,6 +35,10 @@ const initiateOrderPayloadCreator = (
     ...bookingParamsMaybe,
     ...otherOrderParams,
   };
+
+  if (!transitionName) {
+    return rejectWithValue(storableError(new Error('Missing transition for order initiation.')));
+  }
 
   const bodyParams = isTransition
     ? {
@@ -273,6 +280,7 @@ const speculateTransactionPayloadCreator = (
   const orderData = {
     ...(deliveryMethod ? { deliveryMethod } : {}),
     ...(priceVariantName ? { priceVariantName } : {}),
+    processAlias,
   };
 
   // Parameters for Marketplace API
@@ -282,6 +290,12 @@ const speculateTransactionPayloadCreator = (
     ...otherOrderParams,
     cardToken: 'CheckoutPage_speculative_card_token',
   };
+
+  if (!transitionName) {
+    return rejectWithValue(
+      storableError(new Error('Missing transition for speculative transaction.'))
+    );
+  }
 
   const bodyParams = isTransition
     ? {

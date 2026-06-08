@@ -437,11 +437,13 @@ export const handleSubmit = parameters => values => {
     ...otherOrderData
   } = values;
 
-  const bookingMaybe = bookingDates
+  const subscriptionBookingStart = bookingDates?.bookingStart || bookingDates?.startDate;
+  const subscriptionBookingEnd = bookingDates?.bookingEnd || bookingDates?.endDate;
+  const bookingMaybe = subscriptionBookingStart && subscriptionBookingEnd
     ? {
         bookingDates: {
-          bookingStart: bookingDates.startDate,
-          bookingEnd: bookingDates.endDate,
+          bookingStart: subscriptionBookingStart,
+          bookingEnd: subscriptionBookingEnd,
         },
       }
     : bookingStartTime && bookingEndTime
