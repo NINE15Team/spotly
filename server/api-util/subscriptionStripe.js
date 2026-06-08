@@ -95,9 +95,18 @@ const createStripeCustomer = async ({ email, name, sharetribeUserId }) => {
  * Create a recurring monthly Stripe Price for the listing amount.
  */
 const createMonthlyStripePrice = async ({ amount, currency, productName, listingId }) => {
+  const unitAmount = Number.isInteger(amount) && amount > 0 ? amount : null;
+  if (!unitAmount || !currency) {
+    const error = new Error(
+      'Invalid listing price for Stripe subscription (unit_amount and currency required).'
+    );
+    error.status = 400;
+    throw error;
+  }
+
   const stripe = getStripe();
   return stripe.prices.create({
-    unit_amount: amount,
+    unit_amount: unitAmount,
     currency: currency.toLowerCase(),
     recurring: { interval: 'month' },
     product_data: {

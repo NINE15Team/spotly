@@ -255,3 +255,49 @@ exports.convertDecimalJSToNumber = decimalValue => {
 
   return decimalValue.toNumber();
 };
+
+/**
+ * Extract money amount in subunits from Sharetribe Money (SDK or API JSON shape).
+ *
+ * @param {Money|Object|null} money
+ * @returns {number|null} integer subunits suitable for Stripe unit_amount
+ */
+exports.getSubunitAmountFromMoneyLike = money => {
+  if (!money) {
+    return null;
+  }
+
+  if (money instanceof Money) {
+    return exports.convertDecimalJSToNumber(exports.getAmountAsDecimalJS(money));
+  }
+
+  const { amount } = money;
+  if (amount == null) {
+    return null;
+  }
+
+  let decimalAmount;
+  if (typeof amount === 'number') {
+    decimalAmount = new Decimal(amount);
+  } else if (typeof amount === 'string') {
+    decimalAmount = new Decimal(amount);
+  } else if (amount instanceof Decimal) {
+    decimalAmount = amount;
+  } else if (typeof amount === 'object' && amount.value != null) {
+    decimalAmount = new Decimal(amount.value);
+  } else if (isGoogleMathLong(amount)) {
+    decimalAmount = new Decimal(amount.toString());
+  } else if (typeof amount.toNumber === 'function') {
+    decimalAmount = new Decimal(amount.toNumber());
+  } else if (typeof amount.toString === 'function') {
+    decimalAmount = new Decimal(amount.toString());
+  } else {
+    return null;
+  }
+
+  if (!isSafeNumber(decimalAmount)) {
+    return null;
+  }
+
+  return Math.round(exports.convertDecimalJSToNumber(decimalAmount));
+};

@@ -121,6 +121,20 @@ const updateTransactionMetadata = (transactionId, metadataPatch) => {
 };
 
 /**
+ * @param {UUID|string|Object} listingId
+ */
+const showListing = listingId => {
+  const integrationSdk = getIntegrationSdk();
+  const id = normalizeUuid(listingId);
+  if (!id) {
+    const error = new Error('Invalid listing id for Integration API show.');
+    error.status = 400;
+    throw error;
+  }
+  return integrationSdk.listings.show({ id });
+};
+
+/**
  * Find transaction by Stripe subscription id stored in metadata.
  */
 const findTransactionByStripeSubscriptionId = async stripeSubscriptionId => {
@@ -150,6 +164,7 @@ module.exports = {
   isIntegrationSdkConfigured,
   transitionTransaction,
   showTransaction,
+  showListing,
   updateTransactionMetadata,
   findTransactionByStripeSubscriptionId,
   handleIntegrationError,

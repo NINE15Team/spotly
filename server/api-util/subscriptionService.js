@@ -1,10 +1,13 @@
 const log = require('../log');
 const { TRANSITIONS, METADATA_KEYS } = require('./subscriptionConstants');
+const { getSubunitAmountFromMoneyLike } = require('./currency');
 const {
   transitionTransaction,
   showTransaction,
+  showListing,
   updateTransactionMetadata,
   findTransactionByStripeSubscriptionId,
+  normalizeUuid,
 } = require('./integrationSdk');
 const {
   getPaymentIntentIdFromProtectedData,
@@ -17,8 +20,54 @@ const {
 } = require('./subscriptionStripe');
 const { getFirstPeriodEnd, getNextPeriodEnd } = require('./subscriptionDates');
 
-const getRelationship = (included, type, id) =>
-  included?.find(item => item.type === type && item.id?.uuid === id?.uuid);
+const getUuidFromRef = ref => {
+  if (!ref) {
+    return null;
+  }
+  if (typeof ref === 'string') {
+    return ref;
+  }
+  if (ref.uuid) {
+    return ref.uuid;
+  }
+  if (ref.id) {
+    return getUuidFromRef(ref.id);
+  }
+  return normalizeUuid(ref);
+};
+
+const getRelationship = (included, type, ref) => {
+  const refUuid = getUuidFromRef(ref);
+  if (!refUuid || !included) {
+    return null;
+  }
+  return included.find(item => {
+    if (item.type !== type) {
+      return false;
+    }
+    return getUuidFromRef(item.id) === refUuid;
+  });
+};
+
+const resolveListingForTransaction = async (apiData, listingRef) => {
+  let listing = getRelationship(apiData.included, 'listing', listingRef);
+  let monthlyAmount = getSubunitAmountFromMoneyLike(listing?.attributes?.price);
+
+  if (monthlyAmount && listing) {
+    return { listing, monthlyAmount };
+  }
+
+  const listingId = getUuidFromRef(listingRef);
+  if (!listingId) {
+    return { listing: null, monthlyAmount: null };
+  }
+
+  const listingResponse = await showListing(listingId);
+  listing = listingResponse?.data?.data || null;
+  monthlyAmount = getSubunitAmountFromMoneyLike(listing?.attributes?.price);
+
+  return { listing, monthlyAmount };
+};
 
 const getBookingFromTransactionResponse = apiData => {
   const transaction = apiData.data;
@@ -83,7 +132,7 @@ const activateSubscription = async (transactionId, options = {}) => {
   const customerRef = transaction.relationships?.customer?.data;
   const listingRef = transaction.relationships?.listing?.data;
   const customer = getRelationship(apiData.included, 'user', customerRef);
-  const listing = getRelationship(apiData.included, 'listing', listingRef);
+  const { listing, monthlyAmount } = await resolveListingForTransaction(apiData, listingRef);
   const booking = getBookingFromTransactionResponse(apiData);
 
   const bookingStart = booking?.attributes?.start;
@@ -103,15 +152,20 @@ const activateSubscription = async (transactionId, options = {}) => {
     stripeCustomerId = stripeCustomer.id;
   }
 
-  const monthlyAmount = listing?.attributes?.price?.amount;
   const currency = payinTotal?.currency || listing?.attributes?.price?.currency;
   const listingTitle = listing?.attributes?.title || 'Subscription';
+
+  if (!monthlyAmount) {
+    const error = new Error('Listing monthly price not found for Stripe subscription.');
+    error.status = 400;
+    throw error;
+  }
 
   const stripePrice = await createMonthlyStripePrice({
     amount: monthlyAmount,
     currency,
     productName: listingTitle,
-    listingId: listing?.id?.uuid,
+    listingId: getUuidFromRef(listing?.id),
   });
 
   const stripeSubscription = await createStripeSubscription({
