@@ -7,13 +7,13 @@ const { TRANSITIONS } = require('../api-util/subscriptionConstants');
 
 /**
  * POST /api/activate-subscription
- * Body: { transactionId: UUID }
+ * Body: { transactionId: UUID, paymentIntentId?: string }
  *
  * Called after transition/confirm-payment. Creates Stripe Subscription and
  * runs transition/confirm-subscription via Integration API.
  */
 module.exports = async (req, res) => {
-  const { transactionId } = req.body || {};
+  const { transactionId, paymentIntentId } = req.body || {};
 
   if (!transactionId) {
     res.status(400).json({ message: 'transactionId is required.' });
@@ -36,7 +36,7 @@ module.exports = async (req, res) => {
       return;
     }
 
-    const result = await activateSubscription(transactionId);
+    const result = await activateSubscription(transactionId, { paymentIntentId });
 
     res
       .status(200)

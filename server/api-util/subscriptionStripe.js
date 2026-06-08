@@ -3,18 +3,47 @@ const { getStripeBillingAnchorUnix } = require('./subscriptionDates');
 const { BILLING_DAY_OF_MONTH, METADATA_KEYS } = require('./subscriptionConstants');
 
 /**
- * Extract PaymentIntent id from Sharetribe protectedData client secret.
+ * Extract PaymentIntent id from a Stripe client secret (pi_xxx_secret_yyy).
  *
- * @param {Object} protectedData
+ * @param {string} clientSecret
  * @returns {string|null}
  */
-const getPaymentIntentIdFromProtectedData = protectedData => {
-  const clientSecret = protectedData?.stripePaymentIntents?.default;
+const getPaymentIntentIdFromClientSecret = clientSecret => {
   if (!clientSecret || typeof clientSecret !== 'string') {
     return null;
   }
   const parts = clientSecret.split('_secret_');
   return parts[0] || null;
+};
+
+/**
+ * Extract PaymentIntent id from Sharetribe transaction protectedData.
+ *
+ * Sharetribe stores payment intents as:
+ *   stripePaymentIntents.default.stripePaymentIntentClientSecret
+ * (object shape used by the Web Template), not a bare string.
+ *
+ * @param {Object} protectedData
+ * @returns {string|null}
+ */
+const getPaymentIntentIdFromProtectedData = protectedData => {
+  const defaultEntry = protectedData?.stripePaymentIntents?.default;
+  if (!defaultEntry) {
+    return null;
+  }
+
+  if (typeof defaultEntry === 'string') {
+    return getPaymentIntentIdFromClientSecret(defaultEntry);
+  }
+
+  if (typeof defaultEntry === 'object') {
+    if (defaultEntry.stripePaymentIntentId) {
+      return defaultEntry.stripePaymentIntentId;
+    }
+    return getPaymentIntentIdFromClientSecret(defaultEntry.stripePaymentIntentClientSecret);
+  }
+
+  return null;
 };
 
 /**
@@ -115,6 +144,7 @@ const createBillingPortalSession = async ({ customerId, returnUrl }) => {
 };
 
 module.exports = {
+  getPaymentIntentIdFromClientSecret,
   getPaymentIntentIdFromProtectedData,
   getPaymentMethodIdFromPaymentIntent,
   createStripeCustomer,

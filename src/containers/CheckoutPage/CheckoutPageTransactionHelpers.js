@@ -346,10 +346,11 @@ export const processCheckoutWithPayment = (orderParams, extraPaymentParams) => {
   const fnActivateSubscription = fnParams => {
     const orderId = fnParams?.orderId || fnParams?.id;
     const transactionId = orderId?.uuid || orderId;
+    const paymentIntentId = createdPaymentIntent?.id;
     if (!isSubscriptionCheckout || !onActivateSubscription || !transactionId) {
       return Promise.resolve(fnParams);
     }
-    return onActivateSubscription({ transactionId }).then(() => fnParams);
+    return onActivateSubscription({ transactionId, paymentIntentId }).then(() => fnParams);
   };
 
   const handlePaymentIntentCreation = isSubscriptionCheckout

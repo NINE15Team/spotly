@@ -43,9 +43,11 @@ const assertLastTransition = (transaction, expectedTransition) => {
 /**
  * After customer confirm-payment: create Stripe subscription and activate Sharetribe booking.
  *
- * @param {UUID} transactionId
+ * @param {UUID|string} transactionId
+ * @param {Object} [options]
+ * @param {string} [options.paymentIntentId] - optional fallback from checkout (Stripe PI id)
  */
-const activateSubscription = async transactionId => {
+const activateSubscription = async (transactionId, options = {}) => {
   const txResponse = await showTransaction(transactionId);
   const apiData = txResponse.data;
   const transaction = apiData.data;
@@ -62,7 +64,8 @@ const activateSubscription = async transactionId => {
     throw error;
   }
 
-  const paymentIntentId = getPaymentIntentIdFromProtectedData(protectedData);
+  const paymentIntentId =
+    options.paymentIntentId || getPaymentIntentIdFromProtectedData(protectedData);
   if (!paymentIntentId) {
     const error = new Error('Stripe PaymentIntent not found on transaction.');
     error.status = 400;
