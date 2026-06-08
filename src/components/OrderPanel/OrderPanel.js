@@ -408,11 +408,16 @@ const OrderPanel = props => {
   const showInvalidPriceVariantsMessage =
     isPriceVariationsInUse && !hasValidPriceVariants(priceVariants);
 
-  const fetchLineItemsWithProcessAlias = params =>
+  const fetchLineItemsWithProcessAlias = params => {
+    const { orderData, ...rest } = params;
     onFetchTransactionLineItems({
-      ...params,
-      processAlias: transactionProcessAlias,
+      ...rest,
+      orderData: {
+        ...(orderData || {}),
+        processAlias: transactionProcessAlias,
+      },
     });
+  };
 
   const sharedProps = {
     lineItemUnitType,

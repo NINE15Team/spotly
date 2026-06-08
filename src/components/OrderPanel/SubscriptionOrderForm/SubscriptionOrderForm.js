@@ -4,12 +4,7 @@ import classNames from 'classnames';
 
 import { FormattedMessage, useIntl } from '../../../util/reactIntl';
 import { required, composeValidators } from '../../../util/validators';
-import {
-  getStartOf,
-  isDateSameOrAfter,
-  stringifyDateToISO8601,
-  parseDateFromISO8601,
-} from '../../../util/dates';
+import { getStartOf, isDateSameOrAfter } from '../../../util/dates';
 import { propTypes } from '../../../util/types';
 import { getFirstPeriodEnd } from '../../../util/subscriptionDates';
 import { SUBSCRIPTION_PROCESS_NAME } from '../../../transactions/transaction';
@@ -55,11 +50,18 @@ const SubscriptionOrderForm = props => {
     getStartOf(date, 'day', timeZone, dayCountAvailableForBooking, 'days');
 
   const onHandleFetchLineItems = startDate => {
+    if (fetchLineItemsInProgress) {
+      return;
+    }
     const start = getStartOf(startDate, 'day', timeZone);
     const end = getFirstPeriodEnd(start);
     onFetchTransactionLineItems({
-      bookingStart: start,
-      bookingEnd: end,
+      orderData: {
+        bookingStart: start,
+        bookingEnd: end,
+      },
+      listingId,
+      isOwnListing,
     });
   };
 
@@ -157,7 +159,7 @@ const SubscriptionOrderForm = props => {
               }}
             />
 
-            {fetchLineItemsError ? <FetchLineItemsError /> : null}
+            {fetchLineItemsError ? <FetchLineItemsError error={fetchLineItemsError} /> : null}
 
             {showEstimatedBreakdown ? (
               <div className={css.breakdownWrapper}>

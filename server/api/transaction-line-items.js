@@ -5,6 +5,11 @@ const { constructValidLineItems } = require('../api-util/lineItemHelpers');
 module.exports = (req, res) => {
   const { isOwnListing, listingId, orderData } = req.body || {};
 
+  if (!listingId) {
+    res.status(400).json({ message: 'listingId is required.' });
+    return;
+  }
+
   const sdk = getSdk(req, res);
 
   const listingPromise = () =>
@@ -18,9 +23,12 @@ module.exports = (req, res) => {
       const { providerCommission, customerCommission } =
         commissionAsset?.type === 'jsonAsset' ? commissionAsset.attributes.data : {};
 
+      const processAlias =
+        orderData?.processAlias || listing.attributes?.publicData?.transactionProcessAlias;
+
       const lineItems = transactionLineItems(
         listing,
-        { ...orderData, processAlias: orderData?.processAlias },
+        { ...orderData, processAlias },
         providerCommission,
         customerCommission
       );
