@@ -1,4 +1,5 @@
 const { getSdk } = require('./sdk');
+const { normalizeUuid } = require('./integrationSdk');
 const { isSubscriptionProcess } = require('./subscriptionConstants');
 
 /**
@@ -20,7 +21,7 @@ const assertCustomerOnTransaction = async (req, res, transactionId) => {
   }
 
   const txResponse = await sdk.transactions.show({
-    id: transactionId,
+    id: normalizeUuid(transactionId),
     include: ['customer', 'listing'],
   });
 

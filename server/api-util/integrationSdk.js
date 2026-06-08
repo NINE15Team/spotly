@@ -18,6 +18,25 @@ const typeHandlers = [
 let integrationSdkInstance = null;
 
 /**
+ * Normalize Sharetribe UUID (object or string) to a plain uuid string for Integration API calls.
+ *
+ * @param {string|Object} id
+ * @returns {string|null}
+ */
+const normalizeUuid = id => {
+  if (!id) {
+    return null;
+  }
+  if (typeof id === 'string') {
+    return id;
+  }
+  if (typeof id === 'object' && id.uuid) {
+    return id.uuid;
+  }
+  return null;
+};
+
+/**
  * Returns true when Integration API credentials are configured.
  */
 const isIntegrationSdkConfigured = () => Boolean(CLIENT_ID && CLIENT_SECRET);
@@ -53,20 +72,32 @@ const getIntegrationSdk = () => {
  */
 const transitionTransaction = ({ transactionId, transition, params = {} }) => {
   const integrationSdk = getIntegrationSdk();
+  const id = normalizeUuid(transactionId);
+  if (!id) {
+    const error = new Error('Invalid transaction id for Integration API transition.');
+    error.status = 400;
+    throw error;
+  }
   return integrationSdk.transactions.transition({
-    id: transactionId,
+    id,
     transition,
     params,
   });
 };
 
 /**
- * @param {UUID} transactionId
+ * @param {UUID|string} transactionId
  */
 const showTransaction = (transactionId, queryParams = {}) => {
   const integrationSdk = getIntegrationSdk();
+  const id = normalizeUuid(transactionId);
+  if (!id) {
+    const error = new Error('Invalid transaction id for Integration API show.');
+    error.status = 400;
+    throw error;
+  }
   return integrationSdk.transactions.show({
-    id: transactionId,
+    id,
     include: ['customer', 'provider', 'listing', 'booking'],
     ...queryParams,
   });
@@ -77,8 +108,14 @@ const showTransaction = (transactionId, queryParams = {}) => {
  */
 const updateTransactionMetadata = (transactionId, metadataPatch) => {
   const integrationSdk = getIntegrationSdk();
+  const id = normalizeUuid(transactionId);
+  if (!id) {
+    const error = new Error('Invalid transaction id for Integration API metadata update.');
+    error.status = 400;
+    throw error;
+  }
   return integrationSdk.transactions.updateMetadata({
-    id: transactionId,
+    id,
     metadata: metadataPatch,
   });
 };
@@ -108,6 +145,7 @@ const handleIntegrationError = (res, error) => {
 };
 
 module.exports = {
+  normalizeUuid,
   getIntegrationSdk,
   isIntegrationSdkConfigured,
   transitionTransaction,
