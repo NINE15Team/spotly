@@ -1,7 +1,11 @@
 const Decimal = require('decimal.js');
 const { types } = require('sharetribe-flex-sdk');
 const { Money } = types;
-const { convertDecimalJSToNumber, getAmountAsDecimalJS } = require('./currency');
+const {
+  convertDecimalJSToNumber,
+  getAmountAsDecimalJS,
+  getSubunitAmountFromMoneyLike,
+} = require('./currency');
 
 describe('currency utils', () => {
   describe('convertDecimalJSToNumber(value, subUnitDivisor)', () => {
@@ -49,6 +53,50 @@ describe('currency utils', () => {
       expect(() => getAmountAsDecimalJS(new Money('asdf', 'USD'))).toThrow(
         '[DecimalError] Invalid argument'
       );
+    });
+  });
+
+  describe('getSubunitAmountFromMoneyLike(money)', () => {
+    it('returns null for nullish input', () => {
+      expect(getSubunitAmountFromMoneyLike(null)).toBeNull();
+      expect(getSubunitAmountFromMoneyLike(undefined)).toBeNull();
+    });
+
+    it('reads subunits from a Money instance', () => {
+      expect(getSubunitAmountFromMoneyLike(new Money(1200, 'USD'))).toBe(1200);
+    });
+
+    it('reads subunits from an API JSON shape with numeric amount', () => {
+      expect(getSubunitAmountFromMoneyLike({ amount: 1200, currency: 'USD' })).toBe(1200);
+    });
+
+    it('reads subunits from a string amount', () => {
+      expect(getSubunitAmountFromMoneyLike({ amount: '1200' })).toBe(1200);
+    });
+
+    it('reads subunits from a Decimal amount', () => {
+      expect(getSubunitAmountFromMoneyLike({ amount: new Decimal(1200) })).toBe(1200);
+    });
+
+    it('reads subunits from a wrapped { value } amount', () => {
+      expect(getSubunitAmountFromMoneyLike({ amount: { value: 1200 } })).toBe(1200);
+    });
+
+    it('reads subunits from a goog.math.Long-like amount', () => {
+      const longLike = {
+        low_: 1200,
+        high_: 0,
+        toString: () => '1200',
+      };
+      expect(getSubunitAmountFromMoneyLike({ amount: longLike })).toBe(1200);
+    });
+
+    it('rounds fractional subunit amounts', () => {
+      expect(getSubunitAmountFromMoneyLike({ amount: 1200.6 })).toBe(1201);
+    });
+
+    it('returns null when amount is missing', () => {
+      expect(getSubunitAmountFromMoneyLike({ currency: 'USD' })).toBeNull();
     });
   });
 });

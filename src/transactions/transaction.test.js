@@ -7,6 +7,11 @@ import {
   CONDITIONAL_RESOLVER_WILDCARD,
   ConditionalResolver,
   getProcess,
+  isSubscriptionProcess,
+  isSubscriptionProcessAlias,
+  getRequestPaymentTransition,
+  isPrivilegedRequestPaymentTransition,
+  SUBSCRIPTION_PROCESS_NAME,
 } from './transaction';
 
 describe('transaction utils for default-purchase', () => {
@@ -221,6 +226,75 @@ describe('transaction utils for default-booking', () => {
     });
     it('txHasBeenDelivered(txReviewed) succeeds', () => {
       expect(txHasBeenDelivered(txReviewed)).toEqual(true);
+    });
+  });
+});
+
+describe('transaction utils for subscription-rental', () => {
+  const SUBSCRIPTION_ALIAS = `${SUBSCRIPTION_PROCESS_NAME}/release-1`;
+  const process = getProcess(SUBSCRIPTION_PROCESS_NAME);
+  const transitions = process?.transitions;
+
+  describe('isSubscriptionProcess', () => {
+    it('returns true for the subscription process name', () => {
+      expect(isSubscriptionProcess(SUBSCRIPTION_PROCESS_NAME)).toBe(true);
+    });
+    it('returns false for booking/purchase process names', () => {
+      expect(isSubscriptionProcess('default-booking')).toBe(false);
+      expect(isSubscriptionProcess('default-purchase')).toBe(false);
+    });
+    it('returns false for nullish input', () => {
+      expect(isSubscriptionProcess(null)).toBe(false);
+      expect(isSubscriptionProcess(undefined)).toBe(false);
+    });
+  });
+
+  describe('isSubscriptionProcessAlias', () => {
+    it('returns true for the subscription alias', () => {
+      expect(isSubscriptionProcessAlias(SUBSCRIPTION_ALIAS)).toBe(true);
+    });
+    it('returns false for other aliases', () => {
+      expect(isSubscriptionProcessAlias('default-booking/release-1')).toBe(false);
+    });
+    it('returns false for nullish input', () => {
+      expect(isSubscriptionProcessAlias(null)).toBe(false);
+      expect(isSubscriptionProcessAlias(undefined)).toBe(false);
+    });
+  });
+
+  describe('getRequestPaymentTransition', () => {
+    it('resolves request-payment for the subscription process', () => {
+      const transition = getRequestPaymentTransition(process, null, SUBSCRIPTION_PROCESS_NAME);
+      expect(transition).toBe(transitions.REQUEST_PAYMENT);
+    });
+    it('returns null when process has no transitions', () => {
+      expect(getRequestPaymentTransition(null, null, SUBSCRIPTION_PROCESS_NAME)).toBeNull();
+    });
+  });
+
+  describe('isPrivilegedRequestPaymentTransition', () => {
+    it('treats the subscription request-payment transition as privileged', () => {
+      expect(
+        isPrivilegedRequestPaymentTransition(
+          process,
+          transitions.REQUEST_PAYMENT,
+          SUBSCRIPTION_PROCESS_NAME
+        )
+      ).toBe(true);
+    });
+    it('returns false for a non-request-payment transition', () => {
+      expect(
+        isPrivilegedRequestPaymentTransition(
+          process,
+          transitions.CONFIRM_PAYMENT,
+          SUBSCRIPTION_PROCESS_NAME
+        )
+      ).toBe(false);
+    });
+    it('returns false for a missing transition', () => {
+      expect(
+        isPrivilegedRequestPaymentTransition(process, null, SUBSCRIPTION_PROCESS_NAME)
+      ).toBe(false);
     });
   });
 });

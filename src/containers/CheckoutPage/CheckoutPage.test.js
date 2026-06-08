@@ -232,6 +232,76 @@ describe('CheckoutPage', () => {
     ).toBeInTheDocument();
   });
 
+  it('Check that subscription-rental has relevant info', () => {
+    const listing = createListing(
+      'listing1',
+      {
+        publicData: {
+          transactionProcessAlias: 'subscription-rental/release-1',
+          unitType: 'day',
+        },
+      },
+      { author: createUser('author'), images: [createImage('first-image')] }
+    );
+
+    const subscriptionLineItems = [
+      {
+        code: 'line-item/day',
+        includeFor: ['customer', 'provider'],
+        quantity: new Decimal(1),
+        unitPrice: new Money(920, 'USD'),
+        lineTotal: new Money(920, 'USD'),
+        reversal: false,
+      },
+      {
+        code: 'line-item/provider-commission',
+        includeFor: ['provider'],
+        unitPrice: new Money(-100, 'USD'),
+        lineTotal: new Money(-100, 'USD'),
+        reversal: false,
+      },
+    ];
+
+    const props = {
+      ...commonProps,
+      pageData: {
+        orderData: {
+          bookingDates: {
+            bookingStart: new Date(2026, 5, 8),
+            bookingEnd: new Date(2026, 6, 1),
+          },
+        },
+        listing,
+      },
+      processName: 'subscription-rental',
+      listingTitle: listing.attributes.title,
+      title: 'CheckoutPage.subscription-rental.title',
+      speculatedTransaction: createTransaction({
+        id: 'tx1',
+        processName: 'subscription-rental',
+        lineItems: subscriptionLineItems,
+        total: new Money(920, 'USD'),
+      }),
+    };
+    render(<CheckoutPageWithPayment {...props} />);
+
+    const subscriptionTitle = 'CheckoutPage.subscription-rental.title';
+    expect(screen.getByRole('heading', { name: subscriptionTitle })).toBeInTheDocument();
+
+    // The subscription "Prorated first payment" label is shown (mobile & desktop)
+    expect(screen.getAllByText('OrderBreakdown.baseUnitSubscription')).toHaveLength(2);
+    // The non-subscription day label is NOT shown
+    expect(screen.queryAllByText('OrderBreakdown.baseUnitDay')).toHaveLength(0);
+    expect(screen.getAllByText('OrderBreakdown.total')).toHaveLength(2);
+
+    // Stripe payment form renders for the subscription process
+    const paymentHeading = 'StripePaymentForm.paymentHeading';
+    expect(screen.getByRole('heading', { name: paymentHeading })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'StripePaymentForm.submitPaymentInfo' })
+    ).toBeInTheDocument();
+  });
+
   it('Check that inquiry process has relevant info', () => {
     const listing = createListing(
       'listing1',

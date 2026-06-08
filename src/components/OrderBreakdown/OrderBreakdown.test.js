@@ -161,6 +161,59 @@ describe('OrderBreakdown', () => {
     expect(totalPayIn.getByText('22')).toBeInTheDocument();
   });
 
+  it('shows "Prorated first payment" instead of a day count for subscriptions', () => {
+    const created = new Date(Date.UTC(2017, 1, 1));
+    const subscriptionTransaction = {
+      id: new UUID('example-subscription-transaction'),
+      type: 'transaction',
+      attributes: {
+        processName: 'subscription-rental',
+        processVersion: 1,
+        createdAt: created,
+        lastTransitionedAt: created,
+        lastTransition: 'transition/confirm-payment',
+        transitions: [],
+        payinTotal: new Money(920, 'USD'),
+        payoutTotal: new Money(920, 'USD'),
+        lineItems: [
+          {
+            code: 'line-item/day',
+            includeFor: ['customer', 'provider'],
+            quantity: new Decimal(1),
+            lineTotal: new Money(920, 'USD'),
+            unitPrice: new Money(920, 'USD'),
+            reversal: false,
+          },
+        ],
+      },
+    };
+
+    render(
+      <OrderBreakdownComponent
+        userRole="customer"
+        currency="USD"
+        marketplaceName={marketplaceName}
+        transaction={subscriptionTransaction}
+        booking={createBooking('example-booking', {
+          start: new Date(Date.UTC(2026, 5, 8)),
+          end: new Date(Date.UTC(2026, 6, 1)),
+        })}
+        intl={fakeIntl}
+        timeZone="Etc/UTC"
+      />
+    );
+
+    // Subscription label is shown
+    expect(screen.getByText('OrderBreakdown.baseUnitSubscription')).toBeInTheDocument();
+    // The non-subscription day label is NOT shown
+    expect(screen.queryByText('OrderBreakdown.baseUnitDay')).not.toBeInTheDocument();
+
+    // Total reflects the prorated first payment ($9.20)
+    const total = screen.getByText('OrderBreakdown.total');
+    const totalPayIn = within(total.parentNode.parentNode);
+    expect(totalPayIn.getByText('9.2')).toBeInTheDocument();
+  });
+
   it('shows base price, provider-commission and total to provider (booking)', () => {
     render(
       <OrderBreakdownComponent
