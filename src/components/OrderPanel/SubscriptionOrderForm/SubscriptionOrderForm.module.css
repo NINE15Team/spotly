@@ -5,13 +5,12 @@
   flex-direction: column;
 }
 
-.bookingDates {
-  margin: 0 0 6px 0;
-}
-
-.info {
+.activeSubscriptionBanner {
   composes: marketplaceTinyFontStyles from global;
   color: var(--colorGrey700);
+  background-color: var(--colorGrey50);
+  border-radius: 4px;
+  padding: 12px;
   margin: 0 0 18px 0;
 }
 

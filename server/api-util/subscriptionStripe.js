@@ -1,6 +1,6 @@
+const moment = require('moment');
 const { getStripe } = require('./stripeClient');
-const { getStripeBillingAnchorUnix } = require('./subscriptionDates');
-const { BILLING_DAY_OF_MONTH, METADATA_KEYS } = require('./subscriptionConstants');
+const { METADATA_KEYS } = require('./subscriptionConstants');
 
 /**
  * Extract PaymentIntent id from a Stripe client secret (pi_xxx_secret_yyy).
@@ -167,7 +167,11 @@ const createStripeSubscription = async ({
   sharetribeTransactionId,
 }) => {
   const stripe = getStripe();
-  const trialEnd = getStripeBillingAnchorUnix(bookingStart);
+  const startMoment = moment(bookingStart);
+  const billingDayOfMonth = startMoment.date();
+  // First recurring charge fires one month after checkout; the initial period
+  // is already paid via the Sharetribe PaymentIntent at checkout / accept.
+  const trialEndUnix = startMoment.clone().add(1, 'month').unix();
 
   await stripe.paymentMethods.attach(paymentMethodId, { customer: customerId });
   await stripe.customers.update(customerId, {
@@ -179,9 +183,9 @@ const createStripeSubscription = async ({
     items: [{ price: priceId }],
     default_payment_method: paymentMethodId,
     billing_cycle_anchor_config: {
-      day_of_month: BILLING_DAY_OF_MONTH,
+      day_of_month: billingDayOfMonth,
     },
-    trial_end: trialEnd,
+    trial_end: trialEndUnix,
     proration_behavior: 'none',
     metadata: {
       sharetribeTransactionId,

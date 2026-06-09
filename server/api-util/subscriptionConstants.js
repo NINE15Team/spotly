@@ -47,8 +47,6 @@ const METADATA_KEYS = {
   STRIPE_PRICE_ID: 'stripePriceId',
 };
 
-const BILLING_DAY_OF_MONTH = 1;
-
 const isSubscriptionProcess = processAlias => {
   if (!processAlias || typeof processAlias !== 'string') {
     return false;
@@ -64,6 +62,5 @@ module.exports = {
   ACTIVE_ENTRY_TRANSITIONS,
   STATES,
   METADATA_KEYS,
-  BILLING_DAY_OF_MONTH,
   isSubscriptionProcess,
 };

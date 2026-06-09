@@ -1,14 +1,13 @@
 const { types } = require('sharetribe-flex-sdk');
 const { Money } = types;
-const Decimal = require('decimal.js');
 const {
   getProviderCommissionMaybe,
   getCustomerCommissionMaybe,
 } = require('./lineItemHelpers');
-const { getFirstPeriodEnd, getProrationRatio } = require('./subscriptionDates');
+const { getFirstPeriodEnd } = require('./subscriptionDates');
 
 /**
- * Build line items for subscription-rental checkout (first period, optionally prorated).
+ * Build line items for subscription-rental checkout (first period, full monthly price).
  *
  * Uses line-item/day with quantity 1 so the Web Template order breakdown stays compatible.
  * Listing unitType should be `day` (or `fixed`) on subscription listing types.
@@ -49,11 +48,11 @@ const subscriptionTransactionLineItems = (
   const monthlyUnitPrice =
     priceVariationsEnabled && isPriceInSubunitsValid
       ? new Money(priceInSubunits, currency)
-      : priceAttribute;
+      : priceAttribute instanceof Money
+        ? priceAttribute
+        : new Money(priceAttribute?.amount, currency);
 
-  const ratio = getProrationRatio(bookingStart, periodEnd);
-  const proratedAmount = Math.round(new Decimal(monthlyUnitPrice.amount).times(ratio).toNumber());
-  const unitPrice = new Money(proratedAmount, currency);
+  const unitPrice = monthlyUnitPrice;
 
   const order = {
     code: 'line-item/day',

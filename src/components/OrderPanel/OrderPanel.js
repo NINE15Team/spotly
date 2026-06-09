@@ -310,6 +310,8 @@ const OrderPanel = props => {
     fetchLineItemsError,
     payoutDetailsWarning,
     showListingImage,
+    hasActiveSubscription,
+    activeSubscriptionId,
   } = props;
 
   const publicData = listing?.attributes?.publicData || {};
@@ -514,6 +516,8 @@ const OrderPanel = props => {
             timeZone={timeZone}
             dayCountAvailableForBooking={dayCountAvailableForBooking}
             processName={processName}
+            hasActiveSubscription={hasActiveSubscription}
+            activeSubscriptionId={activeSubscriptionId}
             {...sharedProps}
           />
         ) : showBookingFixedDurationForm ? (

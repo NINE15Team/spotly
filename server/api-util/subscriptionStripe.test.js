@@ -12,8 +12,7 @@ const {
   cancelStripeSubscriptionAtPeriodEnd,
   createBillingPortalSession,
 } = require('./subscriptionStripe');
-const { getStripeBillingAnchorUnix } = require('./subscriptionDates');
-const { BILLING_DAY_OF_MONTH } = require('./subscriptionConstants');
+const moment = require('moment');
 
 const PI_ID = 'pi_3Tg6fVRCaDkzUSwR09bml6uG';
 const CLIENT_SECRET = `${PI_ID}_secret_A0z2E8JekwcaPpQ6DTwfGigEM`;
@@ -148,7 +147,7 @@ describe('createStripeSubscription', () => {
   });
 
   it('attaches the payment method, sets it as default and creates a trialed subscription', async () => {
-    const bookingStart = new Date('2026-02-15T00:00:00Z');
+    const bookingStart = new Date(2026, 1, 15); // Feb 15 local
 
     const result = await createStripeSubscription({
       customerId: 'cus_1',
@@ -167,8 +166,8 @@ describe('createStripeSubscription', () => {
         customer: 'cus_1',
         items: [{ price: 'price_1' }],
         default_payment_method: 'pm_1',
-        billing_cycle_anchor_config: { day_of_month: BILLING_DAY_OF_MONTH },
-        trial_end: getStripeBillingAnchorUnix(bookingStart),
+        billing_cycle_anchor_config: { day_of_month: 15 },
+        trial_end: moment(bookingStart).add(1, 'month').unix(),
         proration_behavior: 'none',
         metadata: { sharetribeTransactionId: 'tx-1' },
       })

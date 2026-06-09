@@ -394,6 +394,8 @@ const ListingPage = props => {
     fetchLineItemsInProgress,
     fetchLineItemsError,
     inquiryModalOpenForListingId,
+    hasActiveSubscription,
+    activeSubscriptionId,
   } = useSelector(state => state.ListingPage);
   const currentUser = useSelector(state => state.user?.currentUser);
   const scrollingDisabled = useSelector(state => isScrollingDisabled(state));
@@ -463,6 +465,8 @@ const ListingPage = props => {
       fetchLineItemsError={fetchLineItemsError}
       sendInquiryInProgress={sendInquiryInProgress}
       sendInquiryError={sendInquiryError}
+      hasActiveSubscription={hasActiveSubscription}
+      activeSubscriptionId={activeSubscriptionId}
       onManageDisableScrolling={onManageDisableScrolling}
       callSetInitialValues={callSetInitialValues}
       onFetchTransactionLineItems={onFetchTransactionLineItems}

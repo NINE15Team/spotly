@@ -57,7 +57,11 @@ describe('loadSubscriptionsThunk', () => {
     const resultAction = await loadSubscriptionsThunk()(dispatch, getState, sdk);
 
     expect(sdk.transactions.query).toHaveBeenCalledWith(
-      expect.objectContaining({ only: 'order', processNames: 'subscription-rental', perPage: 50 })
+      expect.objectContaining({
+        only: 'order',
+        processNames: ['subscription-rental'],
+        perPage: 50,
+      })
     );
     const state = reducer(initialState, resultAction);
     expect(state.transactionRefs).toHaveLength(2);

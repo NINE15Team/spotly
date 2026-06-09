@@ -13,26 +13,24 @@ describe('subscriptionTransactionLineItems', () => {
     },
   };
 
-  // Jun 8 2026 start, 30-day month -> 23/30 prorated -> round(1200 * 23/30) = 920.
-  // Use a local Date because subscriptionDates parses with moment() in local time.
   const orderData = {
     bookingStart: new Date(2026, 5, 8),
     currency: 'USD',
   };
 
-  it('creates a prorated line-item/day with quantity 1', () => {
+  it('creates a full-month line-item/day with quantity 1', () => {
     const result = subscriptionTransactionLineItems(mockListing, orderData, null, null);
 
     expect(result).toHaveLength(1);
     expect(result[0]).toEqual({
       code: 'line-item/day',
-      unitPrice: new Money(920, 'USD'),
+      unitPrice: new Money(1200, 'USD'),
       quantity: 1,
       includeFor: ['customer', 'provider'],
     });
   });
 
-  it('charges the full month when start is on the 1st', () => {
+  it('charges the full month regardless of start day', () => {
     const result = subscriptionTransactionLineItems(
       mockListing,
       { bookingStart: new Date(2026, 5, 1), currency: 'USD' },
@@ -81,8 +79,7 @@ describe('subscriptionTransactionLineItems', () => {
       null
     );
 
-    // 3000 * 23/30 = 2300
-    expect(result[0].unitPrice).toEqual(new Money(2300, 'USD'));
+    expect(result[0].unitPrice).toEqual(new Money(3000, 'USD'));
   });
 
   it('falls back to orderData currency when listing price has no currency', () => {

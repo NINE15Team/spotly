@@ -612,7 +612,7 @@ export const TransactionPageComponent = props => {
           onOpenBillingPortal: () => {
             setSubscriptionPortalInProgress(true);
             setSubscriptionPortalError(null);
-            return billingPortal({ transactionId: transaction.id })
+            return billingPortal({ transactionId: transaction.id.uuid })
               .then(res => {
                 if (res?.url) {
                   window.location.href = res.url;
@@ -637,7 +637,7 @@ export const TransactionPageComponent = props => {
           onAcceptSubscription: () => {
             setSubscriptionAcceptInProgress(true);
             setSubscriptionAcceptError(null);
-            return acceptSubscription({ transactionId: transaction.id })
+            return acceptSubscription({ transactionId: transaction.id.uuid })
               .then(() => onFetchTransaction(transaction.id, transactionRole, config))
               .catch(e => {
                 setSubscriptionAcceptError(e);
@@ -648,7 +648,7 @@ export const TransactionPageComponent = props => {
           onDeclineSubscription: () => {
             setSubscriptionDeclineInProgress(true);
             setSubscriptionDeclineError(null);
-            return declineSubscription({ transactionId: transaction.id })
+            return declineSubscription({ transactionId: transaction.id.uuid })
               .then(() => onFetchTransaction(transaction.id, transactionRole, config))
               .catch(e => {
                 setSubscriptionDeclineError(e);

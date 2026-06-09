@@ -26,6 +26,8 @@ import {
   getProcess,
   isBookingProcessAlias,
   isNegotiationProcessAlias,
+  isSubscriptionProcessAlias,
+  SUBSCRIPTION_PROCESS_NAME,
   OFFER,
 } from '../../transactions/transaction';
 import { fetchCurrentUser, setCurrentUserHasOrders } from '../../ducks/user.duck';
@@ -361,6 +363,46 @@ export const fetchTransactionLineItemsThunk = createAsyncThunk(
   'ListingPage/fetchTransactionLineItems',
   fetchTransactionLineItemsPayloadCreator
 );
+
+const SUBSCRIPTION_FINAL_TRANSITIONS = [
+  'transition/cancel-subscription',
+  'transition/cancel-subscription-from-overdue',
+  'transition/expire',
+  'transition/expire-payment',
+  'transition/decline-subscription',
+  'transition/expire-acceptance',
+  'transition/abort-subscription',
+];
+
+const checkActiveSubscriptionPayloadCreator = async (
+  { listingId },
+  { rejectWithValue, extra: sdk }
+) => {
+  try {
+    const response = await sdk.transactions.query({
+      listingId,
+      processNames: [SUBSCRIPTION_PROCESS_NAME],
+      only: 'order',
+      perPage: 10,
+    });
+
+    const active = (response?.data?.data || []).find(
+      tx => !SUBSCRIPTION_FINAL_TRANSITIONS.includes(tx.attributes?.lastTransition)
+    );
+
+    return {
+      hasActiveSubscription: !!active,
+      activeSubscriptionId: active?.id?.uuid || null,
+    };
+  } catch (e) {
+    return rejectWithValue(storableError(e));
+  }
+};
+
+export const checkActiveSubscriptionThunk = createAsyncThunk(
+  'ListingPage/checkActiveSubscription',
+  checkActiveSubscriptionPayloadCreator
+);
 // Backward compatible wrapper for the thunk
 export const fetchTransactionLineItems = ({ orderData, listingId, isOwnListing }) => dispatch => {
   return dispatch(fetchTransactionLineItemsThunk({ orderData, listingId, isOwnListing })).unwrap();
@@ -396,6 +438,9 @@ const initialState = {
   sendInquiryInProgress: false,
   sendInquiryError: null,
   inquiryModalOpenForListingId: null,
+  hasActiveSubscription: false,
+  activeSubscriptionId: null,
+  checkSubscriptionInProgress: false,
 };
 
 const listingPageSlice = createSlice({
@@ -515,6 +560,19 @@ const listingPageSlice = createSlice({
       .addCase(fetchTransactionLineItemsThunk.rejected, (state, action) => {
         state.fetchLineItemsInProgress = false;
         state.fetchLineItemsError = action.payload;
+      })
+      .addCase(checkActiveSubscriptionThunk.pending, state => {
+        state.checkSubscriptionInProgress = true;
+      })
+      .addCase(checkActiveSubscriptionThunk.fulfilled, (state, action) => {
+        state.checkSubscriptionInProgress = false;
+        state.hasActiveSubscription = action.payload.hasActiveSubscription;
+        state.activeSubscriptionId = action.payload.activeSubscriptionId;
+      })
+      .addCase(checkActiveSubscriptionThunk.rejected, state => {
+        state.checkSubscriptionInProgress = false;
+        state.hasActiveSubscription = false;
+        state.activeSubscriptionId = null;
       });
   },
 });
@@ -567,6 +625,11 @@ export const loadData = (params, search, config) => (dispatch, getState, sdk) =>
       // We are not interested to return them from loadData call.
       fetchMonthlyTimeSlots(dispatch, listing);
     }
+
+    if (isSubscriptionProcessAlias(transactionProcessAlias) && isAuthorized) {
+      dispatch(checkActiveSubscriptionThunk({ listingId: listing.id.uuid }));
+    }
+
     return response;
   });
 };

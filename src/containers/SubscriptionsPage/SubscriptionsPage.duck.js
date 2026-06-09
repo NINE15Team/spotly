@@ -15,7 +15,7 @@ const loadSubscriptionsPayloadCreator = (_, { dispatch, rejectWithValue, extra: 
   return sdk.transactions
     .query({
       only: 'order',
-      processNames: SUBSCRIPTION_PROCESS_NAME,
+      processNames: [SUBSCRIPTION_PROCESS_NAME],
       include: ['listing', 'provider', 'booking'],
       'fields.transaction': [
         'processName',
