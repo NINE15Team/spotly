@@ -92,6 +92,43 @@ const createStripeCustomer = async ({ email, name, sharetribeUserId }) => {
 };
 
 /**
+ * Find an existing Stripe customer by Sharetribe user ID, or create a new one.
+ *
+ * Stripe's customer.search API is used to look up any customer previously created
+ * for this Sharetribe user (keyed by metadata.sharetribeUserId). This prevents a
+ * new customer being created on every subscription acceptance or retry attempt.
+ *
+ * Falls back to create only when no match is found.
+ *
+ * @param {Object} params
+ * @param {string} params.email
+ * @param {string} [params.name]
+ * @param {string} params.sharetribeUserId
+ * @returns {Promise<Stripe.Customer>}
+ */
+const findOrCreateStripeCustomer = async ({ email, name, sharetribeUserId }) => {
+  if (!sharetribeUserId) {
+    // No user ID to search by — fall back to plain create.
+    return createStripeCustomer({ email, name, sharetribeUserId });
+  }
+
+  const stripe = getStripe();
+
+  // Stripe customer search supports metadata key lookups.
+  // https://stripe.com/docs/search#query-fields-for-customers
+  const searchResult = await stripe.customers.search({
+    query: `metadata['sharetribeUserId']:'${sharetribeUserId}'`,
+    limit: 1,
+  });
+
+  if (searchResult.data.length > 0) {
+    return searchResult.data[0];
+  }
+
+  return createStripeCustomer({ email, name, sharetribeUserId });
+};
+
+/**
  * Create a recurring monthly Stripe Price for the listing amount.
  */
 const createMonthlyStripePrice = async ({ amount, currency, productName, listingId }) => {
@@ -173,6 +210,7 @@ module.exports = {
   capturePaymentIntentIfNeeded,
   getPaymentMethodIdFromPaymentIntent,
   createStripeCustomer,
+  findOrCreateStripeCustomer,
   createMonthlyStripePrice,
   createStripeSubscription,
   cancelStripeSubscriptionAtPeriodEnd,

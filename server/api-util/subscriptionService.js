@@ -14,7 +14,7 @@ const {
   getPaymentIntentIdFromProtectedData,
   capturePaymentIntentIfNeeded,
   getPaymentMethodIdFromPaymentIntent,
-  createStripeCustomer,
+  findOrCreateStripeCustomer,
   createMonthlyStripePrice,
   createStripeSubscription,
   cancelStripeSubscriptionAtPeriodEnd,
@@ -177,7 +177,9 @@ const activateSubscription = async (transactionId, options = {}) => {
     const sharetribeUserId = customer?.id?.uuid;
 
     if (!stripeCustomerId) {
-      const stripeCustomer = await createStripeCustomer({
+      // findOrCreateStripeCustomer searches Stripe by metadata.sharetribeUserId first,
+      // so repeated Accept attempts and multiple subscriptions all reuse one customer.
+      const stripeCustomer = await findOrCreateStripeCustomer({
         email: customerEmail,
         name: customerName,
         sharetribeUserId,

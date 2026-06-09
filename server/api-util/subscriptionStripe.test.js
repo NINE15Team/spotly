@@ -8,7 +8,12 @@ const {
   getPaymentIntentIdFromProtectedData,
   capturePaymentIntentIfNeeded,
   createMonthlyStripePrice,
+  createStripeSubscription,
+  cancelStripeSubscriptionAtPeriodEnd,
+  createBillingPortalSession,
 } = require('./subscriptionStripe');
+const { getStripeBillingAnchorUnix } = require('./subscriptionDates');
+const { BILLING_DAY_OF_MONTH } = require('./subscriptionConstants');
 
 const PI_ID = 'pi_3Tg6fVRCaDkzUSwR09bml6uG';
 const CLIENT_SECRET = `${PI_ID}_secret_A0z2E8JekwcaPpQ6DTwfGigEM`;
@@ -128,5 +133,85 @@ describe('createMonthlyStripePrice', () => {
       createMonthlyStripePrice({ amount: 1200, currency: null, productName: 'Spot' })
     ).rejects.toThrow(/Invalid listing price/);
     expect(stripe.prices.create).not.toHaveBeenCalled();
+  });
+});
+
+describe('createStripeSubscription', () => {
+  let stripe;
+  beforeEach(() => {
+    stripe = {
+      paymentMethods: { attach: jest.fn().mockResolvedValue({}) },
+      customers: { update: jest.fn().mockResolvedValue({}) },
+      subscriptions: { create: jest.fn().mockResolvedValue({ id: 'sub_123' }) },
+    };
+    getStripe.mockReturnValue(stripe);
+  });
+
+  it('attaches the payment method, sets it as default and creates a trialed subscription', async () => {
+    const bookingStart = new Date('2026-02-15T00:00:00Z');
+
+    const result = await createStripeSubscription({
+      customerId: 'cus_1',
+      priceId: 'price_1',
+      paymentMethodId: 'pm_1',
+      bookingStart,
+      sharetribeTransactionId: 'tx-1',
+    });
+
+    expect(stripe.paymentMethods.attach).toHaveBeenCalledWith('pm_1', { customer: 'cus_1' });
+    expect(stripe.customers.update).toHaveBeenCalledWith('cus_1', {
+      invoice_settings: { default_payment_method: 'pm_1' },
+    });
+    expect(stripe.subscriptions.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        customer: 'cus_1',
+        items: [{ price: 'price_1' }],
+        default_payment_method: 'pm_1',
+        billing_cycle_anchor_config: { day_of_month: BILLING_DAY_OF_MONTH },
+        trial_end: getStripeBillingAnchorUnix(bookingStart),
+        proration_behavior: 'none',
+        metadata: { sharetribeTransactionId: 'tx-1' },
+      })
+    );
+    expect(result.id).toBe('sub_123');
+  });
+});
+
+describe('cancelStripeSubscriptionAtPeriodEnd', () => {
+  it('sets cancel_at_period_end on the subscription', async () => {
+    const stripe = {
+      subscriptions: {
+        update: jest.fn().mockResolvedValue({ id: 'sub_123', cancel_at_period_end: true }),
+      },
+    };
+    getStripe.mockReturnValue(stripe);
+
+    await cancelStripeSubscriptionAtPeriodEnd('sub_123');
+
+    expect(stripe.subscriptions.update).toHaveBeenCalledWith('sub_123', {
+      cancel_at_period_end: true,
+    });
+  });
+});
+
+describe('createBillingPortalSession', () => {
+  it('creates a billing portal session for the customer', async () => {
+    const stripe = {
+      billingPortal: {
+        sessions: { create: jest.fn().mockResolvedValue({ url: 'https://portal.example' }) },
+      },
+    };
+    getStripe.mockReturnValue(stripe);
+
+    const session = await createBillingPortalSession({
+      customerId: 'cus_1',
+      returnUrl: 'https://return.example',
+    });
+
+    expect(stripe.billingPortal.sessions.create).toHaveBeenCalledWith({
+      customer: 'cus_1',
+      return_url: 'https://return.example',
+    });
+    expect(session.url).toBe('https://portal.example');
   });
 });

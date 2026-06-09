@@ -30,6 +30,7 @@ jest.mock('./subscriptionStripe', () => ({
   capturePaymentIntentIfNeeded: jest.fn().mockResolvedValue({}),
   getPaymentMethodIdFromPaymentIntent: jest.fn().mockResolvedValue('pm_123'),
   createStripeCustomer: jest.fn().mockResolvedValue({ id: 'cus_123' }),
+  findOrCreateStripeCustomer: jest.fn().mockResolvedValue({ id: 'cus_123' }),
   createMonthlyStripePrice: jest.fn().mockResolvedValue({ id: 'price_123' }),
   createStripeSubscription: jest.fn().mockResolvedValue({ id: 'sub_123' }),
   cancelStripeSubscriptionAtPeriodEnd: jest.fn().mockResolvedValue({}),
@@ -97,6 +98,7 @@ beforeEach(() => {
   subscriptionStripe.getPaymentIntentIdFromProtectedData.mockReturnValue('pi_123');
   subscriptionStripe.getPaymentMethodIdFromPaymentIntent.mockResolvedValue('pm_123');
   subscriptionStripe.createStripeCustomer.mockResolvedValue({ id: 'cus_123' });
+  subscriptionStripe.findOrCreateStripeCustomer.mockResolvedValue({ id: 'cus_123' });
   subscriptionStripe.createMonthlyStripePrice.mockResolvedValue({ id: 'price_123' });
   subscriptionStripe.createStripeSubscription.mockResolvedValue({ id: 'sub_123' });
 });
@@ -153,6 +155,7 @@ describe('activateSubscription', () => {
     const result = await activateSubscription({ uuid: 'tx-1' });
 
     expect(subscriptionStripe.createStripeCustomer).not.toHaveBeenCalled();
+    expect(subscriptionStripe.findOrCreateStripeCustomer).not.toHaveBeenCalled();
     expect(result.stripeCustomerId).toBe('cus_existing');
   });
 

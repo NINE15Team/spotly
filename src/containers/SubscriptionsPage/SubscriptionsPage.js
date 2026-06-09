@@ -1,4 +1,5 @@
 import React from 'react';
+import { bool, array, func } from 'prop-types';
 import { compose } from 'redux';
 import { connect } from 'react-redux';
 
@@ -147,6 +148,7 @@ export const SubscriptionsPageComponent = props => {
         topbar={<TopbarContainer />}
         sideNav={null}
         footer={<FooterContainer />}
+        intl={intl}
         accountSettingsNavProps={{
           currentPage: 'SubscriptionsPage',
           showPaymentMethods,
@@ -209,15 +211,15 @@ SubscriptionsPageComponent.defaultProps = {
 
 SubscriptionsPageComponent.propTypes = {
   currentUser: propTypes.currentUser,
-  scrollingDisabled: propTypes.bool.isRequired,
-  fetchInProgress: propTypes.bool,
+  scrollingDisabled: bool.isRequired,
+  fetchInProgress: bool,
   fetchError: propTypes.error,
-  transactions: propTypes.array,
-  cancelInProgress: propTypes.bool,
+  transactions: array,
+  cancelInProgress: bool,
   cancelError: propTypes.error,
-  portalInProgress: propTypes.bool,
-  onCancelSubscription: propTypes.func.isRequired,
-  onOpenBillingPortal: propTypes.func.isRequired,
+  portalInProgress: bool,
+  onCancelSubscription: func.isRequired,
+  onOpenBillingPortal: func.isRequired,
 };
 
 const mapStateToProps = state => {
