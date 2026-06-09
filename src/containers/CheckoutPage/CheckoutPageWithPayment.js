@@ -17,6 +17,7 @@ import {
   isBookingProcessAlias,
   isPrivilegedRequestPaymentTransition,
   resolveLatestProcessName,
+  resolveTransactionProcessAlias,
   BOOKING_PROCESS_NAME,
   NEGOTIATION_PROCESS_NAME,
   PURCHASE_PROCESS_NAME,
@@ -181,8 +182,7 @@ const fetchSpeculatedTransactionIfNeeded = (orderParams, pageData, fetchSpeculat
 
   if (shouldFetchSpeculatedTransaction) {
     const { transactionProcessAlias } = pageData.listing.attributes.publicData || {};
-    const processAlias =
-      transactionProcessAlias || (processName ? `${processName}/release-1` : null);
+    const processAlias = resolveTransactionProcessAlias(transactionProcessAlias, processName);
     const transactionId = tx ? tx.id : null;
     const requestTransition = getRequestPaymentTransition(process, tx, processName);
 

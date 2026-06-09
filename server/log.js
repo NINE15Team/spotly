@@ -98,3 +98,17 @@ exports.info = (message, data) => {
     console.log(message); // eslint-disable-line no-console
   }
 };
+
+/**
+ * Warning-level logging for recoverable or unexpected conditions.
+ *
+ * @param {string} message
+ * @param {Object} [data]
+ */
+exports.warn = (message, data) => {
+  if (data !== undefined) {
+    console.warn(message, data); // eslint-disable-line no-console
+  } else {
+    console.warn(message); // eslint-disable-line no-console
+  }
+};

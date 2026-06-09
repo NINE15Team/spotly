@@ -10,6 +10,7 @@ jest.mock('../../transactions/transaction', () => ({
   getRequestPaymentTransition: jest.fn(),
   isPrivilegedRequestPaymentTransition: jest.fn(),
   resolveLatestProcessName: jest.fn(),
+  resolveTransactionProcessAlias: jest.fn((alias, processName) => alias || processName),
   NEGOTIATION_PROCESS_NAME: 'negotiation',
 }));
 jest.mock('./CheckoutPageSessionHelpers', () => ({ storeData: jest.fn() }));

@@ -9,6 +9,7 @@ import {
   getProcess,
   isSubscriptionProcess,
   isSubscriptionProcessAlias,
+  resolveTransactionProcessAlias,
   getRequestPaymentTransition,
   isPrivilegedRequestPaymentTransition,
   SUBSCRIPTION_PROCESS_NAME,
@@ -246,6 +247,21 @@ describe('transaction utils for subscription-rental', () => {
     it('returns false for nullish input', () => {
       expect(isSubscriptionProcess(null)).toBe(false);
       expect(isSubscriptionProcess(undefined)).toBe(false);
+    });
+  });
+
+  describe('resolveTransactionProcessAlias', () => {
+    it('upgrades stale subscription-rental/release-1 to release-4', () => {
+      expect(resolveTransactionProcessAlias('subscription-rental/release-1')).toBe(SUBSCRIPTION_ALIAS);
+    });
+    it('keeps the current subscription alias unchanged', () => {
+      expect(resolveTransactionProcessAlias(SUBSCRIPTION_ALIAS)).toBe(SUBSCRIPTION_ALIAS);
+    });
+    it('resolves subscription process name when alias is missing', () => {
+      expect(resolveTransactionProcessAlias(null, SUBSCRIPTION_PROCESS_NAME)).toBe(SUBSCRIPTION_ALIAS);
+    });
+    it('keeps non-subscription aliases unchanged', () => {
+      expect(resolveTransactionProcessAlias('default-booking/release-1')).toBe('default-booking/release-1');
     });
   });
 

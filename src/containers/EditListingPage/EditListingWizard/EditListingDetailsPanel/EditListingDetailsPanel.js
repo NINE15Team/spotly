@@ -15,7 +15,10 @@ import {
   isFieldForListingType,
   pickCategoryFields,
 } from '../../../../util/fieldHelpers';
-import { isBookingProcessAlias } from '../../../../transactions/transaction';
+import {
+  isBookingProcessAlias,
+  resolveTransactionProcessAlias,
+} from '../../../../transactions/transaction';
 
 // Import shared components
 import { H3, ListingLink } from '../../../../components';
@@ -48,7 +51,12 @@ const getTransactionInfo = props => {
 
   if (listingType && transactionProcessAlias && unitType) {
     // If listing type has already been set, return the existing listing type info.
-    return { listingType, transactionProcessAlias, unitType };
+    // Upgrade stale process aliases (e.g. subscription-rental/release-1 on new Console drafts).
+    return {
+      listingType,
+      transactionProcessAlias: resolveTransactionProcessAlias(transactionProcessAlias),
+      unitType,
+    };
   } else if (listingTypes.length === 1 || preselectedListingType) {
     const listingTypeConfig =
       listingTypes.length === 1

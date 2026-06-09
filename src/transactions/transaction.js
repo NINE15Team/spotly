@@ -276,6 +276,34 @@ export const getSupportedProcessesInfo = () =>
   });
 
 /**
+ * Resolve a process alias to the app's current supported alias for that process.
+ * Upgrades stale listing publicData (e.g. subscription-rental/release-1 → release-4).
+ *
+ * @param {String} [processAlias] - alias from listing publicData or transaction
+ * @param {String} [processName] - fallback when alias is missing
+ * @returns {String|null}
+ */
+export const resolveTransactionProcessAlias = (processAlias, processName) => {
+  const nameFromAlias = processAlias?.split('/')[0];
+  const resolvedName = resolveLatestProcessName(nameFromAlias || processName);
+  const processInfo = PROCESSES.find(p => p.name === resolvedName);
+
+  if (!processInfo) {
+    return processAlias || (processName ? `${processName}/release-1` : null);
+  }
+
+  if (processAlias && nameFromAlias === processInfo.name) {
+    return processInfo.alias;
+  }
+
+  if (!processAlias && processName) {
+    return processInfo.alias;
+  }
+
+  return processAlias || null;
+};
+
+/**
  * Get all the transitions for every supported process
  */
 export const getAllTransitionsForEveryProcess = () => {

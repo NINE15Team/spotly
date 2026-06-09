@@ -113,6 +113,23 @@ describe('POST /api/initiate-privileged — subscription double-booking guard', 
     expect(handleError).toHaveBeenCalledWith(res, error);
   });
 
+  it('upgrades stale subscription-rental/release-1 to release-4 on initiate', async () => {
+    setupSdk();
+    checkForExistingSubscription.mockResolvedValue(undefined);
+    const res = makeRes();
+
+    initiatePrivileged(
+      { body: makeBody({ isSpeculative: false, processAlias: 'subscription-rental/release-1' }) },
+      res
+    );
+    await drain();
+
+    expect(trustedSdk.transactions.initiate).toHaveBeenCalledWith(
+      expect.objectContaining({ processAlias: 'subscription-rental/release-4' }),
+      {}
+    );
+  });
+
   it('initiates a subscription with subscription line items when no active one exists', async () => {
     setupSdk();
     checkForExistingSubscription.mockResolvedValue(undefined);

@@ -9,7 +9,11 @@ const {
   serialize,
   fetchCommission,
 } = require('../api-util/sdk');
-const { isSubscriptionProcess, SUBSCRIPTION_PROCESS_NAME } = require('../api-util/subscriptionConstants');
+const {
+  isSubscriptionProcess,
+  SUBSCRIPTION_PROCESS_NAME,
+  resolveSubscriptionProcessAlias,
+} = require('../api-util/subscriptionConstants');
 const { checkForExistingSubscription } = require('../api-util/subscriptionService');
 
 const { Money } = sharetribeSdk.types;
@@ -54,7 +58,7 @@ const getMetadata = (orderData, transition) => {
 module.exports = (req, res) => {
   const { isSpeculative, orderData, bodyParams, queryParams } = req.body || {};
   const transitionName = bodyParams.transition;
-  const processAlias = bodyParams.processAlias || '';
+  const processAlias = resolveSubscriptionProcessAlias(bodyParams.processAlias || '');
   const isSubscription = isSubscriptionProcess(processAlias);
   const sdk = getSdk(req, res);
   let lineItems = null;
@@ -71,7 +75,7 @@ module.exports = (req, res) => {
 
       const fullOrderData = {
         ...getFullOrderData(orderData, bodyParams, currency),
-        processAlias: bodyParams.processAlias,
+        processAlias,
       };
 
       lineItems = isSubscription
@@ -101,6 +105,7 @@ module.exports = (req, res) => {
       // Add lineItems to the body params
       const body = {
         ...bodyParams,
+        processAlias,
         params: {
           ...params,
           lineItems,

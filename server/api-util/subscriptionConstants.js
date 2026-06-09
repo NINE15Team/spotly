@@ -55,6 +55,16 @@ const isSubscriptionProcess = processAlias => {
   return processName === SUBSCRIPTION_PROCESS_NAME;
 };
 
+/**
+ * Upgrade stale subscription aliases to the current release before initiating transactions.
+ */
+const resolveSubscriptionProcessAlias = processAlias => {
+  if (!isSubscriptionProcess(processAlias)) {
+    return processAlias;
+  }
+  return SUBSCRIPTION_PROCESS_ALIAS;
+};
+
 module.exports = {
   SUBSCRIPTION_PROCESS_NAME,
   SUBSCRIPTION_PROCESS_ALIAS,
@@ -63,4 +73,5 @@ module.exports = {
   STATES,
   METADATA_KEYS,
   isSubscriptionProcess,
+  resolveSubscriptionProcessAlias,
 };

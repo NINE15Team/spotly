@@ -8,6 +8,7 @@ import {
   isPrivilegedRequestPaymentTransition,
   NEGOTIATION_PROCESS_NAME,
   resolveLatestProcessName,
+  resolveTransactionProcessAlias,
 } from '../../transactions/transaction';
 import { storeData } from './CheckoutPageSessionHelpers';
 
@@ -202,7 +203,11 @@ export const processCheckoutWithPayment = (orderParams, extraPaymentParams) => {
   const storedTx = ensureTransaction(pageData.transaction);
 
   const ensuredStripeCustomer = ensureStripeCustomer(stripeCustomer);
-  const processAlias = pageData?.listing?.attributes?.publicData?.transactionProcessAlias;
+  const rawProcessAlias = pageData?.listing?.attributes?.publicData?.transactionProcessAlias;
+  const processAlias = resolveTransactionProcessAlias(
+    rawProcessAlias,
+    rawProcessAlias?.split('/')[0]
+  );
 
   let createdPaymentIntent = null;
 
