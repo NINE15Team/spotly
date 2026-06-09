@@ -30,6 +30,7 @@ const acceptSubscription = require('./api/accept-subscription');
 const declineSubscription = require('./api/decline-subscription');
 const cancelSubscription = require('./api/cancel-subscription');
 const billingPortal = require('./api/billing-portal');
+const operatorAbortSubscription = require('./api/operator-abort-subscription');
 
 // Stripe webhooks require the raw request body for signature verification.
 router.post('/stripe-webhooks', bodyParser.raw({ type: 'application/json' }), stripeWebhooks);
@@ -71,6 +72,7 @@ router.post('/accept-subscription', acceptSubscription);
 router.post('/decline-subscription', declineSubscription);
 router.post('/cancel-subscription', cancelSubscription);
 router.post('/billing-portal', billingPortal);
+router.post('/operator-abort-subscription', operatorAbortSubscription);
 
 // Create user with identity provider (e.g. Facebook or Google)
 // This endpoint is called to create a new user after user has confirmed
