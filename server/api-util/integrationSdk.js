@@ -147,6 +147,43 @@ const findTransactionByStripeSubscriptionId = async stripeSubscriptionId => {
   return transactions[0] || null;
 };
 
+/**
+ * Find active subscription transactions for a given customer + listing combination.
+ * Returns the first match, or null if none found.
+ *
+ * "Active" means any non-final state: pending-payment, payment-confirmed, active, payment-overdue.
+ * Cancelled / expired transactions are excluded by checking lastTransition.
+ *
+ * @param {string} customerId  - plain uuid string
+ * @param {string} listingId   - plain uuid string
+ * @param {string} processName - e.g. 'subscription-rental'
+ * @returns {Promise<Object|null>}
+ */
+const findActiveSubscriptionForListing = async (customerId, listingId, processName) => {
+  const integrationSdk = getIntegrationSdk();
+  const response = await integrationSdk.transactions.query({
+    customerId,
+    listingId,
+    processNames: [processName],
+    perPage: 10,
+  });
+  const transactions = response?.data?.data || [];
+  const FINAL_TRANSITIONS = [
+    'transition/cancel-subscription',
+    'transition/cancel-subscription-from-overdue',
+    'transition/expire',
+    'transition/expire-payment',
+    'transition/decline-subscription',
+    'transition/expire-acceptance',
+    'transition/abort-subscription',
+  ];
+  return (
+    transactions.find(
+      tx => !FINAL_TRANSITIONS.includes(tx.attributes?.lastTransition)
+    ) || null
+  );
+};
+
 const handleIntegrationError = (res, error) => {
   log.error(error, 'integration-api-request-failed', error.data);
   const status = error.status || 500;
@@ -167,5 +204,6 @@ module.exports = {
   showListing,
   updateTransactionMetadata,
   findTransactionByStripeSubscriptionId,
+  findActiveSubscriptionForListing,
   handleIntegrationError,
 };

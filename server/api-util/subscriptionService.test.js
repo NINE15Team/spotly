@@ -21,6 +21,7 @@ jest.mock('./integrationSdk', () => {
     transitionTransaction: jest.fn().mockResolvedValue({}),
     updateTransactionMetadata: jest.fn().mockResolvedValue({}),
     findTransactionByStripeSubscriptionId: jest.fn(),
+    findActiveSubscriptionForListing: jest.fn(),
   };
 });
 
@@ -43,6 +44,7 @@ const {
   handleInvoicePaymentFailed,
   handleSubscriptionDeleted,
   requestCancelAtPeriodEnd,
+  checkForExistingSubscription,
 } = require('./subscriptionService');
 
 // --- Fixtures ----------------------------------------------------------------
@@ -431,6 +433,172 @@ describe('requestCancelAtPeriodEnd', () => {
 
     await expect(requestCancelAtPeriodEnd({ uuid: 'tx-1' })).rejects.toThrow(
       /cannot be cancelled/
+    );
+  });
+
+  it.each([
+    TRANSITIONS.ACCEPT_SUBSCRIPTION,
+    TRANSITIONS.CONFIRM_SUBSCRIPTION,
+    TRANSITIONS.EXTEND_SUBSCRIPTION,
+    TRANSITIONS.PAYMENT_OVERDUE,
+    TRANSITIONS.REACTIVATE_SUBSCRIPTION,
+  ])('succeeds from allowed state: %s', async lastTransition => {
+    buildShowForCancel(lastTransition);
+
+    const result = await requestCancelAtPeriodEnd({ uuid: 'tx-1' });
+
+    expect(subscriptionStripe.cancelStripeSubscriptionAtPeriodEnd).toHaveBeenCalledWith('sub_123');
+    expect(result).toEqual({ cancelAtPeriodEnd: true, stripeSubscriptionId: 'sub_123' });
+  });
+
+  it.each([
+    TRANSITIONS.EXPIRE,
+    TRANSITIONS.CANCEL_SUBSCRIPTION_FROM_OVERDUE,
+    TRANSITIONS.DECLINE_SUBSCRIPTION,
+  ])('throws for final state: %s', async lastTransition => {
+    buildShowForCancel(lastTransition);
+
+    await expect(requestCancelAtPeriodEnd({ uuid: 'tx-1' })).rejects.toThrow(/cannot be cancelled/);
+    expect(subscriptionStripe.cancelStripeSubscriptionAtPeriodEnd).not.toHaveBeenCalled();
+  });
+});
+
+// --- handleSubscriptionDeleted edge cases -----------------------------------
+describe('handleSubscriptionDeleted — terminal state no-ops', () => {
+  it.each([
+    TRANSITIONS.CANCEL_SUBSCRIPTION,
+    TRANSITIONS.CANCEL_SUBSCRIPTION_FROM_OVERDUE,
+    TRANSITIONS.EXPIRE,
+  ])('is a no-op when already in terminal state: %s', async lastTransition => {
+    integrationSdk.findTransactionByStripeSubscriptionId.mockResolvedValue({
+      id: { uuid: 'tx-1' },
+      attributes: { lastTransition },
+    });
+
+    await handleSubscriptionDeleted('sub_123');
+
+    expect(integrationSdk.transitionTransaction).not.toHaveBeenCalled();
+  });
+
+  it('is a no-op when no transaction matches', async () => {
+    integrationSdk.findTransactionByStripeSubscriptionId.mockResolvedValue(null);
+
+    await handleSubscriptionDeleted('sub_unknown');
+
+    expect(integrationSdk.transitionTransaction).not.toHaveBeenCalled();
+  });
+});
+
+// --- handleInvoicePaid — edge cases -----------------------------------------
+describe('handleInvoicePaid — all active-entry transitions extend the period', () => {
+  it.each([
+    TRANSITIONS.CONFIRM_SUBSCRIPTION,
+    TRANSITIONS.ACCEPT_SUBSCRIPTION,
+    TRANSITIONS.EXTEND_SUBSCRIPTION,
+  ])('extends period from active-entry transition: %s', async lastTransition => {
+    integrationSdk.findTransactionByStripeSubscriptionId.mockResolvedValue({
+      id: { uuid: 'tx-1' },
+      attributes: { lastTransition },
+    });
+    integrationSdk.showTransaction.mockResolvedValue({
+      data: { data: buildTransaction(), included: buildIncluded() },
+    });
+
+    await handleInvoicePaid('sub_123');
+
+    expect(integrationSdk.transitionTransaction).toHaveBeenCalledWith(
+      expect.objectContaining({ transition: TRANSITIONS.EXTEND_SUBSCRIPTION })
+    );
+  });
+});
+
+// --- handleInvoicePaymentFailed — edge cases --------------------------------
+describe('handleInvoicePaymentFailed — active-entry states', () => {
+  it.each([
+    TRANSITIONS.CONFIRM_SUBSCRIPTION,
+    TRANSITIONS.ACCEPT_SUBSCRIPTION,
+    TRANSITIONS.EXTEND_SUBSCRIPTION,
+  ])('marks payment-overdue from %s', async lastTransition => {
+    integrationSdk.findTransactionByStripeSubscriptionId.mockResolvedValue({
+      id: { uuid: 'tx-1' },
+      attributes: { lastTransition },
+    });
+
+    await handleInvoicePaymentFailed('sub_123');
+
+    expect(integrationSdk.transitionTransaction).toHaveBeenCalledWith(
+      expect.objectContaining({ transition: TRANSITIONS.PAYMENT_OVERDUE })
+    );
+  });
+
+  it('is a no-op when no transaction matches', async () => {
+    integrationSdk.findTransactionByStripeSubscriptionId.mockResolvedValue(null);
+
+    await handleInvoicePaymentFailed('sub_unknown');
+
+    expect(integrationSdk.transitionTransaction).not.toHaveBeenCalled();
+  });
+});
+
+// --- checkForExistingSubscription (double-booking guard) --------------------
+describe('checkForExistingSubscription', () => {
+  it('resolves without error when no active subscription exists', async () => {
+    integrationSdk.findActiveSubscriptionForListing.mockResolvedValue(null);
+
+    await expect(
+      checkForExistingSubscription('user-1', 'listing-1', 'subscription-rental')
+    ).resolves.toBeUndefined();
+  });
+
+  it('throws a 409 when an active subscription already exists for this listing', async () => {
+    integrationSdk.findActiveSubscriptionForListing.mockResolvedValue({
+      id: { uuid: 'tx-existing' },
+      attributes: { lastTransition: TRANSITIONS.CONFIRM_SUBSCRIPTION },
+    });
+
+    const error = await checkForExistingSubscription(
+      'user-1',
+      'listing-1',
+      'subscription-rental'
+    ).catch(e => e);
+
+    expect(error).toBeInstanceOf(Error);
+    expect(error.status).toBe(409);
+    expect(error.message).toMatch(/already have an active subscription/);
+    expect(error.existingTransactionId).toBe('tx-existing');
+  });
+
+  it('throws when subscription is in payment-confirmed state (not yet active but not final)', async () => {
+    integrationSdk.findActiveSubscriptionForListing.mockResolvedValue({
+      id: { uuid: 'tx-pending' },
+      attributes: { lastTransition: TRANSITIONS.CONFIRM_PAYMENT },
+    });
+
+    await expect(
+      checkForExistingSubscription('user-1', 'listing-1', 'subscription-rental')
+    ).rejects.toMatchObject({ status: 409 });
+  });
+
+  it('throws when subscription is in payment-overdue state', async () => {
+    integrationSdk.findActiveSubscriptionForListing.mockResolvedValue({
+      id: { uuid: 'tx-overdue' },
+      attributes: { lastTransition: TRANSITIONS.PAYMENT_OVERDUE },
+    });
+
+    await expect(
+      checkForExistingSubscription('user-1', 'listing-1', 'subscription-rental')
+    ).rejects.toMatchObject({ status: 409 });
+  });
+
+  it('passes the correct arguments to findActiveSubscriptionForListing', async () => {
+    integrationSdk.findActiveSubscriptionForListing.mockResolvedValue(null);
+
+    await checkForExistingSubscription('cust-abc', 'list-xyz', 'subscription-rental');
+
+    expect(integrationSdk.findActiveSubscriptionForListing).toHaveBeenCalledWith(
+      'cust-abc',
+      'list-xyz',
+      'subscription-rental'
     );
   });
 });

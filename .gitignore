@@ -17,3 +17,4 @@ yarn-error.log
 
 docs/
 .cursor/
+e2e/

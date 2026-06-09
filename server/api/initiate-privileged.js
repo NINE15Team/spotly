@@ -1,5 +1,6 @@
 const sharetribeSdk = require('sharetribe-flex-sdk');
 const { transactionLineItems } = require('../api-util/lineItems');
+const { subscriptionTransactionLineItems } = require('../api-util/subscriptionLineItems');
 const { isIntentionToMakeOffer } = require('../api-util/negotiation');
 const {
   getSdk,
@@ -8,6 +9,8 @@ const {
   serialize,
   fetchCommission,
 } = require('../api-util/sdk');
+const { isSubscriptionProcess, SUBSCRIPTION_PROCESS_NAME } = require('../api-util/subscriptionConstants');
+const { checkForExistingSubscription } = require('../api-util/subscriptionService');
 
 const { Money } = sharetribeSdk.types;
 
@@ -51,6 +54,8 @@ const getMetadata = (orderData, transition) => {
 module.exports = (req, res) => {
   const { isSpeculative, orderData, bodyParams, queryParams } = req.body || {};
   const transitionName = bodyParams.transition;
+  const processAlias = bodyParams.processAlias || '';
+  const isSubscription = isSubscriptionProcess(processAlias);
   const sdk = getSdk(req, res);
   let lineItems = null;
   let metadataMaybe = {};
@@ -64,16 +69,29 @@ module.exports = (req, res) => {
       const { providerCommission, customerCommission } =
         commissionAsset?.type === 'jsonAsset' ? commissionAsset.attributes.data : {};
 
-      lineItems = transactionLineItems(
-        listing,
-        {
-          ...getFullOrderData(orderData, bodyParams, currency),
-          processAlias: bodyParams.processAlias,
-        },
-        providerCommission,
-        customerCommission
-      );
+      const fullOrderData = {
+        ...getFullOrderData(orderData, bodyParams, currency),
+        processAlias: bodyParams.processAlias,
+      };
+
+      lineItems = isSubscription
+        ? subscriptionTransactionLineItems(listing, fullOrderData, providerCommission, customerCommission)
+        : transactionLineItems(listing, fullOrderData, providerCommission, customerCommission);
+
       metadataMaybe = getMetadata(orderData, transitionName);
+
+      // Double-booking guard: reject if customer already has a live subscription for this listing.
+      if (isSubscription && !isSpeculative) {
+        const listingId = bodyParams?.params?.listingId;
+        return sdk.currentUser.show().then(userResponse => {
+          const customerId = userResponse?.data?.data?.id?.uuid;
+          if (customerId && listingId) {
+            return checkForExistingSubscription(customerId, listingId?.uuid || listingId, SUBSCRIPTION_PROCESS_NAME)
+              .then(() => getTrustedSdk(req));
+          }
+          return getTrustedSdk(req);
+        });
+      }
 
       return getTrustedSdk(req);
     })

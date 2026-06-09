@@ -7,6 +7,7 @@ const {
   showListing,
   updateTransactionMetadata,
   findTransactionByStripeSubscriptionId,
+  findActiveSubscriptionForListing,
   normalizeUuid,
 } = require('./integrationSdk');
 const {
@@ -400,6 +401,29 @@ const requestCancelAtPeriodEnd = async transactionId => {
   return { cancelAtPeriodEnd: true, stripeSubscriptionId };
 };
 
+/**
+ * Guard against double-booking: throws a 409 if the customer already has a
+ * non-final subscription transaction for the same listing.
+ *
+ * Call this before initiating a new subscription checkout (initiate-privileged).
+ *
+ * @param {string} customerId  - plain uuid string (from the logged-in user's SDK)
+ * @param {string} listingId   - plain uuid string
+ * @param {string} processName - e.g. 'subscription-rental'
+ */
+const checkForExistingSubscription = async (customerId, listingId, processName) => {
+  const existing = await findActiveSubscriptionForListing(customerId, listingId, processName);
+  if (existing) {
+    const error = new Error(
+      'You already have an active subscription for this listing. Only one subscription per listing is allowed.'
+    );
+    error.status = 409;
+    error.statusText = error.message;
+    error.existingTransactionId = normalizeUuid(existing.id);
+    throw error;
+  }
+};
+
 module.exports = {
   activateSubscription,
   declineSubscription,
@@ -407,4 +431,5 @@ module.exports = {
   handleInvoicePaymentFailed,
   handleSubscriptionDeleted,
   requestCancelAtPeriodEnd,
+  checkForExistingSubscription,
 };
