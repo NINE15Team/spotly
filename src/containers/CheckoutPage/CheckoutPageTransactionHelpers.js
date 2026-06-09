@@ -186,6 +186,7 @@ export const processCheckoutWithPayment = (orderParams, extraPaymentParams) => {
     hasPaymentIntentUserActionsDone,
     isPaymentFlowUseSavedCard,
     isPaymentFlowPayAndSaveCard,
+    isSubscriptionCheckout,
     onConfirmCardPayment,
     onConfirmPayment,
     onInitiateOrder,
@@ -262,12 +263,18 @@ export const processCheckoutWithPayment = (orderParams, extraPaymentParams) => {
 
     // Note: For basic USE_SAVED_CARD scenario, we have set it already on API side, when PaymentIntent was created.
     // However, the payment_method is save here for USE_SAVED_CARD flow if customer first attempted onetime payment
+    //
+    // For subscription-rental, we must set setup_future_usage: 'off_session' so that Stripe saves the
+    // PaymentMethod for future recurring charges. Without this, Stripe rejects the PaymentMethod when
+    // we try to attach it to a Stripe Customer and create a recurring Subscription on provider accept.
+    const setupFutureUsageMaybe = isSubscriptionCheckout ? { setup_future_usage: 'off_session' } : {};
     const paymentParams = !isPaymentFlowUseSavedCard
       ? {
           payment_method: {
             billing_details: billingDetails,
             card: card,
           },
+          ...setupFutureUsageMaybe,
         }
       : { payment_method: stripePaymentMethodId };
 
