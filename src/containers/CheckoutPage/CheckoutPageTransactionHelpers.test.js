@@ -50,7 +50,7 @@ const buildExtraParams = overrides => {
           attributes: { lastTransition: 'transition/request-payment' },
         },
         listing: {
-          attributes: { publicData: { transactionProcessAlias: 'subscription-rental/release-1' } },
+          attributes: { publicData: { transactionProcessAlias: 'subscription-rental/release-4' } },
         },
         orderData: {},
       },

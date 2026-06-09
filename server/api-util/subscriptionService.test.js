@@ -207,11 +207,38 @@ describe('activateSubscription', () => {
     // Provider transitions cannot run on the Integration API.
     expect(integrationSdk.transitionTransaction).not.toHaveBeenCalled();
     expect(marketplaceSdk.transactions.transition).toHaveBeenCalledWith(
-      expect.objectContaining({ transition: TRANSITIONS.ACCEPT_SUBSCRIPTION }),
+      expect.objectContaining({
+        id: 'tx-1',
+        transition: TRANSITIONS.ACCEPT_SUBSCRIPTION,
+      }),
       expect.anything()
     );
     // Billing is still created on first acceptance.
     expect(subscriptionStripe.createStripeSubscription).toHaveBeenCalledTimes(1);
+  });
+
+  it('falls back to operator confirm-subscription when accept-subscription is unavailable', async () => {
+    mockShowTransaction(buildTransaction());
+    const invalidTransitionError = {
+      status: 409,
+      statusText: 'Conflict',
+      data: {
+        errors: [{ code: 'transaction-invalid-transition', status: 409, title: 'Invalid transition.' }],
+      },
+    };
+    const marketplaceSdk = {
+      transactions: { transition: jest.fn().mockRejectedValue(invalidTransitionError) },
+    };
+
+    await activateSubscription(
+      { uuid: 'tx-1' },
+      { transition: TRANSITIONS.ACCEPT_SUBSCRIPTION, marketplaceSdk }
+    );
+
+    expect(marketplaceSdk.transactions.transition).toHaveBeenCalled();
+    expect(integrationSdk.transitionTransaction).toHaveBeenCalledWith(
+      expect.objectContaining({ transition: TRANSITIONS.CONFIRM_SUBSCRIPTION })
+    );
   });
 
   it('throws when no PaymentIntent can be resolved', async () => {
@@ -266,11 +293,36 @@ describe('declineSubscription', () => {
 
     expect(integrationSdk.transitionTransaction).not.toHaveBeenCalled();
     expect(marketplaceSdk.transactions.transition).toHaveBeenCalledWith(
-      expect.objectContaining({ transition: TRANSITIONS.DECLINE_SUBSCRIPTION }),
+      expect.objectContaining({
+        id: 'tx-1',
+        transition: TRANSITIONS.DECLINE_SUBSCRIPTION,
+      }),
       expect.anything()
     );
     // No Stripe subscription is created on decline.
     expect(subscriptionStripe.createStripeSubscription).not.toHaveBeenCalled();
+    expect(result).toEqual({ declined: true });
+  });
+
+  it('falls back to operator abort-subscription when decline-subscription is unavailable', async () => {
+    mockShowTransaction(buildTransaction());
+    const invalidTransitionError = {
+      status: 409,
+      statusText: 'Conflict',
+      data: {
+        errors: [{ code: 'transaction-invalid-transition', status: 409, title: 'Invalid transition.' }],
+      },
+    };
+    const marketplaceSdk = {
+      transactions: { transition: jest.fn().mockRejectedValue(invalidTransitionError) },
+    };
+
+    const result = await declineSubscription({ uuid: 'tx-1' }, { marketplaceSdk });
+
+    expect(marketplaceSdk.transactions.transition).toHaveBeenCalled();
+    expect(integrationSdk.transitionTransaction).toHaveBeenCalledWith(
+      expect.objectContaining({ transition: TRANSITIONS.ABORT_SUBSCRIPTION })
+    );
     expect(result).toEqual({ declined: true });
   });
 

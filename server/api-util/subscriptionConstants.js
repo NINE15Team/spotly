@@ -4,7 +4,7 @@
  */
 
 const SUBSCRIPTION_PROCESS_NAME = 'subscription-rental';
-const SUBSCRIPTION_PROCESS_ALIAS = `${SUBSCRIPTION_PROCESS_NAME}/release-1`;
+const SUBSCRIPTION_PROCESS_ALIAS = `${SUBSCRIPTION_PROCESS_NAME}/release-4`;
 
 const TRANSITIONS = {
   REQUEST_PAYMENT: 'transition/request-payment',

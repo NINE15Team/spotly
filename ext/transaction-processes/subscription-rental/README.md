@@ -83,7 +83,7 @@ See: [Sharetribe booking acceptance](https://www.sharetribe.com/docs/concepts/pa
 
 ## Deploy (Dev)
 
-**Marketplace:** `alpsalpinerentaspot-dev` · **Alias:** `subscription-rental/release-1` (already created)
+**Marketplace:** `alpsalpinerentaspot-dev` · **Active alias:** `subscription-rental/release-4` (points to process version 4)
 
 First-time create (done):
 
@@ -94,14 +94,16 @@ flex-cli process create-alias -m alpsalpinerentaspot-dev \
   --process subscription-rental --version 1 --alias release-1
 ```
 
-Later updates:
+Later updates (push, then create a new alias — `release-1` cannot be reassigned once it exists):
 
 ```bash
 flex-cli process push --process subscription-rental \
   --path ext/transaction-processes/subscription-rental -m alpsalpinerentaspot-dev
+flex-cli process create-alias -m alpsalpinerentaspot-dev \
+  --process subscription-rental --version <latest> --alias release-4
 ```
 
-Then attach `subscription-rental/release-1` to a listing type in Sharetribe Console.
+Then attach `subscription-rental/release-4` to the subscription listing type in Sharetribe Console (and re-save listings that still have `release-1` in public data).
 
 ## Web Template
 

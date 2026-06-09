@@ -231,7 +231,7 @@ describe('transaction utils for default-booking', () => {
 });
 
 describe('transaction utils for subscription-rental', () => {
-  const SUBSCRIPTION_ALIAS = `${SUBSCRIPTION_PROCESS_NAME}/release-1`;
+  const SUBSCRIPTION_ALIAS = `${SUBSCRIPTION_PROCESS_NAME}/release-4`;
   const process = getProcess(SUBSCRIPTION_PROCESS_NAME);
   const transitions = process?.transitions;
 

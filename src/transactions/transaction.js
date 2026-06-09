@@ -64,7 +64,7 @@ const PROCESSES = [
   },
   {
     name: SUBSCRIPTION_PROCESS_NAME,
-    alias: `${SUBSCRIPTION_PROCESS_NAME}/release-1`,
+    alias: `${SUBSCRIPTION_PROCESS_NAME}/release-4`,
     process: subscriptionProcess,
     unitTypes: [DAY],
   },

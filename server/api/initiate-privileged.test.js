@@ -102,7 +102,7 @@ describe('POST /api/initiate-privileged — subscription double-booking guard', 
     const res = makeRes();
 
     initiatePrivileged(
-      { body: makeBody({ isSpeculative: false, processAlias: 'subscription-rental/release-1' }) },
+      { body: makeBody({ isSpeculative: false, processAlias: 'subscription-rental/release-4' }) },
       res
     );
     await drain();
@@ -119,7 +119,7 @@ describe('POST /api/initiate-privileged — subscription double-booking guard', 
     const res = makeRes();
 
     initiatePrivileged(
-      { body: makeBody({ isSpeculative: false, processAlias: 'subscription-rental/release-1' }) },
+      { body: makeBody({ isSpeculative: false, processAlias: 'subscription-rental/release-4' }) },
       res
     );
     await drain();
@@ -140,7 +140,7 @@ describe('POST /api/initiate-privileged — subscription double-booking guard', 
     const res = makeRes();
 
     initiatePrivileged(
-      { body: makeBody({ isSpeculative: true, processAlias: 'subscription-rental/release-1' }) },
+      { body: makeBody({ isSpeculative: true, processAlias: 'subscription-rental/release-4' }) },
       res
     );
     await drain();

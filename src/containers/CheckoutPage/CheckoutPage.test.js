@@ -237,7 +237,7 @@ describe('CheckoutPage', () => {
       'listing1',
       {
         publicData: {
-          transactionProcessAlias: 'subscription-rental/release-1',
+          transactionProcessAlias: 'subscription-rental/release-4',
           unitType: 'day',
         },
       },

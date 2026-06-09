@@ -91,25 +91,68 @@ const assertLastTransition = (transaction, expectedTransition) => {
   }
 };
 
+const isInvalidTransitionError = error => {
+  const errors = error?.data?.errors;
+  if (!Array.isArray(errors)) {
+    return false;
+  }
+  return errors.some(e => e.code === 'transaction-invalid-transition');
+};
+
 /**
  * Run a process transition. Provider/customer transitions must use the requester's
  * Marketplace SDK (the Integration API can only run operator transitions); operator
  * transitions fall back to the Integration API.
  *
+ * When a provider transition is not defined on the transaction's process version
+ * (common for checkouts started before merchant-approval was deployed), the server
+ * retries with the matching operator fallback transition.
+ *
  * @param {Object} args
  * @param {Object} [args.marketplaceSdk] - logged-in user's SDK for provider/customer transitions
  * @param {UUID} args.transactionId
  * @param {string} args.transition
+ * @param {string} [args.operatorFallbackTransition] - operator transition if provider transition is unavailable
  * @param {Object} [args.params]
  */
-const runProcessTransition = ({ marketplaceSdk, transactionId, transition, params }) => {
-  if (marketplaceSdk) {
-    return marketplaceSdk.transactions.transition(
-      { id: transactionId, transition, params: params || {} },
-      { expand: true }
-    );
+const runProcessTransition = async ({
+  marketplaceSdk,
+  transactionId,
+  transition,
+  operatorFallbackTransition,
+  params,
+}) => {
+  const id = normalizeUuid(transactionId);
+  if (!id) {
+    const error = new Error('Invalid transaction id for transition.');
+    error.status = 400;
+    throw error;
   }
-  return transitionTransaction({ transactionId, transition, params });
+
+  const transitionParams = params || {};
+  const transitionBody = { id, transition, params: transitionParams };
+
+  if (!marketplaceSdk) {
+    return transitionTransaction({ transactionId: id, transition, params: transitionParams });
+  }
+
+  try {
+    return await marketplaceSdk.transactions.transition(transitionBody, { expand: true });
+  } catch (error) {
+    if (operatorFallbackTransition && isInvalidTransitionError(error)) {
+      log.warn('Provider transition unavailable on process version; using operator fallback', {
+        transition,
+        operatorFallbackTransition,
+        transactionId: id,
+      });
+      return transitionTransaction({
+        transactionId: id,
+        transition: operatorFallbackTransition,
+        params: transitionParams,
+      });
+    }
+    throw error;
+  }
 };
 
 /**
@@ -223,6 +266,10 @@ const activateSubscription = async (transactionId, options = {}) => {
     marketplaceSdk,
     transactionId: transaction.id,
     transition,
+    operatorFallbackTransition:
+      transition === TRANSITIONS.ACCEPT_SUBSCRIPTION
+        ? TRANSITIONS.CONFIRM_SUBSCRIPTION
+        : null,
   });
 
   // Capture first payment if process version lacks stripe-capture on the transition.
@@ -258,6 +305,7 @@ const declineSubscription = async (transactionId, options = {}) => {
     marketplaceSdk,
     transactionId: transaction.id,
     transition: TRANSITIONS.DECLINE_SUBSCRIPTION,
+    operatorFallbackTransition: TRANSITIONS.ABORT_SUBSCRIPTION,
   });
 
   log.info('Subscription request declined', { transactionId: transaction.id.uuid });

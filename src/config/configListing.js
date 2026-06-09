@@ -285,7 +285,7 @@ export const listingTypes = [
     label: 'Monthly subscription',
     transactionType: {
       process: 'subscription-rental',
-      alias: 'subscription-rental/release-1',
+      alias: 'subscription-rental/release-4',
       unitType: 'day',
     },
     availabilityType: 'oneSeat',

@@ -1,6 +1,6 @@
 import { isValidCurrencyForTransactionProcess } from './fieldHelpers';
 
-const SUBSCRIPTION_ALIAS = 'subscription-rental/release-1';
+const SUBSCRIPTION_ALIAS = 'subscription-rental/release-4';
 const BOOKING_ALIAS = 'default-booking/release-1';
 
 describe('isValidCurrencyForTransactionProcess', () => {
