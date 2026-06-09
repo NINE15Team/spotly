@@ -53,13 +53,14 @@
    :to :state/cancelled}
   ;; Acceptance window: expire & refund if the provider does not respond.
   ;; Fires at the earliest of (entered payment-confirmed + 6 days) or booking start.
+  ;; BUG FIX: Previously used fn/min with booking-start, which caused immediate expiry because
+  ;; booking-start for subscription-rental is always set to "today" at payment time.
+  ;; Now uses a fixed 6-day window from entering payment-confirmed, giving the merchant time to respond.
   {:name :transition/expire-acceptance,
    :at
-   {:fn/min
-    [{:fn/plus
-      [{:fn/timepoint [:time/first-entered-state :state/payment-confirmed]}
-       {:fn/period ["P6D"]}]}
-     {:fn/timepoint [:time/booking-start]}]},
+   {:fn/plus
+    [{:fn/timepoint [:time/first-entered-state :state/payment-confirmed]}
+     {:fn/period ["P6D"]}]},
    :actions
    [{:name :action/calculate-full-refund}
     {:name :action/stripe-refund-payment}
