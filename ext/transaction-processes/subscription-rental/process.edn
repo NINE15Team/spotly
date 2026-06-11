@@ -113,7 +113,11 @@
    :to :state/cancelled,
    :privileged? true}],
  :notifications
- [{:name :notification/subscription-requested-provider,
+ [{:name :notification/subscription-request-received-customer,
+   :on :transition/confirm-payment,
+   :to :actor.role/customer,
+   :template :subscription-request-received-customer}
+  {:name :notification/subscription-requested-provider,
    :on :transition/confirm-payment,
    :to :actor.role/provider,
    :template :subscription-requested-provider}
@@ -121,14 +125,34 @@
    :on :transition/accept-subscription,
    :to :actor.role/customer,
    :template :subscription-confirmed-customer}
+  {:name :notification/subscription-accepted-provider,
+   :on :transition/accept-subscription,
+   :to :actor.role/provider,
+   :template :subscription-accepted-provider}
   {:name :notification/subscription-declined-customer,
    :on :transition/decline-subscription,
    :to :actor.role/customer,
-   :template :subscription-cancelled}
+   :template :subscription-declined-customer}
+  {:name :notification/subscription-declined-provider,
+   :on :transition/decline-subscription,
+   :to :actor.role/provider,
+   :template :subscription-declined-provider}
   {:name :notification/subscription-acceptance-expired-customer,
    :on :transition/expire-acceptance,
    :to :actor.role/customer,
-   :template :subscription-expired}
+   :template :subscription-acceptance-expired-customer}
+  {:name :notification/subscription-acceptance-expired-provider,
+   :on :transition/expire-acceptance,
+   :to :actor.role/provider,
+   :template :subscription-acceptance-expired-provider}
+  {:name :notification/subscription-aborted-customer,
+   :on :transition/abort-subscription,
+   :to :actor.role/customer,
+   :template :subscription-aborted-customer}
+  {:name :notification/subscription-aborted-provider,
+   :on :transition/abort-subscription,
+   :to :actor.role/provider,
+   :template :subscription-aborted-provider}
   {:name :notification/subscription-confirmed-customer,
    :on :transition/confirm-subscription,
    :to :actor.role/customer,
@@ -137,10 +161,26 @@
    :on :transition/confirm-subscription,
    :to :actor.role/provider,
    :template :subscription-confirmed-provider}
+  {:name :notification/subscription-renewed-customer,
+   :on :transition/extend-subscription,
+   :to :actor.role/customer,
+   :template :subscription-renewed-customer}
   {:name :notification/subscription-payment-failed,
    :on :transition/payment-overdue,
    :to :actor.role/customer,
    :template :subscription-payment-failed}
+  {:name :notification/subscription-payment-failed-provider,
+   :on :transition/payment-overdue,
+   :to :actor.role/provider,
+   :template :subscription-payment-failed-provider}
+  {:name :notification/subscription-reactivated-customer,
+   :on :transition/reactivate-subscription,
+   :to :actor.role/customer,
+   :template :subscription-reactivated-customer}
+  {:name :notification/subscription-reactivated-provider,
+   :on :transition/reactivate-subscription,
+   :to :actor.role/provider,
+   :template :subscription-reactivated-provider}
   {:name :notification/subscription-cancelled-customer,
    :on :transition/cancel-subscription,
    :to :actor.role/customer,
@@ -149,6 +189,14 @@
    :on :transition/cancel-subscription,
    :to :actor.role/provider,
    :template :subscription-cancelled}
+  {:name :notification/subscription-cancelled-from-overdue-customer,
+   :on :transition/cancel-subscription-from-overdue,
+   :to :actor.role/customer,
+   :template :subscription-cancelled-from-overdue-customer}
+  {:name :notification/subscription-cancelled-from-overdue-provider,
+   :on :transition/cancel-subscription-from-overdue,
+   :to :actor.role/provider,
+   :template :subscription-cancelled-from-overdue-provider}
   {:name :notification/subscription-expired-customer,
    :on :transition/expire,
    :to :actor.role/customer,

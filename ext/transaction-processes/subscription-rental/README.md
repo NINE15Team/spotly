@@ -75,15 +75,22 @@ operator fallback (`confirm-subscription`) still runs via the Integration API
 
 ## Email templates
 
-`subscription-requested-provider` notifies the provider on `confirm-payment` that a request awaits
-approval. Acceptance reuses `subscription-confirmed-customer`; decline reuses `subscription-cancelled`;
-the acceptance timeout reuses `subscription-expired`.
+23 notifications are defined in `process.edn` covering checkout, approval, renewal, payment
+failure, cancellation, and expiry. Templates live in `templates/` (20 template families).
+
+Notable flows:
+- `confirm-payment` → customer (`subscription-request-received-customer`) + provider (`subscription-requested-provider`)
+- `accept-subscription` / `decline-subscription` → dedicated customer and provider templates (no longer reusing generic cancelled/expired for decline/timeout)
+- `extend-subscription` → monthly renewal receipt (`subscription-renewed-customer`)
+- `payment-overdue` / `reactivate-subscription` / `cancel-subscription-from-overdue` / `abort-subscription` → both parties notified where applicable
+
+Full matrix: [docs/subscription-email-notifications.md](../../../docs/subscription-email-notifications.md)
 
 See: [Sharetribe booking acceptance](https://www.sharetribe.com/docs/concepts/payments/payments-with-stripe/#provider-acceptance)
 
 ## Deploy (Dev)
 
-**Marketplace:** `alpsalpinerentaspot-dev` · **Active alias:** `subscription-rental/release-4` (points to process version 4)
+**Marketplace:** `alpsalpinerentaspot-dev` · **Active alias:** `subscription-rental/release-5` (points to process version 5)
 
 First-time create (done):
 
@@ -100,10 +107,12 @@ Later updates (push, then create a new alias — `release-1` cannot be reassigne
 flex-cli process push --process subscription-rental \
   --path ext/transaction-processes/subscription-rental -m alpsalpinerentaspot-dev
 flex-cli process create-alias -m alpsalpinerentaspot-dev \
-  --process subscription-rental --version <latest> --alias release-4
+  --process subscription-rental --version <latest> --alias release-5
 ```
 
-Then attach `subscription-rental/release-4` to the subscription listing type in Sharetribe Console (and re-save listings that still have `release-1` in public data).
+Then attach `subscription-rental/release-5` to the subscription listing type in Sharetribe Console (and re-save listings that still have an older alias in public data).
+
+See [docs/subscription-process-alias.md](../../../docs/subscription-process-alias.md) for every code location to update on the next alias bump.
 
 ## Web Template
 

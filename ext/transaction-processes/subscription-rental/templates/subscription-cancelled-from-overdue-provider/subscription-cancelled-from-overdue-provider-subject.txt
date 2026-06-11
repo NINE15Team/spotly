@@ -1,0 +1,1 @@
+{{set-translations (asset "content/email-texts.json")}}{{t "SubscriptionCancelledFromOverdueProvider.Subject" "A subscription for {listingTitle} was cancelled" listingTitle=transaction.listing.title}}

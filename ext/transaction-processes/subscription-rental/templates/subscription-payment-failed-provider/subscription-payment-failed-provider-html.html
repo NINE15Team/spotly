@@ -14,9 +14,9 @@
           <table align="center" role="presentation" cellSpacing="0" cellPadding="0" border="0" width="100%" style="max-width:600px;margin:0 auto">
             <tr>
               <td>
-                <h1 style="color:#484848;font-size:26px;line-height:1.3;font-weight:700">{{t "SubscriptionConfirmedCustomer.Title" "Subscription confirmed"}}</h1>
-                <p style="font-size:16px;line-height:1.4;margin:16px 0;color:#484848">{{t "SubscriptionConfirmedCustomer.Description" "Your monthly subscription for {listingTitle} on {marketplaceName} is now active. Billing renews on the same day each month." listingTitle=listing.title marketplaceName=marketplace.name}}</p>
-                <p style="font-size:16px;line-height:1.4;margin:16px 0;color:#484848"><a href="{{marketplace.url}}/order/{{url-encode id}}">{{t "SubscriptionConfirmedCustomer.Cta" "View subscription"}}</a></p>
+                <h1 style="color:#484848;font-size:26px;line-height:1.3;font-weight:700">{{t "SubscriptionPaymentFailedProvider.Title" "Subscription payment failed"}}</h1>
+                <p style="font-size:16px;line-height:1.4;margin:16px 0;color:#484848">{{t "SubscriptionPaymentFailedProvider.Description" "A payment failed for {customerDisplayName}'s subscription on {listingTitle}. Stripe is retrying. If it continues to fail, the subscription may be cancelled." customerDisplayName=customer.display-name listingTitle=listing.title}}</p>
+                <p style="font-size:16px;line-height:1.4;margin:16px 0;color:#484848"><a href="{{marketplace.url}}/sale/{{url-encode id}}">{{t "SubscriptionPaymentFailedProvider.Cta" "View subscription"}}</a></p>
               </td>
             </tr>
           </table>

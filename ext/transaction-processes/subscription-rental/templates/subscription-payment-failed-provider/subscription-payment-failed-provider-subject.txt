@@ -1,0 +1,1 @@
+{{set-translations (asset "content/email-texts.json")}}{{t "SubscriptionPaymentFailedProvider.Subject" "Payment failed for a subscription on {listingTitle}" listingTitle=transaction.listing.title}}

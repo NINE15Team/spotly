@@ -232,7 +232,7 @@ describe('transaction utils for default-booking', () => {
 });
 
 describe('transaction utils for subscription-rental', () => {
-  const SUBSCRIPTION_ALIAS = `${SUBSCRIPTION_PROCESS_NAME}/release-4`;
+  const SUBSCRIPTION_ALIAS = `${SUBSCRIPTION_PROCESS_NAME}/release-5`;
   const process = getProcess(SUBSCRIPTION_PROCESS_NAME);
   const transitions = process?.transitions;
 
@@ -251,7 +251,7 @@ describe('transaction utils for subscription-rental', () => {
   });
 
   describe('resolveTransactionProcessAlias', () => {
-    it('upgrades stale subscription-rental/release-1 to release-4', () => {
+    it('upgrades stale subscription-rental/release-1 to release-5', () => {
       expect(resolveTransactionProcessAlias('subscription-rental/release-1')).toBe(SUBSCRIPTION_ALIAS);
     });
     it('keeps the current subscription alias unchanged', () => {
