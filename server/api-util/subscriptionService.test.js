@@ -25,16 +25,19 @@ jest.mock('./integrationSdk', () => {
   };
 });
 
-jest.mock('./subscriptionStripe', () => ({
-  getPaymentIntentIdFromProtectedData: jest.fn(),
-  capturePaymentIntentIfNeeded: jest.fn().mockResolvedValue({}),
-  getPaymentMethodIdFromPaymentIntent: jest.fn().mockResolvedValue('pm_123'),
-  createStripeCustomer: jest.fn().mockResolvedValue({ id: 'cus_123' }),
-  findOrCreateStripeCustomer: jest.fn().mockResolvedValue({ id: 'cus_123' }),
-  createMonthlyStripePrice: jest.fn().mockResolvedValue({ id: 'price_123' }),
-  createStripeSubscription: jest.fn().mockResolvedValue({ id: 'sub_123' }),
-  cancelStripeSubscriptionAtPeriodEnd: jest.fn().mockResolvedValue({}),
-}));
+jest.mock('./subscriptionStripe', () => {
+  const actual = jest.requireActual('./subscriptionStripe');
+  return {
+    ...actual,
+    getPaymentIntentIdFromProtectedData: jest.fn(),
+    capturePaymentIntentIfNeeded: jest.fn().mockResolvedValue({}),
+    getPaymentMethodIdFromPaymentIntent: jest.fn().mockResolvedValue('pm_123'),
+    resolveSubscriptionStripeCustomer: jest.fn(),
+    createMonthlyStripePrice: jest.fn().mockResolvedValue({ id: 'price_123' }),
+    createStripeSubscription: jest.fn().mockResolvedValue({ id: 'sub_123' }),
+    cancelStripeSubscriptionAtPeriodEnd: jest.fn().mockResolvedValue({}),
+  };
+});
 
 const integrationSdk = require('./integrationSdk');
 const subscriptionStripe = require('./subscriptionStripe');
@@ -97,8 +100,9 @@ beforeEach(() => {
   jest.clearAllMocks();
   subscriptionStripe.getPaymentIntentIdFromProtectedData.mockReturnValue('pi_123');
   subscriptionStripe.getPaymentMethodIdFromPaymentIntent.mockResolvedValue('pm_123');
-  subscriptionStripe.createStripeCustomer.mockResolvedValue({ id: 'cus_123' });
-  subscriptionStripe.findOrCreateStripeCustomer.mockResolvedValue({ id: 'cus_123' });
+  subscriptionStripe.resolveSubscriptionStripeCustomer.mockImplementation(
+    async ({ existingCustomerId }) => existingCustomerId || 'cus_123'
+  );
   subscriptionStripe.createMonthlyStripePrice.mockResolvedValue({ id: 'price_123' });
   subscriptionStripe.createStripeSubscription.mockResolvedValue({ id: 'sub_123' });
 });
@@ -154,9 +158,56 @@ describe('activateSubscription', () => {
 
     const result = await activateSubscription({ uuid: 'tx-1' });
 
-    expect(subscriptionStripe.createStripeCustomer).not.toHaveBeenCalled();
-    expect(subscriptionStripe.findOrCreateStripeCustomer).not.toHaveBeenCalled();
+    expect(subscriptionStripe.resolveSubscriptionStripeCustomer).toHaveBeenCalledWith(
+      expect.objectContaining({ existingCustomerId: 'cus_existing' })
+    );
     expect(result.stripeCustomerId).toBe('cus_existing');
+  });
+
+  it('persists stripeCustomerId before creating the subscription', async () => {
+    mockShowTransaction(buildTransaction());
+
+    await activateSubscription({ uuid: 'tx-1' });
+
+    expect(integrationSdk.updateTransactionMetadata).toHaveBeenCalledWith(
+      { uuid: 'tx-1' },
+      { [METADATA_KEYS.STRIPE_CUSTOMER_ID]: 'cus_123' }
+    );
+    const firstMetadataCallOrder =
+      integrationSdk.updateTransactionMetadata.mock.invocationCallOrder[0];
+    const subscriptionCallOrder = subscriptionStripe.createStripeSubscription.mock.invocationCallOrder[0];
+    expect(firstMetadataCallOrder).toBeLessThan(subscriptionCallOrder);
+  });
+
+  it('resolves the customer from the payment method without creating a duplicate', async () => {
+    mockShowTransaction(buildTransaction());
+    subscriptionStripe.resolveSubscriptionStripeCustomer.mockResolvedValue('cus_from_pm');
+
+    const result = await activateSubscription({ uuid: 'tx-1' });
+
+    expect(subscriptionStripe.resolveSubscriptionStripeCustomer).toHaveBeenCalledWith(
+      expect.objectContaining({
+        paymentMethodId: 'pm_123',
+        paymentIntentId: 'pi_123',
+      })
+    );
+    expect(result.stripeCustomerId).toBe('cus_from_pm');
+  });
+
+  it('maps Stripe card_declined to HTTP 402', async () => {
+    mockShowTransaction(buildTransaction());
+    subscriptionStripe.createStripeSubscription.mockRejectedValue({
+      type: 'StripeCardError',
+      code: 'card_declined',
+      decline_code: 'insufficient_funds',
+      message: 'Your card has insufficient funds.',
+    });
+
+    await expect(activateSubscription({ uuid: 'tx-1' })).rejects.toMatchObject({
+      status: 402,
+      message: 'Your card has insufficient funds.',
+      code: 'insufficient_funds',
+    });
   });
 
   it('throws when the transaction is not in confirm-payment state', async () => {

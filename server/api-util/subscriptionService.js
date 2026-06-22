@@ -14,10 +14,11 @@ const {
   getPaymentIntentIdFromProtectedData,
   capturePaymentIntentIfNeeded,
   getPaymentMethodIdFromPaymentIntent,
-  findOrCreateStripeCustomer,
+  resolveSubscriptionStripeCustomer,
   createMonthlyStripePrice,
   createStripeSubscription,
   cancelStripeSubscriptionAtPeriodEnd,
+  rethrowStripeError,
 } = require('./subscriptionStripe');
 const { getFirstPeriodEnd, getNextPeriodEnd } = require('./subscriptionDates');
 
@@ -200,66 +201,74 @@ const activateSubscription = async (transactionId, options = {}) => {
 
   // Create Stripe billing only if it has not been created yet (idempotent).
   if (!stripeSubscriptionId) {
-    const paymentMethodId = await getPaymentMethodIdFromPaymentIntent(paymentIntentId);
-    if (!paymentMethodId) {
-      const error = new Error('Payment method not found on PaymentIntent.');
-      error.status = 400;
-      throw error;
-    }
+    try {
+      const paymentMethodId = await getPaymentMethodIdFromPaymentIntent(paymentIntentId);
+      if (!paymentMethodId) {
+        const error = new Error('Payment method not found on PaymentIntent.');
+        error.status = 400;
+        throw error;
+      }
 
-    const customerRef = transaction.relationships?.customer?.data;
-    const listingRef = transaction.relationships?.listing?.data;
-    const customer = getRelationship(apiData.included, 'user', customerRef);
-    const { listing, monthlyAmount } = await resolveListingForTransaction(apiData, listingRef);
-    const booking = getBookingFromTransactionResponse(apiData);
+      const customerRef = transaction.relationships?.customer?.data;
+      const listingRef = transaction.relationships?.listing?.data;
+      const customer = getRelationship(apiData.included, 'user', customerRef);
+      const { listing, monthlyAmount } = await resolveListingForTransaction(apiData, listingRef);
+      const booking = getBookingFromTransactionResponse(apiData);
 
-    const bookingStart = booking?.attributes?.start;
+      const bookingStart = booking?.attributes?.start;
 
-    const customerEmail = customer?.attributes?.email;
-    const customerName = customer?.attributes?.profile?.displayName;
-    const sharetribeUserId = customer?.id?.uuid;
+      const customerEmail = customer?.attributes?.email;
+      const customerName = customer?.attributes?.profile?.displayName;
+      const sharetribeUserId = customer?.id?.uuid;
 
-    if (!stripeCustomerId) {
-      // findOrCreateStripeCustomer searches Stripe by metadata.sharetribeUserId first,
-      // so repeated Accept attempts and multiple subscriptions all reuse one customer.
-      const stripeCustomer = await findOrCreateStripeCustomer({
+      stripeCustomerId = await resolveSubscriptionStripeCustomer({
+        paymentMethodId,
+        paymentIntentId,
+        existingCustomerId: stripeCustomerId,
         email: customerEmail,
         name: customerName,
         sharetribeUserId,
       });
-      stripeCustomerId = stripeCustomer.id;
+
+      if (!metadata[METADATA_KEYS.STRIPE_CUSTOMER_ID]) {
+        await updateTransactionMetadata(transaction.id, {
+          [METADATA_KEYS.STRIPE_CUSTOMER_ID]: stripeCustomerId,
+        });
+      }
+
+      const currency = payinTotal?.currency || listing?.attributes?.price?.currency;
+      const listingTitle = listing?.attributes?.title || 'Subscription';
+
+      if (!monthlyAmount) {
+        const error = new Error('Listing monthly price not found for Stripe subscription.');
+        error.status = 400;
+        throw error;
+      }
+
+      const stripePrice = await createMonthlyStripePrice({
+        amount: monthlyAmount,
+        currency,
+        productName: listingTitle,
+        listingId: getUuidFromRef(listing?.id),
+      });
+
+      const stripeSubscription = await createStripeSubscription({
+        customerId: stripeCustomerId,
+        priceId: stripePrice.id,
+        paymentMethodId,
+        bookingStart,
+        sharetribeTransactionId: transaction.id.uuid,
+      });
+      stripeSubscriptionId = stripeSubscription.id;
+
+      await updateTransactionMetadata(transaction.id, {
+        [METADATA_KEYS.STRIPE_CUSTOMER_ID]: stripeCustomerId,
+        [METADATA_KEYS.STRIPE_SUBSCRIPTION_ID]: stripeSubscriptionId,
+        [METADATA_KEYS.STRIPE_PRICE_ID]: stripePrice.id,
+      });
+    } catch (error) {
+      rethrowStripeError(error);
     }
-
-    const currency = payinTotal?.currency || listing?.attributes?.price?.currency;
-    const listingTitle = listing?.attributes?.title || 'Subscription';
-
-    if (!monthlyAmount) {
-      const error = new Error('Listing monthly price not found for Stripe subscription.');
-      error.status = 400;
-      throw error;
-    }
-
-    const stripePrice = await createMonthlyStripePrice({
-      amount: monthlyAmount,
-      currency,
-      productName: listingTitle,
-      listingId: getUuidFromRef(listing?.id),
-    });
-
-    const stripeSubscription = await createStripeSubscription({
-      customerId: stripeCustomerId,
-      priceId: stripePrice.id,
-      paymentMethodId,
-      bookingStart,
-      sharetribeTransactionId: transaction.id.uuid,
-    });
-    stripeSubscriptionId = stripeSubscription.id;
-
-    await updateTransactionMetadata(transaction.id, {
-      [METADATA_KEYS.STRIPE_CUSTOMER_ID]: stripeCustomerId,
-      [METADATA_KEYS.STRIPE_SUBSCRIPTION_ID]: stripeSubscriptionId,
-      [METADATA_KEYS.STRIPE_PRICE_ID]: stripePrice.id,
-    });
   }
 
   await runProcessTransition({

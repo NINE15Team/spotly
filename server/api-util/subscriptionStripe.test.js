@@ -11,6 +11,8 @@ const {
   createStripeSubscription,
   cancelStripeSubscriptionAtPeriodEnd,
   createBillingPortalSession,
+  resolveSubscriptionStripeCustomer,
+  mapStripeErrorToHttpError,
 } = require('./subscriptionStripe');
 const moment = require('moment');
 
@@ -139,15 +141,47 @@ describe('createStripeSubscription', () => {
   let stripe;
   beforeEach(() => {
     stripe = {
-      paymentMethods: { attach: jest.fn().mockResolvedValue({}) },
+      paymentMethods: {
+        retrieve: jest.fn(),
+        attach: jest.fn().mockResolvedValue({}),
+      },
       customers: { update: jest.fn().mockResolvedValue({}) },
       subscriptions: { create: jest.fn().mockResolvedValue({ id: 'sub_123' }) },
     };
     getStripe.mockReturnValue(stripe);
   });
 
-  it('attaches the payment method, sets it as default and creates a trialed subscription', async () => {
-    const bookingStart = new Date(2026, 1, 15); // Feb 15 local
+  it('skips attach when the payment method already belongs to a customer', async () => {
+    stripe.paymentMethods.retrieve.mockResolvedValue({
+      id: 'pm_1',
+      customer: 'cus_owner',
+    });
+    const bookingStart = new Date(2026, 1, 15);
+
+    const result = await createStripeSubscription({
+      customerId: 'cus_new',
+      priceId: 'price_1',
+      paymentMethodId: 'pm_1',
+      bookingStart,
+      sharetribeTransactionId: 'tx-1',
+    });
+
+    expect(stripe.paymentMethods.attach).not.toHaveBeenCalled();
+    expect(stripe.customers.update).toHaveBeenCalledWith('cus_owner', {
+      invoice_settings: { default_payment_method: 'pm_1' },
+    });
+    expect(stripe.subscriptions.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        customer: 'cus_owner',
+        default_payment_method: 'pm_1',
+      })
+    );
+    expect(result.id).toBe('sub_123');
+  });
+
+  it('attaches an unattached payment method and creates a trialed subscription', async () => {
+    stripe.paymentMethods.retrieve.mockResolvedValue({ id: 'pm_1', customer: null });
+    const bookingStart = new Date(2026, 1, 15);
 
     const result = await createStripeSubscription({
       customerId: 'cus_1',
@@ -173,6 +207,104 @@ describe('createStripeSubscription', () => {
       })
     );
     expect(result.id).toBe('sub_123');
+  });
+});
+
+describe('resolveSubscriptionStripeCustomer', () => {
+  let stripe;
+  beforeEach(() => {
+    stripe = {
+      paymentMethods: { retrieve: jest.fn() },
+      paymentIntents: { retrieve: jest.fn() },
+      customers: {
+        search: jest.fn().mockResolvedValue({ data: [] }),
+        create: jest.fn().mockResolvedValue({ id: 'cus_created' }),
+      },
+    };
+    getStripe.mockReturnValue(stripe);
+  });
+
+  it('returns an existing customer id without calling Stripe', async () => {
+    const customerId = await resolveSubscriptionStripeCustomer({
+      paymentMethodId: 'pm_1',
+      existingCustomerId: 'cus_existing',
+    });
+
+    expect(customerId).toBe('cus_existing');
+    expect(stripe.paymentMethods.retrieve).not.toHaveBeenCalled();
+  });
+
+  it('returns the payment method owner without creating a customer', async () => {
+    stripe.paymentMethods.retrieve.mockResolvedValue({ id: 'pm_1', customer: 'cus_from_pm' });
+
+    const customerId = await resolveSubscriptionStripeCustomer({
+      paymentMethodId: 'pm_1',
+      email: 'buyer@example.com',
+      sharetribeUserId: 'user-1',
+    });
+
+    expect(customerId).toBe('cus_from_pm');
+    expect(stripe.customers.create).not.toHaveBeenCalled();
+    expect(stripe.customers.search).not.toHaveBeenCalled();
+  });
+
+  it('falls back to findOrCreateStripeCustomer when the PM and PI have no customer', async () => {
+    stripe.paymentMethods.retrieve.mockResolvedValue({ id: 'pm_1', customer: null });
+    stripe.paymentIntents.retrieve.mockResolvedValue({ id: 'pi_1', customer: null });
+    stripe.customers.search.mockResolvedValue({ data: [{ id: 'cus_found' }] });
+
+    const customerId = await resolveSubscriptionStripeCustomer({
+      paymentMethodId: 'pm_1',
+      paymentIntentId: 'pi_1',
+      email: 'buyer@example.com',
+      sharetribeUserId: 'user-1',
+    });
+
+    expect(customerId).toBe('cus_found');
+    expect(stripe.customers.create).not.toHaveBeenCalled();
+  });
+});
+
+describe('mapStripeErrorToHttpError', () => {
+  it('maps card_declined to HTTP 402', () => {
+    const stripeError = {
+      type: 'StripeCardError',
+      code: 'card_declined',
+      decline_code: 'insufficient_funds',
+      message: 'Your card has insufficient funds.',
+    };
+
+    const httpError = mapStripeErrorToHttpError(stripeError);
+
+    expect(httpError.status).toBe(402);
+    expect(httpError.message).toBe('Your card has insufficient funds.');
+    expect(httpError.code).toBe('insufficient_funds');
+  });
+
+  it('maps invalid_request_error to HTTP 400', () => {
+    const stripeError = {
+      type: 'StripeInvalidRequestError',
+      code: 'resource_missing',
+      message: 'No such payment_method.',
+    };
+
+    const httpError = mapStripeErrorToHttpError(stripeError);
+
+    expect(httpError.status).toBe(400);
+    expect(httpError.message).toBe('No such payment_method.');
+  });
+
+  it('maps unknown Stripe errors to HTTP 502', () => {
+    const stripeError = {
+      type: 'StripeAPIError',
+      code: 'api_error',
+      message: 'Stripe is down.',
+    };
+
+    const httpError = mapStripeErrorToHttpError(stripeError);
+
+    expect(httpError.status).toBe(502);
+    expect(httpError.message).toMatch(/billing failed/i);
   });
 });
 
