@@ -733,6 +733,7 @@
   "OrderBreakdown.refundCustomerFee": "Refund {marketplaceName} fee",
   "OrderBreakdown.refundProviderFee": "Refund {marketplaceName} fee",
   "OrderBreakdown.salesTax": "Sales tax",
+  "OrderBreakdown.salesTaxCalculatedAtCheckout": "Calculated at checkout",
   "OrderBreakdown.shippingFee": "Shipping",
   "OrderBreakdown.subTotal": "Subtotal",
   "OrderBreakdown.total": "Total price",

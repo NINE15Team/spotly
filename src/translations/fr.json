@@ -717,6 +717,8 @@
   "OrderBreakdown.refund": "Remboursement",
   "OrderBreakdown.refundCustomerFee": "Rembourser les frais {marketplaceName}",
   "OrderBreakdown.refundProviderFee": "Rembourser les frais {marketplaceName}",
+  "OrderBreakdown.salesTax": "Taxe de vente",
+  "OrderBreakdown.salesTaxCalculatedAtCheckout": "Calculé au moment du paiement",
   "OrderBreakdown.shippingFee": "Transport",
   "OrderBreakdown.subTotal": "Sous-total",
   "OrderBreakdown.total": "Prix total",

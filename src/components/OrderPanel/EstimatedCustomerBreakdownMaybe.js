@@ -33,6 +33,7 @@ import { FormattedMessage } from '../../util/reactIntl';
 import { LINE_ITEM_DAY, LINE_ITEM_NIGHT, LISTING_UNIT_TYPES } from '../../util/types';
 import { unitDivisor, convertMoneyToNumber, convertUnitToSubUnit } from '../../util/currency';
 import { getProcess, TX_TRANSITION_ACTOR_CUSTOMER } from '../../transactions/transaction';
+import { salesTaxEnabled } from '../../config/configStripe';
 
 import { OrderBreakdown } from '../../components';
 
@@ -168,6 +169,7 @@ const EstimatedCustomerBreakdownMaybe = props => {
       timeZone={timeZone}
       currency={currency}
       marketplaceName={marketplaceName}
+      showEstimatedSalesTax={salesTaxEnabled}
     />
   ) : null;
 };
