@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { compose } from 'redux';
 import { connect } from 'react-redux';
 import { useHistory } from 'react-router-dom';
@@ -70,6 +70,11 @@ const getProcessName = pageData => {
 const EnhancedCheckoutPage = props => {
   const [pageData, setPageData] = useState({});
   const [isDataLoaded, setIsDataLoaded] = useState(false);
+  // Latch: has the initial speculative transaction fetch completed at least once?
+  // Needed so that tax-address driven re-speculations (Stripe Tax) don't unmount
+  // the payment form by falling back to the full-page spinner.
+  const [initialSpeculationDone, setInitialSpeculationDone] = useState(false);
+  const speculationStartedRef = useRef(false);
   const config = useConfiguration();
   const routeConfiguration = useRouteConfiguration();
   const intl = useIntl();
@@ -112,6 +117,14 @@ const EnhancedCheckoutPage = props => {
     onInquiryWithoutPayment,
     initiateOrderError,
   } = props;
+
+  useEffect(() => {
+    if (speculateTransactionInProgress) {
+      speculationStartedRef.current = true;
+    } else if (speculationStartedRef.current && !initialSpeculationDone) {
+      setInitialSpeculationDone(true);
+    }
+  }, [speculateTransactionInProgress]);
   const processName = getProcessName(pageData);
   const isInquiryProcess = processName === INQUIRY_PROCESS_NAME;
 
@@ -192,7 +205,9 @@ const EnhancedCheckoutPage = props => {
       transactionFieldConfigs={transactionFieldConfigs}
       {...props}
     />
-  ) : processName && !isInquiryProcess && !speculateTransactionInProgress ? (
+  ) : processName &&
+    !isInquiryProcess &&
+    (!speculateTransactionInProgress || initialSpeculationDone) ? (
     <CheckoutPageWithPayment
       config={config}
       routeConfiguration={routeConfiguration}

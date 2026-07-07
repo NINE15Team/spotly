@@ -258,6 +258,9 @@ const activateSubscription = async (transactionId, options = {}) => {
         paymentMethodId,
         bookingStart,
         sharetribeTransactionId: transaction.id.uuid,
+        // Renter's tax address collected at checkout — enables Stripe Tax
+        // (automatic_tax) on recurring renewal invoices.
+        taxAddress: protectedData.taxAddress || protectedData.shippingDetails?.address || null,
       });
       stripeSubscriptionId = stripeSubscription.id;
 
@@ -342,11 +345,32 @@ const extendSubscriptionPeriod = async transaction => {
   });
 };
 
-const handleInvoicePaid = async stripeSubscriptionId => {
+const handleInvoicePaid = async (stripeSubscriptionId, invoice = null) => {
   const transaction = await findTransactionByStripeSubscriptionId(stripeSubscriptionId);
   if (!transaction) {
     log.warn('invoice.paid: no transaction for subscription', { stripeSubscriptionId });
     return;
+  }
+
+  // Persist the renewal invoice's tax breakdown (Stripe Tax automatic_tax) on
+  // the Sharetribe transaction so records match what was actually charged.
+  if (invoice) {
+    try {
+      await updateTransactionMetadata(transaction.id, {
+        lastRenewalInvoice: {
+          invoiceId: invoice.id,
+          totalCents: invoice.total ?? null,
+          taxCents: invoice.tax ?? invoice.total_taxes?.[0]?.amount ?? null,
+          currency: invoice.currency || null,
+          periodEnd: invoice.period_end || null,
+        },
+      });
+    } catch (e) {
+      log.error(e, 'invoice-paid-tax-metadata-failed', {
+        stripeSubscriptionId,
+        invoiceId: invoice.id,
+      });
+    }
   }
 
   const lastTransition = transaction.attributes.lastTransition;

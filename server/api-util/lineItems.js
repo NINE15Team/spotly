@@ -7,6 +7,7 @@ const {
 } = require('./lineItemHelpers');
 const { isSubscriptionProcess } = require('./subscriptionConstants');
 const { subscriptionTransactionLineItems } = require('./subscriptionLineItems');
+const { calculateSalesTax, appendSalesTaxToLineItems } = require('./tax');
 const { types } = require('sharetribe-flex-sdk');
 const { Money } = types;
 
@@ -248,4 +249,53 @@ exports.transactionLineItems = (listing, orderData, providerCommission, customer
   ];
 
   return lineItems;
+};
+
+/**
+ * Compute transaction line items and append a Stripe Tax sales-tax line item.
+ *
+ * Works for both processes:
+ * - default-booking / default-purchase / default-negotiation via transactionLineItems
+ * - subscription-rental first payment via the subscription branch inside
+ *   transactionLineItems (orderData.processAlias)
+ *
+ * The customer's tax address travels in orderData (taxAddress or
+ * protectedData.taxAddress). If tax is disabled, no address is available, or
+ * Stripe returns $0, the original line items are returned unchanged.
+ *
+ * @param {Object} listing
+ * @param {Object} orderData
+ * @param {Object} providerCommission
+ * @param {Object} customerCommission
+ * @returns {Promise<{lineItems: Array, taxCalculationId: string|null}>}
+ */
+exports.transactionLineItemsWithTax = async (
+  listing,
+  orderData,
+  providerCommission,
+  customerCommission
+) => {
+  const lineItems = exports.transactionLineItems(
+    listing,
+    orderData,
+    providerCommission,
+    customerCommission
+  );
+
+  const currency =
+    lineItems[0]?.unitPrice?.currency ||
+    listing?.attributes?.price?.currency ||
+    orderData?.currency;
+
+  const taxResult = await calculateSalesTax({
+    lineItems,
+    orderData,
+    currency,
+    listingId: listing?.id?.uuid,
+  });
+
+  return {
+    lineItems: appendSalesTaxToLineItems(lineItems, taxResult, currency),
+    taxCalculationId: taxResult?.calculationId || null,
+  };
 };

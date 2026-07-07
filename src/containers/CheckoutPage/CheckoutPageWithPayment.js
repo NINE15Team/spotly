@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 
 // Import contexts and util modules
 import { FormattedMessage, intlShape } from '../../util/reactIntl';
@@ -32,6 +32,7 @@ import {
   getBillingDetails,
   getFormattedTotalPrice,
   getShippingDetailsMaybe,
+  getTaxAddressMaybe,
   getTransactionTypeData,
   hasDefaultPaymentMethod,
   hasPaymentExpired,
@@ -114,7 +115,8 @@ const getOrderParams = (
   optionalPaymentParams,
   config,
   transactionFieldProtectedData,
-  customerDefaultMessage
+  customerDefaultMessage,
+  taxAddressMaybe = {}
 ) => {
   const quantity = pageData.orderData?.quantity;
   const quantityMaybe = quantity ? { quantity } : {};
@@ -137,6 +139,10 @@ const getOrderParams = (
       ...getTransactionTypeData(listingType, unitType, config),
       ...deliveryMethodMaybe,
       ...shippingDetails,
+      // Customer's tax address for Stripe Tax (customer-address sourcing).
+      // Carried in protectedData so it reaches the server before line items
+      // are computed, and stays on the transaction for subscription renewals.
+      ...taxAddressMaybe,
       ...priceVariantMaybe,
       ...transactionFieldProtectedData,
       ...customerDefaultMessageMaybe,
@@ -324,6 +330,9 @@ const handleSubmit = (values, process, props, stripe, submitting, setSubmitting)
       ? { setupPaymentMethodForSaving: true }
       : {};
 
+  // Customer's tax address for Stripe Tax (from shipping details or billing address)
+  const taxAddressMaybe = config.stripe?.salesTaxEnabled ? getTaxAddressMaybe(formValues) : {};
+
   // These are the order parameters for the first payment-related transition
   // which is either initiate-transition or initiate-transition-after-enquiry
   const orderParams = getOrderParams(
@@ -332,7 +341,8 @@ const handleSubmit = (values, process, props, stripe, submitting, setSubmitting)
     optionalPaymentParams,
     config,
     transactionFieldsProtectedData,
-    message
+    message,
+    taxAddressMaybe
   );
 
   // There are multiple XHR calls that needs to be made against Stripe API and Sharetribe Marketplace API on checkout with payments
@@ -423,6 +433,11 @@ export const CheckoutPageWithPayment = props => {
   const [submitting, setSubmitting] = useState(false);
   // Initialized stripe library is saved to state - if it's needed at some point here too.
   const [stripe, setStripe] = useState(null);
+  // Customer tax address tracking (Stripe Tax, customer-address sourcing):
+  // when the address in the payment form becomes complete or changes, the
+  // speculative transaction is re-fetched so the breakdown shows the tax line.
+  const taxAddressRef = useRef(null);
+  const taxAddressDebounceRef = useRef(null);
 
   const {
     scrollingDisabled,
@@ -445,7 +460,35 @@ export const CheckoutPageWithPayment = props => {
     transactionFieldConfigs = [],
     showTransactionFields,
     config,
+    fetchSpeculatedTransaction,
   } = props;
+
+  const isTaxEnabled = !!config.stripe?.salesTaxEnabled;
+
+  // Called (via FormSpy) whenever the payment form values change. When the
+  // customer's tax address becomes complete or changes, re-fetch the
+  // speculative transaction so the order breakdown includes the sales-tax
+  // line item before the customer submits the payment.
+  const handlePaymentFormValuesChange = formValues => {
+    if (!isTaxEnabled || !fetchSpeculatedTransaction) {
+      return;
+    }
+    const { taxAddress = null } = getTaxAddressMaybe(formValues);
+    const key = JSON.stringify(taxAddress);
+    if (key === JSON.stringify(taxAddressRef.current)) {
+      return;
+    }
+    taxAddressRef.current = taxAddress;
+
+    if (taxAddressDebounceRef.current) {
+      clearTimeout(taxAddressDebounceRef.current);
+    }
+    taxAddressDebounceRef.current = setTimeout(() => {
+      const taxAddressMaybe = taxAddress ? { taxAddress } : {};
+      const orderParams = getOrderParams(pageData, {}, {}, config, {}, null, taxAddressMaybe);
+      fetchSpeculatedTransactionIfNeeded(orderParams, pageData, fetchSpeculatedTransaction);
+    }, 700);
+  };
 
   // Since the listing data is already given from the ListingPage
   // and stored to handle refreshes, it might not have the possible
@@ -647,6 +690,8 @@ export const CheckoutPageWithPayment = props => {
                   return onStripeInitialized(stripe, process, props);
                 }}
                 askShippingDetails={askShippingDetails}
+                askTaxAddress={isTaxEnabled}
+                onFormValuesChange={handlePaymentFormValuesChange}
                 showPickUpLocation={showPickUpLocation}
                 showLocation={showLocation}
                 listingLocation={listingLocation}

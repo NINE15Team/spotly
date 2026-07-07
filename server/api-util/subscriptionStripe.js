@@ -1,6 +1,9 @@
 const moment = require('moment');
 const { getStripe } = require('./stripeClient');
 const { METADATA_KEYS } = require('./subscriptionConstants');
+const { isSalesTaxEnabled, getTaxCode } = require('./tax');
+const { normalizeAddress, isUsableTaxAddress } = require('./taxAddress');
+const log = require('../log');
 
 /**
  * Extract PaymentIntent id from a Stripe client secret (pi_xxx_secret_yyy).
@@ -251,14 +254,27 @@ const createMonthlyStripePrice = async ({ amount, currency, productName, listing
     throw error;
   }
 
+  // When Stripe Tax is enabled, renewal invoices must add tax ON TOP of the
+  // listing price (exclusive), matching the first-period Sharetribe line items.
+  const taxFieldsMaybe = isSalesTaxEnabled()
+    ? {
+        tax_behavior: 'exclusive',
+        product_data_tax_code: getTaxCode(),
+      }
+    : {};
+
   const stripe = getStripe();
   return stripe.prices.create({
     unit_amount: unitAmount,
     currency: currency.toLowerCase(),
     recurring: { interval: 'month' },
+    ...(taxFieldsMaybe.tax_behavior ? { tax_behavior: taxFieldsMaybe.tax_behavior } : {}),
     product_data: {
       name: productName || 'Subscription',
       metadata: { listingId },
+      ...(taxFieldsMaybe.product_data_tax_code
+        ? { tax_code: taxFieldsMaybe.product_data_tax_code }
+        : {}),
     },
   });
 };
@@ -275,6 +291,7 @@ const createStripeSubscription = async ({
   paymentMethodId,
   bookingStart,
   sharetribeTransactionId,
+  taxAddress,
 }) => {
   const stripe = getStripe();
   const startMoment = moment(bookingStart);
@@ -294,9 +311,26 @@ const createStripeSubscription = async ({
     resolvedCustomerId = customerId;
   }
 
+  // Stripe Tax on renewals (automatic_tax) needs a tax location on the Customer.
+  // The address is the renter's tax address collected at checkout, carried in the
+  // transaction's protectedData (same address used for the first-period tax).
+  const normalizedTaxAddress = normalizeAddress(taxAddress);
+  const hasTaxLocation = isUsableTaxAddress(normalizedTaxAddress);
+  const useAutomaticTax = isSalesTaxEnabled() && hasTaxLocation;
+
   await stripe.customers.update(resolvedCustomerId, {
     invoice_settings: { default_payment_method: paymentMethodId },
+    ...(useAutomaticTax ? { address: normalizedTaxAddress } : {}),
   });
+
+  if (isSalesTaxEnabled() && !hasTaxLocation) {
+    // Renewals would fail or bill without tax if automatic_tax is on without a
+    // customer location — fall back to no automatic tax, but log loudly.
+    log.warn(
+      'Stripe subscription created WITHOUT automatic tax: no usable tax address on transaction.',
+      { sharetribeTransactionId }
+    );
+  }
 
   return stripe.subscriptions.create({
     customer: resolvedCustomerId,
@@ -307,6 +341,7 @@ const createStripeSubscription = async ({
     },
     trial_end: trialEndUnix,
     proration_behavior: 'none',
+    ...(useAutomaticTax ? { automatic_tax: { enabled: true } } : {}),
     metadata: {
       sharetribeTransactionId,
     },

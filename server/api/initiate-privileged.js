@@ -1,6 +1,6 @@
 const sharetribeSdk = require('sharetribe-flex-sdk');
-const { transactionLineItems } = require('../api-util/lineItems');
-const { subscriptionTransactionLineItems } = require('../api-util/subscriptionLineItems');
+const { transactionLineItemsWithTax } = require('../api-util/lineItems');
+const { updatePaymentIntentTaxMetadata } = require('../api-util/tax');
 const { isIntentionToMakeOffer } = require('../api-util/negotiation');
 const {
   getSdk,
@@ -62,6 +62,7 @@ module.exports = (req, res) => {
   const isSubscription = isSubscriptionProcess(processAlias);
   const sdk = getSdk(req, res);
   let lineItems = null;
+  let taxCalculationId = null;
   let metadataMaybe = {};
 
   Promise.all([listingPromise(sdk, bodyParams?.params?.listingId), fetchCommission(sdk)])
@@ -78,9 +79,19 @@ module.exports = (req, res) => {
         processAlias,
       };
 
-      lineItems = isSubscription
-        ? subscriptionTransactionLineItems(listing, fullOrderData, providerCommission, customerCommission)
-        : transactionLineItems(listing, fullOrderData, providerCommission, customerCommission);
+      // Both subscription-rental and default-booking line items are computed here;
+      // transactionLineItemsWithTax branches on fullOrderData.processAlias and
+      // appends the sales-tax line item (Stripe Tax, customer-address sourcing).
+      return transactionLineItemsWithTax(
+        listing,
+        fullOrderData,
+        providerCommission,
+        customerCommission
+      );
+    })
+    .then(lineItemsResult => {
+      lineItems = lineItemsResult.lineItems;
+      taxCalculationId = lineItemsResult.taxCalculationId;
 
       metadataMaybe = getMetadata(orderData, transitionName);
 
@@ -118,8 +129,16 @@ module.exports = (req, res) => {
       }
       return trustedSdk.transactions.initiate(body, queryParams);
     })
-    .then(apiResponse => {
+    .then(async apiResponse => {
       const { status, statusText, data } = apiResponse;
+
+      // Write the Stripe Tax calculation id onto the PaymentIntent metadata so
+      // the payment_intent.succeeded webhook can record a filable tax transaction.
+      // Best-effort: never fails the checkout.
+      if (!isSpeculative && taxCalculationId) {
+        await updatePaymentIntentTaxMetadata({ transaction: data?.data, taxCalculationId });
+      }
+
       res
         .status(status)
         .set('Content-Type', 'application/transit+json')

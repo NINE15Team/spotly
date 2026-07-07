@@ -42,6 +42,64 @@ export const bookingDatesMaybe = bookingDates => {
 };
 
 /**
+ * Extract the customer's tax address from the payment form values (Stripe Tax,
+ * customer-address sourcing).
+ *
+ * Priority:
+ * 1. Shipping recipient address (destination) when the form collects one
+ * 2. Billing address fields (StripePaymentAddress)
+ *
+ * Returned shape matches what the server-side tax service expects in
+ * protectedData.taxAddress: { line1, line2, city, state, postalCode, country }.
+ *
+ * @param {Object} formValues payment form values
+ * @returns {Object} { taxAddress } or an empty object
+ */
+export const getTaxAddressMaybe = formValues => {
+  const {
+    addressLine1,
+    addressLine2,
+    postal,
+    city,
+    state,
+    country,
+    recipientAddressLine1,
+    recipientAddressLine2,
+    recipientPostal,
+    recipientCity,
+    recipientState,
+    recipientCountry,
+  } = formValues || {};
+
+  const recipientAddress =
+    recipientPostal && recipientCountry
+      ? {
+          line1: recipientAddressLine1,
+          line2: recipientAddressLine2,
+          city: recipientCity,
+          state: recipientState,
+          postalCode: recipientPostal,
+          country: recipientCountry,
+        }
+      : null;
+
+  const billingAddress =
+    postal && country
+      ? {
+          line1: addressLine1,
+          line2: addressLine2,
+          city,
+          state,
+          postalCode: postal,
+          country,
+        }
+      : null;
+
+  const taxAddress = recipientAddress || billingAddress;
+  return taxAddress ? { taxAddress } : {};
+};
+
+/**
  * Construct billing details (JSON-like object) for the Stripe API
  *
  * @param {Object} formValues object containing name, addressLine1, addressLine2, postal, city, state, country
