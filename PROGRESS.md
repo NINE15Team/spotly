@@ -19,7 +19,7 @@ Figma MCP returned: *"You've reached the Figma MCP tool call limit for your View
 | Area | Status |
 |------|--------|
 | Foundations (tokens, fonts, Playwright) | Done (assets + tokens + Playwright config) |
-| Shared Topbar / Footer | Partial (dark Topbar desktop + HakoFooter on homepage) |
+| Shared Topbar / Footer | Done (dark Topbar mobile+desktop, global HakoFooter, ListingCard Hako styles) |
 | Homepage | Implemented + unit tests; visual baselines pending running app |
 | Search results | Not started |
 | Listing details | Not started |
@@ -102,7 +102,24 @@ _Open questions / decisions made autonomously — please verify first:_
 
 ---
 
+
+### Search Results inventory (from cached metadata only — not pixel-ready)
+
+Desktop `172:1142` / Mobile `172:1324`:
+- nav (70px)
+- filter bar (105px): parking option dropdown, location, date, hours, Search button
+- content: left filters col (400px) with PRICE BY Hour/Day + range slider; listing cards col
+- **Blocked:** no get_design_context (colors/type/spacing tokens) due to Figma MCP quota
+
 ## Changelog
+
+### 2026-08-03 — Shared chrome + ListingCard
+- Wired HakoFooter globally via FooterContainer (CMS footer opt-in via REACT_APP_USE_CMS_FOOTER).
+- Dark mobile Topbar; light icons.
+- ListingCard restyled toward Hako featured card tokens.
+- FooterContainer unit test added.
+- Figma MCP still rate-limited for remaining pages.
+
 ### 2026-08-03 — Homepage foundation commit
 - Added Hako design tokens, Outfit font, Playwright config.
 - Built custom Hako LandingPage sections from cached Figma Homepage context.
