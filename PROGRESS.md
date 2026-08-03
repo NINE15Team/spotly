@@ -4,7 +4,24 @@
 **Figma:** [Hako HiFi Design All Pages](https://www.figma.com/design/RKgPHFsOwrX0MYPBYRFTpJ/Hako-%7C-Design-%7C-Hifi-Design-All-Pages?node-id=12-423)  
 **File key:** `RKgPHFsOwrX0MYPBYRFTpJ`
 
+## Top-line status (read this first)
+
+**Blocked on Figma MCP quota** (View-seat / ~6 calls/month limit hit after Homepage inventory). Remaining pages cannot be pulled with `get_design_context` until you upgrade the Figma seat/plan or quota resets.
+
+### Fully done & pixel-verified against Figma screenshots
+_None yet_ — Playwright visual baselines exist but need a running app + side-by-side Figma comparison.
+
+### Implemented with unit tests (design-faithful where Figma data existed)
+- **Homepage** — custom sections from full `get_design_context` (tokens, assets, copy). Not yet screenshot-verified in browser.
+- **Shared chrome** — design tokens, dark Topbar, global HakoFooter, ListingCard token restyle.
+- **FAQ `/faq`** — questions/sections from Figma metadata; **answer bodies interim**.
+- **Contact `/contact`** — form labels/placeholders from Figma metadata; hero not design-context verified.
+
+### Not started (need Figma design context)
+Search results, Listing details, Checkout, Merchant listings, Post a listing, Merchant account, About us, Privacy policy (restyle), Sign up/Login layout, Become a host.
+
 ## ⛔ HARD BLOCKER — Figma MCP rate limit
+
 
 Figma MCP returned: *"You've reached the Figma MCP tool call limit for your View seat on the Professional plan."*
 
