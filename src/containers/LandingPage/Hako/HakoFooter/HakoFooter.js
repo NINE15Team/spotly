@@ -57,7 +57,7 @@ export const HakoFooter = () => {
         <NamedLink name="NewListingPage" className={css.link}>
           <FormattedMessage id="HakoLanding.footer.postListing" defaultMessage="Post a Listing" />
         </NamedLink>
-        <NamedLink name="CMSPage" params={{ pageId: 'faq' }} className={css.link}>
+        <NamedLink name="FAQPage" className={css.link}>
           <FormattedMessage id="HakoLanding.footer.faq" defaultMessage="FAQ" />
         </NamedLink>
       </nav>
@@ -66,7 +66,7 @@ export const HakoFooter = () => {
         <p className={css.columnTitle}>
           <FormattedMessage id="HakoLanding.footer.company" defaultMessage="Company" />
         </p>
-        <NamedLink name="CMSPage" params={{ pageId: 'contact-us' }} className={css.link}>
+        <NamedLink name="ContactPage" className={css.link}>
           <FormattedMessage id="HakoLanding.footer.contact" defaultMessage="Contact Us" />
         </NamedLink>
         <NamedLink name="CMSPage" params={{ pageId: 'about' }} className={css.link}>

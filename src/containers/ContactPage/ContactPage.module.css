@@ -1,0 +1,89 @@
+@import '../../styles/customMediaQueries.css';
+
+.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 280px;
+  padding: 40px var(--hakoLateralPaddingMobile);
+  background-color: var(--hakoDark);
+  box-sizing: border-box;
+  text-align: center;
+
+  @media (--viewportMedium) {
+    min-height: 400px;
+    padding: 60px var(--hakoLateralPaddingDesktop);
+  }
+}
+
+.heroTitle {
+  margin: 0;
+  font-family: var(--fontFamilyHeading);
+  font-weight: 600;
+  font-size: 36px;
+  line-height: 40px;
+  color: var(--hakoLightText);
+
+  @media (--viewportMedium) {
+    font-size: 65px;
+    line-height: 60px;
+  }
+}
+
+.heroSubtitle {
+  margin: 0;
+  font-family: var(--fontFamily);
+  font-size: 16px;
+  line-height: 23px;
+  color: var(--hakoSecondaryText);
+}
+
+.content {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  padding: var(--hakoSectionPaddingYMobile) var(--hakoLateralPaddingMobile);
+  background-color: var(--hakoWhite);
+  box-sizing: border-box;
+
+  @media (--viewportMedium) {
+    padding: var(--hakoSectionPaddingY) var(--hakoLateralPaddingDesktop);
+  }
+}
+
+.formCard {
+  width: 100%;
+  max-width: 600px;
+  padding: var(--hakoCardPadding);
+  border-radius: var(--hakoBorderRadius);
+  background-color: var(--hakoLightGreen);
+  box-sizing: border-box;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.field {
+  width: 100%;
+}
+
+.submit {
+  margin-top: 10px;
+  border-radius: var(--hakoBorderRadiusSmall);
+  min-height: 45px;
+  background-color: var(--hakoPrimary);
+}
+
+.success {
+  margin: 0;
+  font-family: var(--fontFamily);
+  font-size: 16px;
+  line-height: 23px;
+  color: var(--hakoPrimaryText);
+}

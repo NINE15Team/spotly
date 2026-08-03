@@ -28,9 +28,9 @@ Figma MCP returned: *"You've reached the Figma MCP tool call limit for your View
 | Post a listing | Not started |
 | Merchant account | Not started |
 | About us | Not started |
-| FAQ | Not started |
+| FAQ | Implemented from metadata (questions + layout); answers interim; not pixel-verified |
 | Privacy policy | Not started |
-| Contact us | Not started |
+| Contact us | Implemented from metadata (fields/layout); not pixel-verified |
 | Sign up / Login | Not started |
 | Become a host | Not started |
 
@@ -78,7 +78,8 @@ _Open questions / decisions made autonomously — please verify first:_
 1. **LandingPage vs hosted CMS:** Replaced PageBuilder-driven homepage content with custom Figma sections so we can match design without Console asset edits. Hosted `landing-page` asset is no longer the visual source of truth for `/`.
 2. **Figma typo "San Franciso":** Kept as in design for pixel match; may want corrected copy later.
 3. **Become a Host / Contact / FAQ / About:** Adding explicit routes if missing (template often uses CMSPage `/:pageId`). Exact path slugs assumed: `/about`, `/faq`, `/contact`, `/become-a-host`, `/privacy-policy` (existing).
-4. **Playwright visual baselines:** Stored under `e2e/visual/` and require a running or story-mounted page; CI may need headed/skip flags until env is configured.
+4. **FAQ answer copy:** Accordion answers were not visible in collapsed Figma metadata; interim answers used — replace from open states when Figma MCP quota returns.
+5. **Playwright visual baselines:** Stored under `e2e/visual/` and require a running or story-mounted page; CI may need headed/skip flags until env is configured.
 
 ---
 
@@ -112,6 +113,13 @@ Desktop `172:1142` / Mobile `172:1324`:
 - **Blocked:** no get_design_context (colors/type/spacing tokens) due to Figma MCP quota
 
 ## Changelog
+
+### 2026-08-03 — FAQ + Contact pages
+- Added `/faq` and `/contact` routes with Hako-styled pages.
+- FAQ questions/sections from Figma metadata; answer copy interim (Needs review).
+- Contact form labels/placeholders from Figma metadata.
+- Unit tests: 5 passing.
+
 
 ### 2026-08-03 — Shared chrome + ListingCard
 - Wired HakoFooter globally via FooterContainer (CMS footer opt-in via REACT_APP_USE_CMS_FOOTER).
