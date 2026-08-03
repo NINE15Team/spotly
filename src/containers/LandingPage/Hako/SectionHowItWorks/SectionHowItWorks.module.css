@@ -1,0 +1,120 @@
+@import '../../../../styles/customMediaQueries.css';
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  width: 100%;
+  padding: var(--hakoSectionPaddingYMobile) var(--hakoLateralPaddingMobile);
+  background-color: var(--hakoWhite);
+  box-sizing: border-box;
+
+  @media (--viewportMedium) {
+    padding: var(--hakoSectionPaddingY) var(--hakoLateralPaddingDesktop);
+  }
+}
+
+.titleBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.headingRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.icon {
+  width: 30px;
+  height: 30px;
+  display: block;
+  flex-shrink: 0;
+}
+
+.heading {
+  margin: 0;
+  font-family: var(--fontFamilyHeading);
+  font-weight: 600;
+  font-size: 28px;
+  line-height: 34px;
+  color: var(--hakoPrimaryText);
+
+  @media (--viewportMedium) {
+    font-size: 36px;
+    line-height: 40px;
+  }
+}
+
+.subtitle {
+  margin: 0;
+  font-family: var(--fontFamily);
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 23px;
+  color: var(--hakoSecondaryText);
+}
+
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+
+  @media (--viewportMedium) {
+    flex-direction: row;
+    align-items: stretch;
+  }
+}
+
+.card {
+  flex: 1 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  min-width: 0;
+  padding: var(--hakoCardPadding);
+  background-color: var(--hakoLightGreen);
+  border-radius: var(--hakoBorderRadius);
+  box-sizing: border-box;
+}
+
+.cardTitle {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.stepBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 13px;
+  background-color: var(--hakoAccent);
+  border-radius: var(--hakoBorderRadiusSmall);
+  font-family: var(--fontFamily);
+  font-weight: 700;
+  font-size: 16px;
+  line-height: 23px;
+  color: var(--hakoWhite);
+}
+
+.cardHeading {
+  margin: 0;
+  font-family: var(--fontFamilyHeading);
+  font-weight: 700;
+  font-size: 22px;
+  line-height: normal;
+  color: var(--hakoPrimaryText);
+}
+
+.cardBody {
+  margin: 0;
+  font-family: var(--fontFamily);
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 23px;
+  color: var(--hakoSecondaryText);
+}

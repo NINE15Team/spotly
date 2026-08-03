@@ -1,0 +1,242 @@
+@import '../../../../styles/customMediaQueries.css';
+
+.root {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+  width: 100%;
+  min-height: 560px;
+  padding: 40px var(--hakoLateralPaddingMobile);
+  box-sizing: border-box;
+  overflow: hidden;
+
+  @media (--viewportMedium) {
+    gap: 50px;
+    height: 700px;
+    min-height: 700px;
+    padding: 0 var(--hakoLateralPaddingDesktop);
+  }
+}
+
+.background {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.backgroundImage {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  max-width: none;
+}
+
+.overlayDark {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(12, 22, 29, 0.3);
+}
+
+.overlayMultiply {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(12, 22, 29, 0.7);
+  mix-blend-mode: multiply;
+}
+
+.overlayGradient {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(
+    196deg,
+    rgba(62, 120, 178, 0.3) 12.7%,
+    rgba(102, 102, 102, 0) 46.3%
+  );
+}
+
+.headline {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  width: 100%;
+  max-width: 1440px;
+  text-align: center;
+  font-family: var(--fontFamilyHeading);
+  font-weight: 600;
+  font-size: 36px;
+  line-height: 40px;
+  color: var(--hakoLightText);
+
+  @media (--viewportMedium) {
+    font-size: 65px;
+    line-height: 60px;
+  }
+}
+
+.headlineLine {
+  display: block;
+}
+
+.accent {
+  color: var(--hakoAccent);
+}
+
+.searchBlock {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+}
+
+.modeTabs {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.modeTab {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-family: var(--fontFamily);
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 23px;
+  color: var(--hakoWhite);
+}
+
+.modeTabActive {
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-position: from-font;
+}
+
+.searchBar {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  align-items: stretch;
+  width: 100%;
+  max-width: 655px;
+  padding: 5px 10px 5px 5px;
+  background-color: rgba(255, 255, 255, 0.3);
+  border: 1px solid var(--hakoWhite);
+  border-radius: var(--hakoBorderRadiusSmall);
+  box-sizing: border-box;
+
+  @media (--viewportMedium) {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+.fields {
+  display: flex;
+  flex: 1 0 0;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+
+  @media (--viewportMedium) {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+.field {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 20px;
+  border-radius: var(--hakoBorderRadiusSmall);
+}
+
+.hoursField {
+  width: auto;
+
+  @media (--viewportMedium) {
+    width: 141px;
+  }
+}
+
+.fieldIcon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  display: block;
+}
+
+.fieldText {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-items: flex-start;
+  font-family: var(--fontFamily);
+  font-size: 12px;
+  line-height: normal;
+}
+
+.fieldLabel {
+  color: var(--hakoLightText);
+  font-weight: 400;
+}
+
+.fieldValue {
+  color: var(--hakoWhite);
+  font-weight: 400;
+}
+
+.fieldValueBold {
+  font-weight: 700;
+}
+
+.divider {
+  display: none;
+  width: 1px;
+  height: 36px;
+  border: 0;
+  border-left: 1px solid rgba(255, 255, 255, 0.5);
+  flex-shrink: 0;
+
+  @media (--viewportMedium) {
+    display: block;
+  }
+}
+
+.searchButton {
+  flex-shrink: 0;
+  height: 45px;
+  width: 100%;
+  padding: 10px 40px;
+  border: 0;
+  border-radius: var(--hakoBorderRadiusSmall);
+  background-color: var(--hakoPrimary);
+  color: var(--hakoWhite);
+  font-family: var(--fontFamily);
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 23px;
+  cursor: pointer;
+  transition: background-color var(--transitionStyleButton);
+
+  @media (--viewportMedium) {
+    width: 133px;
+  }
+}
+
+.searchButton:hover,
+.searchButton:focus {
+  background-color: var(--colorPrimaryButtonDark);
+  outline: none;
+}
