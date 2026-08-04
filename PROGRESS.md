@@ -36,7 +36,7 @@ Figma MCP returned: *"You've reached the Figma MCP tool call limit for your View
 | Area | Status |
 |------|--------|
 | Foundations (tokens, fonts, Playwright) | Done (assets + tokens + Playwright config) |
-| Shared Topbar / Footer | Done (dark Topbar mobile+desktop, global HakoFooter, ListingCard Hako styles) |
+| Shared Topbar / Footer | Done — desktop header remade to Figma nav (263:1925) |
 | Homepage | Implemented + unit tests; visual baselines pending running app |
 | Search results | Not started |
 | Listing details | Not started |
@@ -130,6 +130,13 @@ Desktop `172:1142` / Mobile `172:1324`:
 - **Blocked:** no get_design_context (colors/type/spacing tokens) due to Figma MCP quota
 
 ## Changelog
+
+### 2026-08-05 — Remake desktop header to Figma nav
+- Rebuilt `TopbarDesktop` layout: Logo | Day Parking / Monthly Storage / Post a Listing / About Us / FAQ | compact Search Listings | Become a Host / Log In / Sign Up (blue).
+- Restyled search to 300×35 translucent field (not white full-height pill).
+- Unit tests for Hako header structure (3 passing).
+- Used cached Figma nav specs (MCP still rate-limited for node 263:1925).
+
 
 ### 2026-08-03 — FAQ + Contact pages
 - Added `/faq` and `/contact` routes with Hako-styled pages.

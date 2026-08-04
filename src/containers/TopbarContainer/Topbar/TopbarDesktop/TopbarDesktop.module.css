@@ -1,144 +1,220 @@
 @import '../../../../styles/customMediaQueries.css';
 
-/* Desktop */
-.root {
-  /* Size */
-  width: 100%;
-  height: var(--topbarHeightDesktop);
+/**
+ * Hako desktop header — Figma 263:1925
+ * height 70, bg #0C161D, lateral padding 50, gap 50 between logo/nav cluster
+ */
 
-  /* Layout for child components */
+.root {
+  width: 100%;
+  height: 70px;
   display: flex;
   flex-direction: row;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
+  gap: 20px;
   padding: 0 24px;
-
-  /* Hako dark nav */
   background-color: var(--hakoDark);
   box-shadow: none;
+  box-sizing: border-box;
 
   @media (--viewportLarge) {
     padding: 0 50px;
   }
 }
 
-/* logo */
+.left {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 50px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
 .logoLink {
-  border-bottom: 0px solid;
-  transition: var(--transitionStyleButton);
-}
-.logoLink:hover {
-  border-bottom: 0;
-  border-radius: 0;
-  opacity: 0.9;
-}
-
-/* Search */
-.searchLink {
-  min-width: 320px;
-  height: 100%;
-  border-left-style: solid;
-  border-left-width: 1px;
-  border-left-color: var(--colorGrey100);
-  margin-right: auto;
-}
-
-.spacer {
-  min-width: 320px;
-  height: 100%;
-  margin-right: auto;
-}
-
-.search {
-  font-weight: var(--fontWeightMedium);
-  font-size: 15px;
-  line-height: 24px;
-  letter-spacing: 0;
-  color: var(--colorGrey700);
-
-  display: inline-block;
-  margin: 28px 0;
-  text-decoration: inherit;
-
-  @media (--viewportMedium) {
-    font-weight: var(--fontWeightMedium);
-  }
-}
-
-.takeAvailableSpace {
-  flex-grow: 1;
-
-  /* At 1024px, the translations might need more space than what searchLink otherwise gets. */
-  min-width: 220px;
-}
-
-.topbarSearchWithLeftPadding {
-  padding-left: 24px;
-  padding-right: 24px;
-  height: var(--topbarHeightDesktop);
-
-  @media (--viewportLarge) {
-    padding-left: 34px;
-  }
-}
-
-/* These is used with Inbox, Sign up, and Log in */
-.topbarLink {
+  display: flex;
+  align-items: center;
   flex-shrink: 0;
-
-  border-bottom: 0px solid;
-  transition: var(--transitionStyleButton);
-
-  font-weight: var(--fontWeightRegular);
-  font-size: 12px;
-  line-height: normal;
-  letter-spacing: 0;
-  color: var(--hakoLightText);
-
-  height: 100%;
-  padding: 0 10px;
-  margin: 0;
+  line-height: 0;
+  border-bottom: 0;
+  text-decoration: none;
 
   &:hover {
-    color: var(--hakoWhite);
-    border-bottom: 2px solid var(--hakoPrimary);
-    border-radius: 0;
+    opacity: 0.9;
+    border-bottom: 0;
     text-decoration: none;
   }
+}
 
-  @media (--viewportMedium) {
-    line-height: 16px;
-    margin: 0;
+.logoImage {
+  width: 64px;
+  height: 32px;
+  display: block;
+  object-fit: contain;
+}
+
+.navLinks {
+  display: none;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  min-width: 0;
+  max-width: 480px;
+
+  @media (--viewportLarge) {
+    display: flex;
+  }
+}
+
+.navLink {
+  flex-shrink: 0;
+  padding: 3px 0;
+  border-bottom: 1px solid transparent;
+  font-family: var(--fontFamily);
+  font-weight: 400;
+  font-size: 12px;
+  line-height: normal;
+  color: var(--hakoLightText);
+  text-decoration: none;
+  white-space: nowrap;
+
+  &:hover,
+  &:focus {
+    color: var(--hakoWhite);
+    text-decoration: none;
+    outline: none;
+  }
+}
+
+.navLinkActive {
+  color: var(--hakoPrimary);
+  border-bottom-color: var(--hakoPrimary);
+  font-weight: 400;
+
+  &:hover,
+  &:focus {
+    color: var(--hakoPrimary);
+  }
+}
+
+/* Compact Figma search: 300×35, rgba(255,255,255,0.05), radius 5 */
+.searchForm {
+  flex: 0 0 auto;
+  width: 220px;
+  max-width: 300px;
+
+  @media (--viewportLarge) {
+    width: 300px;
+  }
+}
+
+.searchSpacer {
+  width: 220px;
+  height: 35px;
+
+  @media (--viewportLarge) {
+    width: 300px;
+  }
+}
+
+.searchInputRoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: 35px;
+  padding: 0 15px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: var(--hakoBorderRadiusSmall);
+  box-sizing: border-box;
+}
+
+.right {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 20px;
+  flex-shrink: 0;
+}
+
+.topbarLink {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  height: auto;
+  padding: 0;
+  margin: 0;
+  border-bottom: 0;
+  font-family: var(--fontFamily);
+  font-weight: 400;
+  font-size: 12px;
+  line-height: normal;
+  color: var(--hakoLightText);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color var(--transitionStyleButton);
+
+  &:hover,
+  &:focus {
+    color: var(--hakoWhite);
+    border-bottom: 0;
+    text-decoration: none;
+    outline: none;
   }
 }
 
 .topbarLinkLabel {
-  composes: textSmall from global;
   display: inline-block;
-  margin: 28px 0;
+  margin: 0;
   text-decoration: inherit;
   position: relative;
+  font-size: 12px;
+  line-height: normal;
+}
+
+.signupButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 105px;
+  height: 35px;
+  padding: 10px 30px;
+  box-sizing: border-box;
+  border-radius: var(--hakoBorderRadiusSmall);
+  background-color: var(--hakoAccent);
+  color: var(--hakoWhite);
+  font-family: var(--fontFamily);
+  font-weight: 400;
+  font-size: 12px;
+  line-height: normal;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color var(--transitionStyleButton);
+
+  &:hover,
+  &:focus {
+    background-color: #336597;
+    color: var(--hakoWhite);
+    text-decoration: none;
+    outline: none;
+  }
 }
 
 .notificationDot {
-  /* Dimensions */
   width: 7px;
   height: 7px;
   border-radius: 50%;
-
-  /* Position */
   position: absolute;
-  top: 2px;
+  top: -2px;
   right: -9px;
-
-  /* Style: red dot */
   background-color: var(--colorFail);
-
   animation-name: notificationPop;
   animation-duration: 0.1s;
   animation-delay: 0.1s;
   animation-fill-mode: forwards;
-
   animation-timing-function: ease-in;
   opacity: 0;
   transform: scale(0);
@@ -155,27 +231,22 @@
   }
 }
 
-/* Profile menu */
 .profileMenuLabel {
-  border-bottom: 0px solid;
+  border-bottom: 0;
   transition: var(--transitionStyleButton);
-
   font-weight: var(--fontWeightMedium);
   font-size: 14px;
   line-height: 18px;
-  letter-spacing: 0;
-  color: var(--colorGrey700);
-
+  color: var(--hakoLightText);
   flex-shrink: 0;
   display: flex;
   align-items: center;
   height: 100%;
   margin: 0;
-  padding: 0 12px 0 12px;
+  padding: 0;
 
   &:hover {
-    border-bottom: 4px solid var(--marketplaceColor);
-    border-radius: 0;
+    border-bottom: 0;
     text-decoration: none;
   }
 
@@ -191,7 +262,7 @@
 }
 
 .avatar {
-  margin: 16px 0;
+  margin: 0;
 }
 
 .profileMenuContent {
@@ -199,11 +270,10 @@
   padding-top: 20px;
 }
 
-/* left animated "border" like hover element */
 .menuItemBorder {
   position: absolute;
   top: 2px;
-  left: 0px;
+  left: 0;
   height: calc(100% - 4px);
   width: 0;
   transition: width var(--transitionStyleButton);
@@ -213,14 +283,10 @@
   composes: textSmall from global;
   position: relative;
   display: block;
-
-  /* Dimensions */
   width: 100%;
   min-width: 276px;
   margin: 0;
   padding: 4px 24px;
-
-  /* Layout details */
   color: var(--colorGrey700);
   text-align: left;
   transition: var(--transitionStyleButton);
@@ -231,7 +297,7 @@
 
     & .menuItemBorder {
       width: 6px;
-      background-color: var(--marketplaceColor);
+      background-color: var(--hakoPrimary);
     }
   }
 
@@ -242,30 +308,19 @@
 
 .logoutButton {
   display: inline;
-
-  /* Text size should be inherited */
   text-decoration: none;
-
-  /* Font is specific to this component */
   font-weight: var(--fontWeightMedium);
   font-size: 14px;
   line-height: 18px;
-  letter-spacing: 0;
-
-  /* Dimensions */
   position: relative;
   width: 100%;
   min-width: 276px;
   margin: 0;
   padding: 20px 24px;
-
-  /* Layout details */
   color: var(--colorGrey600);
   text-align: left;
   white-space: nowrap;
   transition: var(--transitionStyleButton);
-
-  /* Borders */
   border: none;
   border-top-width: 1px;
   border-top-style: solid;
@@ -280,7 +335,7 @@
       height: 100%;
       width: 6px;
       top: 0;
-      background-color: var(--marketplaceColor);
+      background-color: var(--hakoPrimary);
     }
   }
 
