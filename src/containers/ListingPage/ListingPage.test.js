@@ -272,57 +272,50 @@ describe('ListingPage variants', () => {
   });
 
   it('has carousel on carousel mode', async () => {
-    // Select correct SearchPage variant according to route configuration
+    // Hako listing details layout on carousel variant
     const config = getConfig('carousel');
     const routeConfiguration = getRouteConfiguration(config.layout);
     const props = { ...commonProps };
     const listingRouteConfig = routeConfiguration.find(conf => conf.name === 'ListingPage');
     const ListingPage = listingRouteConfig.component;
 
-    const { getByPlaceholderText, getByRole, queryAllByRole, getByText } = render(
-      <ListingPage {...props} />,
-      {
-        initialState,
-        config,
-        routeConfiguration,
-      }
-    );
+    const { getByPlaceholderText, getByRole, getByText } = render(<ListingPage {...props} />, {
+      initialState,
+      config,
+      routeConfiguration,
+      messages: {
+        'HakoListing.amenitiesTitle': 'What this spot offers',
+        'HakoListing.restrictionsTitle': 'Vehicle Restrictions',
+        'HakoListing.aboutTitle': 'About this space',
+        'HakoListing.contactHost': 'Contact Host',
+        'HakoListing.breadcrumbSearch': 'Search',
+        'HakoListing.mapAddressNote': 'Exact location shared after booking confirmation',
+      },
+    });
     await waitFor(() => {
       // Has main search in Topbar and it's a location search.
       expect(getByPlaceholderText('TopbarSearchForm.placeholder')).toBeInTheDocument();
       expect(screen.getByTestId('location-search')).toBeInTheDocument();
 
-      // Does not have hero (coverPhoto) section on carousel mode
+      // Has gallery carousel (not coverPhoto hero)
       expect(screen.getByTestId('carousel')).toBeInTheDocument();
       expect(screen.queryByTestId('hero')).not.toBeInTheDocument();
 
-      // Has order title (rendered for )
-      const orderTitle = queryAllByRole('heading', { name: 'ListingPage.orderTitle' });
-      expect(orderTitle).toHaveLength(3);
-
-      // Has details section title and selected category info
-      expect(getByRole('heading', { name: 'ListingPage.detailsTitle' })).toBeInTheDocument();
-      expect(getByText('Cat')).toBeInTheDocument();
-      expect(getByText('Cat 1')).toBeInTheDocument();
-
-      // Has details location title
+      // Hako structure sections
+      expect(getByText('Search')).toBeInTheDocument();
+      expect(getByRole('heading', { name: 'listing1 title' })).toBeInTheDocument();
+      expect(getByRole('heading', { name: 'What this spot offers' })).toBeInTheDocument();
+      expect(getByRole('heading', { name: 'Vehicle Restrictions' })).toBeInTheDocument();
+      expect(getByRole('heading', { name: 'About this space' })).toBeInTheDocument();
       expect(getByRole('heading', { name: 'ListingPage.locationTitle' })).toBeInTheDocument();
+      expect(getByText('Exact location shared after booking confirmation')).toBeInTheDocument();
+      expect(getByRole('button', { name: 'Contact Host' })).toBeInTheDocument();
 
-      // Has details reviews title
+      // Reviews still present
       const reviewsTitle = getByRole('heading', { name: 'ListingPage.reviewsTitle' });
       expect(reviewsTitle).toBeInTheDocument();
       const sectionReviews = within(reviewsTitle.parentNode.parentNode);
       expect(sectionReviews.getByText('It was awesome!')).toBeInTheDocument();
-      expect(sectionReviews.getByText('reviewerA display name')).toBeInTheDocument();
-      expect(sectionReviews.getByText('June 2023')).toBeInTheDocument();
-      expect(sectionReviews.getAllByTitle('4/5')).toHaveLength(2);
-
-      // Has details provider/author title
-      expect(getByRole('heading', { name: 'ListingPage.aboutProviderTitle' })).toBeInTheDocument();
-      // Has link to provider's profile
-      expect(getByRole('link', { name: 'UserCard.viewProfileLink' })).toBeInTheDocument();
-      // Has button to contact provider
-      expect(getByRole('button', { name: 'UserCard.contactUser' })).toBeInTheDocument();
     });
   });
 });

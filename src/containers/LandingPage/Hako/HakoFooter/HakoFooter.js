@@ -69,7 +69,7 @@ export const HakoFooter = () => {
         <NamedLink name="ContactPage" className={css.link}>
           <FormattedMessage id="HakoLanding.footer.contact" defaultMessage="Contact Us" />
         </NamedLink>
-        <NamedLink name="CMSPage" params={{ pageId: 'about' }} className={css.link}>
+        <NamedLink name="AboutPage" className={css.link}>
           <FormattedMessage id="HakoLanding.footer.about" defaultMessage="About Us" />
         </NamedLink>
         <NamedLink name="CMSPage" params={{ pageId: 'terms-of-service' }} className={css.link}>

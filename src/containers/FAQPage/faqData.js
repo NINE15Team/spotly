@@ -23,7 +23,7 @@ export const FAQ_SECTIONS = [
           'Hako processes payments securely via Stripe. Major credit and debit cards are supported.',
       },
       {
-        question: 'Is my booking guaranteed?',
+        question: 'Is my parking spot guaranteed?',
         answer:
           'Once payment succeeds, your spot is reserved for the selected time. You will receive confirmation by email and SMS with access details.',
       },

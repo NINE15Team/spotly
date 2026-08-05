@@ -10,7 +10,9 @@ const { screen } = testingLibrary;
 describe('ContactPage', () => {
   it('renders hero and Figma form field labels', () => {
     render(<ContactPageComponent />);
+    expect(screen.getByText('Support')).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 1, name: /contact us/i })).toBeInTheDocument();
+    expect(screen.getByText(/we typically respond within 24 hours/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/your name/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/email address/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/subject/i)).toBeInTheDocument();

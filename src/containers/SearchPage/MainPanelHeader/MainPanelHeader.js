@@ -19,6 +19,7 @@ import css from './MainPanelHeader.module.css';
  * @param {number} props.resultsCount - The results count
  * @param {boolean} props.searchInProgress - Whether the search is in progress
  * @param {React.Node} props.noResultsInfo - The no results info
+ * @param {boolean} [props.isHakoLayout] - Hako Search Results header layout
  * @returns {JSX.Element}
  */
 const MainPanelHeader = props => {
@@ -32,17 +33,26 @@ const MainPanelHeader = props => {
     resultsCount,
     searchInProgress = false,
     noResultsInfo,
+    isHakoLayout = false,
   } = props;
 
-  const classes = classNames(rootClassName || css.root, className);
+  const classes = classNames(rootClassName || css.root, className, {
+    [css.hakoRoot]: isHakoLayout,
+  });
 
   return (
     <div className={classes}>
-      <div className={css.searchOptions}>
-        <h1 className={css.searchResultSummary}>
+      <div className={classNames(css.searchOptions, { [css.hakoSearchOptions]: isHakoLayout })}>
+        <h1 className={classNames(css.searchResultSummary, { [css.hakoSummary]: isHakoLayout })}>
           <span className={css.resultsFound}>
             {searchInProgress ? (
               <FormattedMessage id="MainPanelHeader.loadingResults" />
+            ) : isHakoLayout ? (
+              <FormattedMessage
+                id="MainPanelHeader.hakoFoundResults"
+                defaultMessage="{count, number} {count, plural, one {SPOT MATCHES YOUR SEARCH} other {SPOTS MATCH YOUR SEARCH}}"
+                values={{ count: resultsCount }}
+              />
             ) : (
               <FormattedMessage
                 id="MainPanelHeader.foundResults"
@@ -52,9 +62,12 @@ const MainPanelHeader = props => {
           </span>
         </h1>
         {isSortByActive ? (
-          <div className={css.sortyByWrapper}>
-            <span className={css.sortyBy}>
-              <FormattedMessage id="MainPanelHeader.sortBy" />
+          <div className={classNames(css.sortyByWrapper, { [css.hakoSortWrapper]: isHakoLayout })}>
+            <span className={classNames(css.sortyBy, { [css.hakoSortLabel]: isHakoLayout })}>
+              <FormattedMessage
+                id={isHakoLayout ? 'MainPanelHeader.hakoSortBy' : 'MainPanelHeader.sortBy'}
+                defaultMessage={isHakoLayout ? 'Sort:' : 'Sort by:'}
+              />
             </span>
             {sortByComponent}
           </div>

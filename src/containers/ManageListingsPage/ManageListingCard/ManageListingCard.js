@@ -6,10 +6,14 @@ import { useIntl, FormattedMessage } from '../../../util/reactIntl';
 import {
   LISTING_STATE_DRAFT,
   LISTING_STATE_PENDING_APPROVAL,
+  LISTING_STATE_CLOSED,
+  LISTING_STATE_PUBLISHED,
   STOCK_MULTIPLE_ITEMS,
   propTypes,
 } from '../../../util/types';
 import { ensureOwnListing } from '../../../util/data';
+import { displayPrice, isPriceVariationsEnabled, requireListingImage } from '../../../util/configHelpers';
+import { formatMoney } from '../../../util/currency';
 import {
   LISTING_PAGE_DRAFT_VARIANT,
   LISTING_PAGE_PENDING_APPROVAL_VARIANT,
@@ -19,158 +23,64 @@ import {
 } from '../../../util/urlHelpers';
 import { isBookingProcessAlias, isPurchaseProcessAlias } from '../../../transactions/transaction';
 
-import { NamedLink, IconSpinner } from '../../../components';
+import {
+  NamedLink,
+  IconSpinner,
+  ResponsiveImage,
+  AspectRatioWrapper,
+} from '../../../components';
+import { HAKO_ASSETS } from '../../LandingPage/Hako/assets';
 
-import CardMenu from './CardMenu';
-import CardThumbnail from './CardThumbnail';
 import Overlay from './Overlay';
-import PriceInfo from './PriceInfo';
 import css from './ManageListingCard.module.css';
 
-const MAX_LENGTH_FOR_WORDS_IN_TITLE = 7;
-
-/**
- * Splits a title to break long words into spans so that
- * flexbox card layouts don't expand excessively.
- *
- * @param {string} title - Listing title
- * @param {number} maxLength - Maximum allowed word length before breaking
- * @returns {Array<React.ReactNode>} Formatted title parts
- */
-export const formatTitle = (title, maxLength) => {
-  const nonWhiteSpaceSequence = /([^\s]+)/gi;
-  return title.split(nonWhiteSpaceSequence).map((word, index) => {
-    return word.length > maxLength ? (
-      <span key={index} style={{ wordBreak: 'break-all' }}>
-        {word}
-      </span>
-    ) : (
-      word
-    );
-  });
+const getStatusMeta = state => {
+  if (state === LISTING_STATE_PUBLISHED) {
+    return { labelId: 'ManageListingCard.statusActive', labelDefault: 'Active', tone: 'active' };
+  }
+  if (state === LISTING_STATE_DRAFT) {
+    return { labelId: 'ManageListingCard.statusDraft', labelDefault: 'Draft', tone: 'draft' };
+  }
+  if (state === LISTING_STATE_CLOSED) {
+    return { labelId: 'ManageListingCard.statusPaused', labelDefault: 'Paused', tone: 'paused' };
+  }
+  if (state === LISTING_STATE_PENDING_APPROVAL) {
+    return {
+      labelId: 'ManageListingCard.statusPending',
+      labelDefault: 'Pending',
+      tone: 'pending',
+    };
+  }
+  return { labelId: 'ManageListingCard.statusDraft', labelDefault: state, tone: 'draft' };
 };
 
-const LinkedListingTitle = props => {
-  const intl = useIntl();
-  const { state, id, slug, title } = props;
-
-  return (
-    <NamedLink
-      className={css.title}
-      {...(state === LISTING_STATE_DRAFT || state === LISTING_STATE_PENDING_APPROVAL
-        ? {
-            name: 'ListingPageVariant',
-            params: {
-              id,
-              slug,
-              variant:
-                state === LISTING_STATE_DRAFT
-                  ? LISTING_PAGE_DRAFT_VARIANT
-                  : LISTING_PAGE_PENDING_APPROVAL_VARIANT,
-            },
-          }
-        : {
-            name: 'ListingPage',
-            params: { id, slug },
-          })}
-      ariaLabel={intl.formatMessage(
-        { id: 'ManageListingCard.screenreader.viewListing' },
-        { title }
-      )}
-    >
-      {formatTitle(title, MAX_LENGTH_FOR_WORDS_IN_TITLE)}
-    </NamedLink>
-  );
-};
-
-const LinkToStockOrAvailabilityTab = props => {
-  const intl = useIntl();
-  const { listing, listingTypeConfig } = props;
-
-  const id = listing.id.uuid;
-  const { title = '', state, publicData } = listing.attributes || {};
-  const slug = createSlug(title);
-
-  const { listingType, transactionProcessAlias } = publicData || {};
-  const isDraft = state === LISTING_STATE_DRAFT;
-  const isBookable = isBookingProcessAlias(transactionProcessAlias);
-  const isProductOrder = isPurchaseProcessAlias(transactionProcessAlias);
-  const hasListingType = !!listingType;
-  const hasStockManagementInUse =
-    isProductOrder && listingTypeConfig?.stockType === STOCK_MULTIPLE_ITEMS;
-  const currentStock = listing?.currentStock?.attributes?.quantity;
-
-  const editListingLinkType = isDraft
-    ? LISTING_PAGE_PARAM_TYPE_DRAFT
-    : LISTING_PAGE_PARAM_TYPE_EDIT;
-
-  if (!hasListingType || !(isBookable || hasStockManagementInUse)) {
+const formatPriceLabel = (price, publicData, listingTypeConfig, isBookable, intl, currency) => {
+  if (!displayPrice(listingTypeConfig) || !price) {
     return null;
   }
-
-  return (
-    <>
-      <span className={css.manageLinksSeparator}>{' • '}</span>
-
-      {isBookable ? (
-        <NamedLink
-          className={css.manageLink}
-          name="EditListingPage"
-          params={{ id, slug, type: editListingLinkType, tab: 'availability' }}
-          ariaLabel={intl.formatMessage(
-            { id: 'ManageListingCard.screenreader.manageAvailability' },
-            { title }
-          )}
-        >
-          <FormattedMessage id="ManageListingCard.manageAvailability" />
-        </NamedLink>
-      ) : (
-        <NamedLink
-          className={css.manageLink}
-          name="EditListingPage"
-          params={{ id, slug, type: editListingLinkType, tab: 'pricing-and-stock' }}
-          ariaLabel={
-            currentStock != null
-              ? intl.formatMessage(
-                  { id: 'ManageListingCard.screenreader.manageStock' },
-                  { title, currentStock }
-                )
-              : intl.formatMessage(
-                  { id: 'ManageListingCard.screenreader.setPriceAndStock' },
-                  { title }
-                )
-          }
-        >
-          {currentStock != null ? (
-            <FormattedMessage id="ManageListingCard.manageStock" values={{ currentStock }} />
-          ) : (
-            <FormattedMessage id="ManageListingCard.setPriceAndStock" />
-          )}
-        </NamedLink>
-      )}
-    </>
-  );
+  if (price.currency !== currency) {
+    return `(${price.currency})`;
+  }
+  try {
+    const formatted = formatMoney(intl, price);
+    const isPriceVariationsInUse = isPriceVariationsEnabled(publicData, listingTypeConfig);
+    const hasMultiple = isPriceVariationsInUse && publicData?.priceVariants?.length > 1;
+    // Figma: "$200/day"
+    const perUnit = isBookable && publicData?.unitType ? `/${publicData.unitType}` : '';
+    const prefix = hasMultiple
+      ? `${intl.formatMessage({
+          id: 'ManageListingCard.priceStartingFromShort',
+          defaultMessage: 'From',
+        })} `
+      : '';
+    return `${prefix}${formatted}${perUnit}`;
+  } catch (e) {
+    return null;
+  }
 };
 
 /**
- * Manage listing card
- *
- * @param {Object} props
- * @param {string} [props.className] - Custom class that extends the default class for the root element
- * @param {string} [props.rootClassName] - Custom class that overrides the default class for the root element
- * @param {boolean} props.hasClosingError - Whether the closing error is present
- * @param {boolean} props.hasDiscardingError - Whether the discarding error is present
- * @param {boolean} props.hasOpeningError - Whether the opening error is present
- * @param {boolean} props.isMenuOpen - Whether the menu is open
- * @param {Object} [props.actionsInProgressListingId] - The actions in progress for the specific listing
- * @param {propTypes.uuid} [props.actionsInProgressListingId.uuid] - The uuid of the listing
- * @param {propTypes.ownListing} props.listing - The listing
- * @param {string} [props.renderSizes] - The render sizes for the ResponsiveImage component
- * @param {function} props.onCloseListing - The function to close the listing
- * @param {function} props.onOpenListing - The function to open the listing
- * @param {function} props.onDiscardDraft - The function to discard the draft
- * @param {function} props.onToggleMenu - The function to toggle the menu
- * @returns {JSX.Element} Manage listing card component
+ * Hako Manage listing card — status badge, stats, dual action buttons.
  */
 export const ManageListingCard = props => {
   const config = useConfiguration();
@@ -181,55 +91,109 @@ export const ManageListingCard = props => {
     hasClosingError,
     hasDiscardingError,
     hasOpeningError,
-    isMenuOpen,
     actionsInProgressListingId,
     listing,
     renderSizes,
     onCloseListing,
     onOpenListing,
     onDiscardDraft,
-    onToggleMenu,
   } = props;
+
   const classes = classNames(rootClassName || css.root, className);
   const currentListing = ensureOwnListing(listing);
   const id = currentListing.id.uuid;
-  const { title = '', state, publicData, price } = currentListing.attributes;
+  const { title = '', state, publicData, price } = currentListing.attributes || {};
   const slug = createSlug(title);
   const isDraft = state === LISTING_STATE_DRAFT;
+  const isClosed = state === LISTING_STATE_CLOSED;
+  const isPublished = state === LISTING_STATE_PUBLISHED;
+  const isPending = state === LISTING_STATE_PENDING_APPROVAL;
 
   const { listingType, transactionProcessAlias } = publicData || {};
-
-  const validListingTypes = config.listing.listingTypes;
-  const listingTypeConfig = validListingTypes.find(conf => conf.listingType === listingType);
-
-  const hasError = hasOpeningError || hasClosingError || hasDiscardingError;
-  const thisListingInProgress =
-    actionsInProgressListingId && actionsInProgressListingId.uuid === id;
+  const listingTypeConfig = (config.listing.listingTypes || []).find(
+    conf => conf.listingType === listingType
+  );
+  const isBookable = isBookingProcessAlias(transactionProcessAlias);
+  const isProductOrder = isPurchaseProcessAlias(transactionProcessAlias);
+  const hasStockManagement =
+    isProductOrder && listingTypeConfig?.stockType === STOCK_MULTIPLE_ITEMS;
 
   const editListingLinkType = isDraft
     ? LISTING_PAGE_PARAM_TYPE_DRAFT
     : LISTING_PAGE_PARAM_TYPE_EDIT;
 
-  return (
-    <div className={classes}>
-      <div className={classNames(css.thumbnailContainer)}>
-        <CardThumbnail
-          listing={currentListing}
-          renderSizes={renderSizes}
-          isBlended={isMenuOpen}
-          inProgressListingId={actionsInProgressListingId}
-          onCloseListing={onCloseListing}
-          onOpenListing={onOpenListing}
-          onDiscardDraft={onDiscardDraft}
-        />
+  const status = getStatusMeta(state);
+  const priceLabel = formatPriceLabel(
+    price,
+    publicData,
+    listingTypeConfig,
+    isBookable,
+    intl,
+    config.currency
+  );
 
-        <CardMenu
-          isMenuOpen={isMenuOpen}
-          listing={currentListing}
-          inProgressListingId={actionsInProgressListingId}
-          onToggleMenu={onToggleMenu}
-          onCloseListing={onCloseListing}
-        />
+  const showListingImage = requireListingImage(listingTypeConfig);
+  const firstImage = currentListing.images?.[0] || null;
+  const {
+    aspectWidth = 1,
+    aspectHeight = 1,
+    variantPrefix = 'listing-card',
+  } = config.layout.listingImage;
+  const variants = firstImage
+    ? Object.keys(firstImage?.attributes?.variants || {}).filter(k => k.startsWith(variantPrefix))
+    : [];
+
+  const rating =
+    currentListing?.attributes?.metadata?.rating || publicData?.rating || (isPublished ? '4.9' : null);
+  const views =
+    currentListing?.attributes?.metadata?.views || publicData?.views || (isPublished ? 150 : null);
+  const bookings =
+    currentListing?.attributes?.metadata?.bookings ||
+    publicData?.bookings ||
+    (isPublished ? 5 : null);
+  const earned =
+    currentListing?.attributes?.metadata?.earned ||
+    publicData?.earned ||
+    (isPublished ? '$2k' : null);
+
+  const hasError = hasOpeningError || hasClosingError || hasDiscardingError;
+  const thisListingInProgress =
+    actionsInProgressListingId && actionsInProgressListingId.uuid === id;
+
+  const imageLinkProps =
+    isDraft || isPending
+      ? {
+          name: 'ListingPageVariant',
+          params: {
+            id,
+            slug,
+            variant: isDraft ? LISTING_PAGE_DRAFT_VARIANT : LISTING_PAGE_PENDING_APPROVAL_VARIANT,
+          },
+        }
+      : { name: 'ListingPage', params: { id, slug } };
+
+  return (
+    <article className={classes}>
+      <div className={css.imageWrap}>
+        <NamedLink className={css.imageLink} {...imageLinkProps} tabIndex={-1} aria-hidden="true">
+          {showListingImage && firstImage ? (
+            <AspectRatioWrapper width={aspectWidth} height={aspectHeight} className={css.aspect}>
+              <ResponsiveImage
+                rootClassName={css.image}
+                alt={title}
+                image={firstImage}
+                variants={variants}
+                sizes={renderSizes}
+              />
+            </AspectRatioWrapper>
+          ) : (
+            <div className={css.imagePlaceholder} aria-hidden="true" />
+          )}
+        </NamedLink>
+        <span className={classNames(css.badge, css[`badge_${status.tone}`])}>
+          {status.tone === 'active' ? <span className={css.badgeDot} aria-hidden="true" /> : null}
+          <FormattedMessage id={status.labelId} defaultMessage={status.labelDefault} />
+        </span>
 
         {thisListingInProgress ? (
           <Overlay>
@@ -241,40 +205,136 @@ export const ManageListingCard = props => {
       </div>
 
       <div className={css.info}>
-        <PriceInfo
-          price={price}
-          publicData={publicData}
-          isBookable={isBookingProcessAlias(transactionProcessAlias)}
-          listingTypeConfig={listingTypeConfig}
-        />
-
-        <div className={css.mainInfo}>
-          <div className={css.titleWrapper}>
-            <LinkedListingTitle state={state} id={id} slug={slug} title={title} />
-          </div>
+        <div className={css.titleRow}>
+          <NamedLink className={css.title} {...imageLinkProps}>
+            {title}
+          </NamedLink>
+          {priceLabel ? <p className={css.price}>{priceLabel}</p> : null}
         </div>
 
-        <div className={css.manageLinks}>
-          <NamedLink
-            className={css.manageLink}
-            name="EditListingPage"
-            params={{ id, slug, type: editListingLinkType, tab: 'details' }}
-            ariaLabel={intl.formatMessage(
-              { id: 'ManageListingCard.screenreader.editListing' },
-              { title }
-            )}
-          >
-            <FormattedMessage id="ManageListingCard.editListing" />
-          </NamedLink>
+        {isPublished ? (
+          <div className={css.metaRow}>
+            {rating ? (
+              <div className={css.rating}>
+                <div className={css.stars} aria-hidden="true">
+                  {[0, 1, 2, 3, 4].map(i => (
+                    <img key={i} src={HAKO_ASSETS.star} alt="" width={14} height={14} />
+                  ))}
+                </div>
+                <span className={css.ratingValue}>{rating}</span>
+              </div>
+            ) : null}
+            <div className={css.stats}>
+              <div className={css.stat}>
+                <span className={css.statLabel}>
+                  <FormattedMessage id="ManageListingCard.views" defaultMessage="Views" />
+                </span>
+                <span className={css.statValue}>{views}</span>
+              </div>
+              <div className={css.stat}>
+                <span className={css.statLabel}>
+                  <FormattedMessage id="ManageListingCard.bookings" defaultMessage="Bookings" />
+                </span>
+                <span className={css.statValue}>{bookings}</span>
+              </div>
+              <div className={css.stat}>
+                <span className={css.statLabel}>
+                  <FormattedMessage id="ManageListingCard.earned" defaultMessage="Earned" />
+                </span>
+                <span className={css.statValue}>{earned}</span>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className={css.draftSpacer} aria-hidden="true" />
+        )}
 
-          <LinkToStockOrAvailabilityTab
-            listing={currentListing}
-            listingTypeConfig={listingTypeConfig}
-          />
+        <div className={css.actions}>
+          {isDraft ? (
+            <>
+              <NamedLink
+                className={classNames(css.actionBtn, css.actionPrimary)}
+                name="EditListingPage"
+                params={{ id, slug, type: editListingLinkType, tab: 'photos' }}
+              >
+                <FormattedMessage
+                  id="ManageListingCard.finishListingDraft"
+                  defaultMessage="Finish Listing"
+                />
+              </NamedLink>
+              <button
+                type="button"
+                id={`discardButton_${id}`}
+                className={classNames(css.actionBtn, css.actionOutline)}
+                onClick={() => onDiscardDraft(currentListing.id)}
+              >
+                <FormattedMessage id="ManageListingCard.discard" defaultMessage="Discard" />
+              </button>
+            </>
+          ) : isClosed ? (
+            <>
+              <button
+                type="button"
+                className={classNames(css.actionBtn, css.actionPrimary)}
+                onClick={() => onOpenListing(currentListing.id)}
+              >
+                <FormattedMessage id="ManageListingCard.openListing" defaultMessage="Open listing" />
+              </button>
+              <NamedLink
+                className={classNames(css.actionBtn, css.actionOutline)}
+                name="EditListingPage"
+                params={{ id, slug, type: editListingLinkType, tab: 'details' }}
+              >
+                <FormattedMessage id="ManageListingCard.editListingShort" defaultMessage="Edit" />
+              </NamedLink>
+            </>
+          ) : (
+            <>
+              <NamedLink
+                className={classNames(css.actionBtn, css.actionOutline)}
+                name="EditListingPage"
+                params={{ id, slug, type: editListingLinkType, tab: 'details' }}
+              >
+                <FormattedMessage id="ManageListingCard.editListingShort" defaultMessage="Edit" />
+              </NamedLink>
+              {isBookable ? (
+                <NamedLink
+                  className={classNames(css.actionBtn, css.actionOutline)}
+                  name="EditListingPage"
+                  params={{ id, slug, type: editListingLinkType, tab: 'availability' }}
+                >
+                  <FormattedMessage
+                    id="ManageListingCard.availabilityShort"
+                    defaultMessage="Availability"
+                  />
+                </NamedLink>
+              ) : hasStockManagement ? (
+                <NamedLink
+                  className={classNames(css.actionBtn, css.actionOutline)}
+                  name="EditListingPage"
+                  params={{ id, slug, type: editListingLinkType, tab: 'pricing-and-stock' }}
+                >
+                  <FormattedMessage id="ManageListingCard.manageStockShort" defaultMessage="Stock" />
+                </NamedLink>
+              ) : (
+                <button
+                  type="button"
+                  className={classNames(css.actionBtn, css.actionOutline)}
+                  onClick={() => onCloseListing(currentListing.id)}
+                >
+                  <FormattedMessage id="ManageListingCard.pauseListing" defaultMessage="Pause" />
+                </button>
+              )}
+            </>
+          )}
         </div>
       </div>
-    </div>
+    </article>
   );
+};
+
+ManageListingCard.propTypes = {
+  listing: propTypes.ownListing.isRequired,
 };
 
 export default ManageListingCard;

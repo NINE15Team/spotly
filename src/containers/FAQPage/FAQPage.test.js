@@ -10,7 +10,10 @@ const { screen } = testingLibrary;
 describe('FAQPage', () => {
   it('renders hero and section headings from Figma', () => {
     render(<FAQPageComponent />);
-    expect(screen.getByRole('heading', { level: 1, name: 'FAQ' })).toBeInTheDocument();
+    expect(screen.getByText('Support')).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { level: 1, name: 'Frequently Asked Questions' })
+    ).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'For Drivers' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'For Hosts' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Billing & Account' })).toBeInTheDocument();

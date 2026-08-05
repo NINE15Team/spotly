@@ -1,44 +1,81 @@
 @import '../../styles/customMediaQueries.css';
 
 .hero {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
   width: 100%;
-  min-height: 280px;
-  padding: 40px var(--hakoLateralPaddingMobile);
-  background-color: var(--hakoDark);
+  min-height: 300px;
+  padding: 48px var(--hakoLateralPaddingMobile);
   box-sizing: border-box;
   text-align: center;
+  overflow: hidden;
+  background-color: var(--hakoDark);
 
   @media (--viewportMedium) {
     min-height: 400px;
-    padding: 60px var(--hakoLateralPaddingDesktop);
+    padding: 72px var(--hakoLateralPaddingDesktop);
   }
+}
+
+.heroImage {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.heroOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(12, 22, 29, 0.68);
+}
+
+.heroContent {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  max-width: 620px;
+  margin: 0 auto;
+}
+
+.eyebrow {
+  margin: 0;
+  font-family: var(--fontFamily);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--hakoPrimary);
 }
 
 .heroTitle {
   margin: 0;
   font-family: var(--fontFamilyHeading);
-  font-weight: 600;
+  font-weight: 700;
   font-size: 36px;
-  line-height: 40px;
-  color: var(--hakoLightText);
+  line-height: 1.1;
+  color: var(--hakoWhite);
 
   @media (--viewportMedium) {
-    font-size: 65px;
-    line-height: 60px;
+    font-size: 56px;
   }
 }
 
 .heroSubtitle {
   margin: 0;
+  max-width: 480px;
   font-family: var(--fontFamily);
   font-size: 16px;
-  line-height: 23px;
-  color: var(--hakoSecondaryText);
+  line-height: 1.5;
+  color: var(--hakoWhite);
 }
 
 .content {
@@ -46,7 +83,7 @@
   justify-content: center;
   width: 100%;
   padding: var(--hakoSectionPaddingYMobile) var(--hakoLateralPaddingMobile);
-  background-color: var(--hakoWhite);
+  background-color: var(--hakoLightGreen);
   box-sizing: border-box;
 
   @media (--viewportMedium) {
@@ -56,10 +93,7 @@
 
 .formCard {
   width: 100%;
-  max-width: 600px;
-  padding: var(--hakoCardPadding);
-  border-radius: var(--hakoBorderRadius);
-  background-color: var(--hakoLightGreen);
+  max-width: 620px;
   box-sizing: border-box;
 }
 
@@ -74,16 +108,30 @@
 }
 
 .submit {
-  margin-top: 10px;
+  margin-top: 4px;
+  width: 100%;
+  min-height: 48px;
   border-radius: var(--hakoBorderRadiusSmall);
-  min-height: 45px;
   background-color: var(--hakoPrimary);
+  font-family: var(--fontFamily);
+  font-size: 16px;
+  font-weight: 600;
+
+  @media (--viewportMedium) {
+    width: 200px;
+  }
+}
+
+.submit:hover,
+.submit:focus {
+  background-color: var(--colorPrimaryButtonDark);
+  outline: none;
 }
 
 .success {
   margin: 0;
   font-family: var(--fontFamily);
   font-size: 16px;
-  line-height: 23px;
+  line-height: 1.5;
   color: var(--hakoPrimaryText);
 }

@@ -11,13 +11,14 @@ import {
 } from '../../components';
 import TopbarContainer from '../TopbarContainer/TopbarContainer';
 import FooterContainer from '../FooterContainer/FooterContainer';
+import { HAKO_ASSETS } from '../LandingPage/Hako/assets';
 
 import css from './ContactPage.module.css';
 
 const required = message => value => (value ? undefined : message);
 
 /**
- * Contact Us — field labels/layout from Figma node 142:620.
+ * Contact Us — layout & copy from Figma Contact Us desktop/mobile screenshots.
  */
 export const ContactPageComponent = props => {
   const { onSubmit } = props;
@@ -34,8 +35,16 @@ export const ContactPageComponent = props => {
     <Page title="Contact Us | Hako" scrollingDisabled={false}>
       <LayoutSingleColumn topbar={<TopbarContainer />} footer={<FooterContainer />}>
         <section className={css.hero} aria-label="Contact hero">
-          <h1 className={css.heroTitle}>Contact Us</h1>
-          <p className={css.heroSubtitle}>We usually respond within 24 hours</p>
+          <img className={css.heroImage} src={HAKO_ASSETS.hero} alt="" role="presentation" />
+          <div className={css.heroOverlay} aria-hidden="true" />
+          <div className={css.heroContent}>
+            <p className={css.eyebrow}>Support</p>
+            <h1 className={css.heroTitle}>Contact Us</h1>
+            <p className={css.heroSubtitle}>
+              Have a question or need help? We&apos;d love to hear from you. We typically respond
+              within 24 hours.
+            </p>
+          </div>
         </section>
 
         <section className={css.content}>
@@ -81,7 +90,7 @@ export const ContactPageComponent = props => {
                         </option>
                         <option value="drivers">Driver support</option>
                         <option value="hosts">Host support</option>
-                        <option value="billing">Billing & account</option>
+                        <option value="billing">Billing &amp; account</option>
                         <option value="other">Other</option>
                       </FieldSelect>
                       <FieldTextInput

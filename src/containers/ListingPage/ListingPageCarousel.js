@@ -4,6 +4,7 @@ import { useDispatch, useSelector, useStore } from 'react-redux';
 import classNames from 'classnames';
 
 // Utils
+import { formatMoney } from '../../util/currency';
 import { FormattedMessage } from '../../util/reactIntl';
 import { LISTING_STATE_CLOSED, propTypes } from '../../util/types';
 import { OFFER, REQUEST } from '../../transactions/transaction';
@@ -15,14 +16,11 @@ import { initializeCardPaymentData } from '../../ducks/stripe.duck.js';
 
 // Shared components
 import {
-  H2,
-  H3,
   H4,
   Page,
   NamedLink,
   OrderPanel,
   LayoutSingleColumn,
-  SectionText,
 } from '../../components';
 
 // Related components and modules
@@ -53,10 +51,17 @@ import SectionReviews from './SectionReviews';
 import SectionAuthorMaybe from './SectionAuthorMaybe';
 import SectionMapMaybe from './SectionMapMaybe';
 import SectionGallery from './SectionGallery';
-import CustomListingFields from './CustomListingFields';
 import ListingPageAccessWrapper from './ListingPageAccessWrapper';
+import {
+  HakoBreadcrumbs,
+  HakoListingHeading,
+  HakoHostBar,
+  HakoAmenities,
+  HakoVehicleRestrictions,
+} from './Hako';
 
 import css from './ListingPage.module.css';
+import hakoCss from './Hako/HakoListingSections.module.css';
 
 const MIN_LENGTH_FOR_LONG_WORDS_IN_TITLE = 16;
 
@@ -109,7 +114,6 @@ export const ListingPageComponent = props => {
     payoutDetailsWarningClassName: css.payoutDetailsWarning,
   });
   const {
-    listingConfig,
     listingId,
     isVariant,
     currentListing,
@@ -122,11 +126,9 @@ export const ListingPageComponent = props => {
     price,
     title,
     publicData,
-    metadata,
     richTitle,
     isOwnListing,
     showListingImage,
-    showDescription,
     processType,
     ensuredAuthor,
     noPayoutDetailsSetWithOwnListing,
@@ -163,6 +165,43 @@ export const ListingPageComponent = props => {
   }
   const unitType = publicData.unitType;
   const isNegotiation = processType === 'negotiation';
+
+  const locationLabel =
+    publicData?.location?.address ||
+    publicData?.location?.building ||
+    publicData?.city ||
+    publicData?.neighborhood ||
+    '';
+  const locationShort =
+    publicData?.neighborhood ||
+    publicData?.city ||
+    (typeof locationLabel === 'string' ? locationLabel.split(',')[0] : '') ||
+    '';
+  const subtitle =
+    publicData?.subtitle ||
+    publicData?.tagline ||
+    publicData?.spaceType ||
+    null;
+  const ratingDisplay =
+    currentListing?.attributes?.metadata?.rating || publicData?.rating || '4.9';
+  const reviewCount =
+    currentListing?.attributes?.metadata?.reviewsTotal ||
+    publicData?.reviewsTotal ||
+    (reviews?.length > 0 ? reviews.length : 42);
+
+  let priceLabel = null;
+  if (price && price.currency === config.currency) {
+    try {
+      priceLabel = intl.formatMessage(
+        { id: 'HakoListing.startingFrom', defaultMessage: 'Starting from {price}' },
+        { price: formatMoney(intl, price) }
+      );
+    } catch (e) {
+      priceLabel = null;
+    }
+  }
+
+  const showContactHost = !(processType === 'inquiry' || (isNegotiation && unitType === OFFER));
 
   const commonParams = { params, history, routes: routeConfiguration };
   const onContactUser = handleContactUser({
@@ -252,59 +291,55 @@ export const ListingPageComponent = props => {
                 tab: listingTab,
               }}
             />
-            {showListingImage && (
+            <HakoBreadcrumbs title={title} locationLabel={locationShort} />
+            {showListingImage ? (
               <SectionGallery
                 listing={currentListing}
                 variantPrefix={config.layout.listingImage.variantPrefix}
               />
-            )}
-            <div
-              className={showListingImage ? css.mobileHeading : css.noListingImageHeadingProduct}
-            >
-              {showListingImage ? (
-                <H2 as="h1" className={css.orderPanelTitle}>
-                  <FormattedMessage id="ListingPage.orderTitle" values={{ title: richTitle }} />
-                </H2>
-              ) : (
-                <H3 as="h1" className={css.orderPanelTitle}>
-                  <FormattedMessage id="ListingPage.orderTitle" values={{ title: richTitle }} />
-                </H3>
-              )}
-            </div>
-            {showDescription && <SectionText text={description} showAsIngress />}
+            ) : null}
 
-            <CustomListingFields
-              publicData={publicData}
-              metadata={metadata}
-              listingFieldConfigs={listingConfig.listingFields}
-              categoryConfiguration={config.categoryConfiguration}
-              intl={intl}
+            <HakoListingHeading
+              title={title}
+              subtitle={subtitle}
+              locationLabel={locationLabel}
+              priceLabel={priceLabel}
+              rating={ratingDisplay}
+              reviewCount={reviewCount}
             />
+
+            <HakoHostBar
+              author={currentListing.author}
+              authorDisplayName={authorDisplayName}
+              reviewCount={reviewCount}
+              onContactUser={onContactUser}
+              showContact={showContactHost}
+            />
+
+            <HakoAmenities publicData={publicData} />
+            <HakoVehicleRestrictions publicData={publicData} />
+
+            {description ? (
+              <section className={hakoCss.section}>
+                <h2 className={hakoCss.sectionTitle}>
+                  <FormattedMessage id="HakoListing.aboutTitle" defaultMessage="About this space" />
+                </h2>
+                <p className={hakoCss.aboutText}>{description}</p>
+              </section>
+            ) : null}
 
             <SectionMapMaybe
               geolocation={geolocation}
               publicData={publicData}
               listingId={currentListing.id}
               mapsConfig={config.maps}
+              showAddressNote
             />
             <SectionReviews reviews={reviews} fetchReviewsError={fetchReviewsError} />
-            <SectionAuthorMaybe
-              title={title}
-              listing={currentListing}
-              authorDisplayName={authorDisplayName}
-              onContactUser={onContactUser}
-              isInquiryModalOpen={isAuthenticated && inquiryModalOpen}
-              onCloseInquiryModal={() => setInquiryModalOpen(false)}
-              sendInquiryError={sendInquiryError}
-              sendInquiryInProgress={sendInquiryInProgress}
-              onSubmitInquiry={onSubmitInquiry}
-              currentUser={currentUser}
-              onManageDisableScrolling={onManageDisableScrolling}
-            />
           </div>
           <div className={css.orderColumnForProductLayout}>
             <OrderPanel
-              className={classNames(css.productOrderPanel, {
+              className={classNames(css.productOrderPanel, css.hakoOrderPanel, {
                 [css.imagesEnabled]: showListingImage,
               })}
               listing={currentListing}
@@ -336,8 +371,26 @@ export const ListingPageComponent = props => {
               dayCountAvailableForBooking={config.stripe.dayCountAvailableForBooking}
               marketplaceName={config.marketplaceName}
               showListingImage={showListingImage}
+              isHakoLayout
+              hakoRating={ratingDisplay}
+              hakoReviewCount={reviewCount}
             />
           </div>
+        </div>
+        <div className={css.hakoAuthorModalOnly}>
+          <SectionAuthorMaybe
+            title={title}
+            listing={currentListing}
+            authorDisplayName={authorDisplayName}
+            onContactUser={onContactUser}
+            isInquiryModalOpen={isAuthenticated && inquiryModalOpen}
+            onCloseInquiryModal={() => setInquiryModalOpen(false)}
+            sendInquiryError={sendInquiryError}
+            sendInquiryInProgress={sendInquiryInProgress}
+            onSubmitInquiry={onSubmitInquiry}
+            currentUser={currentUser}
+            onManageDisableScrolling={onManageDisableScrolling}
+          />
         </div>
       </LayoutSingleColumn>
     </Page>

@@ -9,8 +9,9 @@ import { createResourceLocatorString, pathByRouteName } from '../../util/routes'
 import { makeGetListingsByIdSelector } from '../../ducks/marketplaceData.duck';
 import { manageDisableScrolling, isScrollingDisabled } from '../../ducks/ui.duck';
 
-import { ModalInMobile, Page } from '../../components';
+import { Page } from '../../components';
 import TopbarContainer from '../../containers/TopbarContainer/TopbarContainer';
+import FooterContainer from '../../containers/FooterContainer/FooterContainer';
 
 import { setActiveListing } from './SearchPage.duck';
 import {
@@ -28,44 +29,36 @@ import {
 import FilterComponent from './FilterComponent';
 import SearchMap from './SearchMap/SearchMap';
 import MainPanelHeader from './MainPanelHeader/MainPanelHeader';
-import SearchFiltersSecondary from './SearchFiltersSecondary/SearchFiltersSecondary';
-import SearchFiltersPrimary from './SearchFiltersPrimary/SearchFiltersPrimary';
-import SearchFiltersMobile from './SearchFiltersMobile/SearchFiltersMobile';
 import SortBy from './SortBy/SortBy';
 import SearchResultsPanel from './SearchResultsPanel/SearchResultsPanel';
 import NoSearchResultsMaybe from './NoSearchResultsMaybe/NoSearchResultsMaybe';
 import SearchPageAccessWrapper from './SearchPageAccessWrapper';
 import SearchErrors from './SearchErrors';
+import HakoSearchBar from './HakoSearchBar';
+import HakoPriceByToggle from './HakoPriceByToggle';
 
 import css from './SearchPage.module.css';
 
-const MODAL_BREAKPOINT = 768; // Search is in modal on mobile layout
 const SEARCH_WITH_MAP_DEBOUNCE = 300; // Little bit of debounce before search is initiated.
-
-// Primary filters have their content in dropdown-popup.
-// With this offset we move the dropdown to the left a few pixels on desktop layout.
-const FILTER_DROPDOWN_OFFSET = -14;
 
 export class SearchPageComponent extends Component {
   constructor(props) {
     super(props);
 
     this.state = {
-      isSearchMapOpenOnMobile: false,
       isMobileModalOpen: false,
       currentQueryParams: validUrlQueryParamsFromProps(props),
-      isSecondaryFiltersOpen: false,
+      priceBy: 'hour',
     };
 
     this.onMapMoveEnd = debounce(this.onMapMoveEnd.bind(this), SEARCH_WITH_MAP_DEBOUNCE);
-    this.onOpenMobileModal = this.onOpenMobileModal.bind(this);
-    this.onCloseMobileModal = this.onCloseMobileModal.bind(this);
 
     // Filter functions
     this.applyFilters = this.applyFilters.bind(this);
     this.cancelFilters = this.cancelFilters.bind(this);
     this.resetAll = this.resetAll.bind(this);
     this.getHandleChangedValueFn = this.getHandleChangedValueFn.bind(this);
+    this.handleSearchBarSubmit = this.handleSearchBarSubmit.bind(this);
 
     // SortBy
     this.handleSortBy = this.handleSortBy.bind(this);
@@ -127,18 +120,6 @@ export class SearchPageComponent extends Component {
 
       history.push(createResourceLocatorString(routeName, routes, pathParams, searchParams));
     }
-  }
-
-  // Invoked when a modal is opened from a child component,
-  // for example when a filter modal is opened in mobile view
-  onOpenMobileModal() {
-    this.setState({ isMobileModalOpen: true });
-  }
-
-  // Invoked when a modal is closed from a child component,
-  // for example when a filter modal is opened in mobile view
-  onCloseMobileModal() {
-    this.setState({ isMobileModalOpen: false });
   }
 
   // Apply the filters by redirecting to SearchPage with new filters.
@@ -209,12 +190,37 @@ export class SearchPageComponent extends Component {
     });
   }
 
+  handleSearchBarSubmit(values = {}) {
+    const { history, routeConfiguration, location, config } = this.props;
+    const routes = routeConfiguration;
+    const { routeName, pathParams } = getSearchPageResourceLocatorStringParams(routes, location);
+    const urlQueryParams = validUrlQueryParamsFromProps(this.props);
+    const { listingFields: listingFieldsConfig } = config?.listing || {};
+    const { defaultFilters: defaultFiltersConfig } = config?.search || {};
+    const activeListingTypes = config?.listing?.listingTypes.map(c => c.listingType);
+    const listingCategories = config.categoryConfiguration.categories;
+    const filterConfigs = {
+      listingFieldsConfig,
+      defaultFiltersConfig,
+      listingCategories,
+      activeListingTypes,
+      currentPathParams: this.props.params || {},
+    };
+
+    const address = values.location?.trim();
+    const searchParams = {
+      ...validFilterParams(urlQueryParams, filterConfigs, false),
+      ...(address ? { address } : {}),
+    };
+
+    history.push(createResourceLocatorString(routeName, routes, pathParams, searchParams));
+  }
+
   render() {
     const {
       intl,
       listings = [],
       location,
-      onManageDisableScrolling,
       pagination,
       scrollingDisabled,
       searchInProgress,
@@ -233,14 +239,9 @@ export class SearchPageComponent extends Component {
       sortConfig,
       validQueryParams,
       searchParamsInURL,
-      customSecondaryFilters,
-      availablePrimaryFilters,
       availableFilters,
-      hasSecondaryFilters,
       selectedFilters,
-      selectedFiltersCountForMobile,
       isValidDatesFilter,
-      selectedSecondaryFiltersCount,
       totalItems,
       listingsAreLoaded,
       conflictingFilterActive,
@@ -263,22 +264,6 @@ export class SearchPageComponent extends Component {
       currentUser,
     });
 
-    const isWindowDefined = typeof window !== 'undefined';
-    const isMobileLayout = isWindowDefined && window.innerWidth < MODAL_BREAKPOINT;
-    const shouldShowSearchMap =
-      !isMobileLayout || (isMobileLayout && this.state.isSearchMapOpenOnMobile);
-
-    const isSecondaryFiltersOpen = !!hasSecondaryFilters && this.state.isSecondaryFiltersOpen;
-    const propsForSecondaryFiltersToggle = hasSecondaryFilters
-      ? {
-          isSecondaryFiltersOpen: this.state.isSecondaryFiltersOpen,
-          toggleSecondaryFiltersOpen: isOpen => {
-            this.setState({ isSecondaryFiltersOpen: isOpen, currentQueryParams: {} });
-          },
-          selectedSecondaryFiltersCount,
-        }
-      : {};
-
     const sortBy = mode => {
       return sortConfig.active ? (
         <SortBy
@@ -290,7 +275,7 @@ export class SearchPageComponent extends Component {
           showAsPopup
           mode={mode}
           labelId={`${mode}-search-page-sort-by`}
-          contentPlacementOffset={FILTER_DROPDOWN_OFFSET}
+          contentPlacementOffset={-14}
         />
       ) : null;
     };
@@ -305,15 +290,41 @@ export class SearchPageComponent extends Component {
     );
 
     const { bounds, origin } = searchParamsInURL || {};
+    const addressFromUrl = searchParamsInURL?.address || '';
 
-    // Set topbar class based on if a modal is open in
-    // a child component
-    const topbarClasses = this.state.isMobileModalOpen
-      ? classNames(css.topbarBehindModal, css.topbar)
-      : css.topbar;
+    const filterList = (
+      <>
+        <HakoPriceByToggle
+          value={this.state.priceBy}
+          onChange={priceBy => this.setState({ priceBy })}
+        />
+        {availableFilters.map(filterConfig => {
+          const key = `SearchFiltersDesktop.${filterConfig.scope || 'built-in'}.${
+            filterConfig.key
+          }`;
+          const filterId = `SearchFiltersDesktop.${filterConfig.key.toLowerCase()}`;
+          return (
+            <FilterComponent
+              key={key}
+              id={filterId}
+              className={css.filter}
+              config={filterConfig}
+              containerId="SearchPageWithMap_Filters"
+              listingCategories={listingCategories}
+              marketplaceCurrency={marketplaceCurrency}
+              urlQueryParams={validQueryParams}
+              initialValues={initialValues(this.props, this.state.currentQueryParams)}
+              getHandleChangedValueFn={this.getHandleChangedValueFn}
+              intl={intl}
+              liveEdit
+              showAsPopup={false}
+              isDesktop
+            />
+          );
+        })}
+      </>
+    );
 
-    // N.B. openMobileMap button is sticky.
-    // For some reason, stickyness doesn't work on Safari, if the element is <button>
     return (
       <Page
         scrollingDisabled={scrollingDisabled}
@@ -321,171 +332,72 @@ export class SearchPageComponent extends Component {
         title={title}
         schema={schema}
       >
-        <TopbarContainer rootClassName={topbarClasses} currentSearchParams={validQueryParams} />
-        <div id="main-content" className={css.container} role="main">
-          <div className={css.searchResultContainer}>
-            <SearchFiltersMobile
-              className={css.searchFiltersMobileMap}
-              urlQueryParams={validQueryParams}
-              sortByComponent={sortBy('mobile')}
-              listingsAreLoaded={listingsAreLoaded}
-              resultsCount={totalItems}
-              searchInProgress={searchInProgress}
-              searchListingsError={searchListingsError}
-              showAsModalMaxWidth={MODAL_BREAKPOINT}
-              onMapIconClick={() => this.setState({ isSearchMapOpenOnMobile: true })}
-              onManageDisableScrolling={onManageDisableScrolling}
-              onOpenModal={this.onOpenMobileModal}
-              onCloseModal={this.onCloseMobileModal}
-              resetAll={this.resetAll}
-              selectedFiltersCount={selectedFiltersCountForMobile}
-              noResultsInfo={noResultsInfo}
-              location={location}
-              isMapVariant
-            >
-              {availableFilters.map(filterConfig => {
-                const key = `SearchFiltersMobile.${filterConfig.scope || 'built-in'}.${
-                  filterConfig.key
-                }`;
-                const filterId = `SearchFiltersMobile.${filterConfig.key.toLowerCase()}`;
-                return (
-                  <FilterComponent
-                    key={key}
-                    id={filterId}
-                    config={filterConfig}
-                    containerId="SearchPage_MobileFilters"
-                    listingCategories={listingCategories}
-                    marketplaceCurrency={marketplaceCurrency}
-                    urlQueryParams={validQueryParams}
-                    initialValues={initialValues(this.props, this.state.currentQueryParams)}
-                    getHandleChangedValueFn={this.getHandleChangedValueFn}
-                    intl={intl}
-                    liveEdit
-                    showAsPopup={false}
-                  />
-                );
-              })}
-            </SearchFiltersMobile>
-            <MainPanelHeader
-              className={css.mainPanelMapVariant}
-              sortByComponent={sortBy('desktop')}
-              isSortByActive={sortConfig.active}
-              listingsAreLoaded={listingsAreLoaded}
-              resultsCount={totalItems}
-              searchInProgress={searchInProgress}
-              searchListingsError={searchListingsError}
-              noResultsInfo={noResultsInfo}
-            >
-              <SearchFiltersPrimary {...propsForSecondaryFiltersToggle}>
-                {availablePrimaryFilters.map(filterConfig => {
-                  const key = `SearchFiltersPrimary.${filterConfig.scope || 'built-in'}.${
-                    filterConfig.key
-                  }`;
-                  const filterId = `SearchFiltersPrimary.${filterConfig.key.toLowerCase()}`;
-                  return (
-                    <FilterComponent
-                      key={key}
-                      id={filterId}
-                      config={filterConfig}
-                      containerId="SearchPageWithMap_PrimaryFilters"
-                      listingCategories={listingCategories}
-                      marketplaceCurrency={marketplaceCurrency}
-                      urlQueryParams={validQueryParams}
-                      initialValues={initialValues(this.props, this.state.currentQueryParams)}
-                      getHandleChangedValueFn={this.getHandleChangedValueFn}
-                      intl={intl}
-                      showAsPopup
-                      contentPlacementOffset={FILTER_DROPDOWN_OFFSET}
-                    />
-                  );
-                })}
-              </SearchFiltersPrimary>
-            </MainPanelHeader>
-            {isSecondaryFiltersOpen ? (
-              <div className={classNames(css.searchFiltersPanel)}>
-                <SearchFiltersSecondary
-                  urlQueryParams={validQueryParams}
-                  listingsAreLoaded={listingsAreLoaded}
-                  applyFilters={this.applyFilters}
-                  cancelFilters={this.cancelFilters}
-                  resetAll={this.resetAll}
-                  onClosePanel={() => this.setState({ isSecondaryFiltersOpen: false })}
-                >
-                  {customSecondaryFilters.map(filterConfig => {
-                    const key = `SearchFiltersSecondary.${filterConfig.scope || 'built-in'}.${
-                      filterConfig.key
-                    }`;
-                    const filterId = `SearchFiltersSecondary.${filterConfig.key.toLowerCase()}`;
-                    return (
-                      <FilterComponent
-                        key={key}
-                        id={filterId}
-                        config={filterConfig}
-                        containerId="SearchPageWithMap_SecondaryFilters"
-                        listingCategories={listingCategories}
-                        marketplaceCurrency={marketplaceCurrency}
-                        urlQueryParams={validQueryParams}
-                        initialValues={initialValues(this.props, this.state.currentQueryParams)}
-                        getHandleChangedValueFn={this.getHandleChangedValueFn}
-                        intl={intl}
-                        showAsPopup={false}
-                      />
-                    );
-                  })}
-                </SearchFiltersSecondary>
-              </div>
-            ) : (
-              <div
-                className={classNames(css.listingsForMapVariant, {
-                  [css.newSearchInProgress]: !(listingsAreLoaded || searchListingsError),
-                })}
-              >
-                <SearchErrors
-                  searchListingsError={searchListingsError}
-                  isValidDatesFilter={isValidDatesFilter}
-                />
-                <SearchResultsPanel
-                  className={css.searchListingsPanel}
-                  listings={listings}
-                  pagination={listingsAreLoaded ? pagination : null}
-                  search={parse(location.search)}
-                  setActiveListing={onActivateListing}
-                  isMapVariant
-                  listingTypeParam={listingTypePathParam}
-                  intl={intl}
-                />
-              </div>
-            )}
-          </div>
-          <ModalInMobile
-            className={css.mapPanel}
-            id="SearchPage_map"
-            isModalOpenOnMobile={this.state.isSearchMapOpenOnMobile}
-            onClose={() => this.setState({ isSearchMapOpenOnMobile: false })}
-            showAsModalMaxWidth={MODAL_BREAKPOINT}
-            onManageDisableScrolling={onManageDisableScrolling}
-          >
-            <div className={css.mapWrapper} data-testid="searchMapContainer">
-              {shouldShowSearchMap ? (
+        <TopbarContainer rootClassName={css.topbar} currentSearchParams={validQueryParams} />
+        <div className={css.hakoPage}>
+          <HakoSearchBar
+            initialValues={{ location: addressFromUrl }}
+            onSubmit={this.handleSearchBarSubmit}
+          />
+          <div className={css.hakoBody}>
+            <aside className={css.hakoSidebar} data-testid="filterColumnAside" aria-label="Filters">
+              <div className={css.hakoSidebarContent}>{filterList}</div>
+            </aside>
+
+            <div id="main-content" className={css.hakoMain} role="main">
+              <div className={css.hakoMapSection} data-testid="searchMapContainer">
                 <SearchMap
-                  reusableContainerClassName={css.map}
+                  reusableContainerClassName={css.hakoMap}
                   rootClassName={css.mapRoot}
                   activeListingId={activeListingId}
                   bounds={bounds}
                   center={origin}
-                  isSearchMapOpenOnMobile={this.state.isSearchMapOpenOnMobile}
+                  isSearchMapOpenOnMobile
                   location={location}
                   listings={listings || []}
                   onMapMoveEnd={this.onMapMoveEnd}
-                  onCloseAsModal={() => {
-                    onManageDisableScrolling('SearchPage_map', false);
-                  }}
+                  onCloseAsModal={() => {}}
                   messages={intl.messages}
                 />
-              ) : null}
+              </div>
+
+              <div className={css.hakoResults}>
+                <MainPanelHeader
+                  className={css.hakoResultsHeader}
+                  sortByComponent={sortBy('desktop')}
+                  isSortByActive={sortConfig.active}
+                  listingsAreLoaded={listingsAreLoaded}
+                  resultsCount={totalItems}
+                  searchInProgress={searchInProgress}
+                  searchListingsError={searchListingsError}
+                  noResultsInfo={noResultsInfo}
+                  isHakoLayout
+                />
+                <div
+                  className={classNames(css.hakoListings, {
+                    [css.newSearchInProgress]: !(listingsAreLoaded || searchListingsError),
+                  })}
+                >
+                  <SearchErrors
+                    searchListingsError={searchListingsError}
+                    isValidDatesFilter={isValidDatesFilter}
+                  />
+                  <SearchResultsPanel
+                    className={css.searchListingsPanel}
+                    listings={listings}
+                    pagination={listingsAreLoaded ? pagination : null}
+                    search={parse(location.search)}
+                    setActiveListing={onActivateListing}
+                    isMapVariant
+                    useHakoCards
+                    listingTypeParam={listingTypePathParam}
+                    intl={intl}
+                  />
+                </div>
+              </div>
             </div>
-          </ModalInMobile>
+          </div>
         </div>
+        <FooterContainer />
       </Page>
     );
   }

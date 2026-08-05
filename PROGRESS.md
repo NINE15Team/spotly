@@ -14,11 +14,17 @@ _None yet_ — Playwright visual baselines exist but need a running app + side-b
 ### Implemented with unit tests (design-faithful where Figma data existed)
 - **Homepage** — custom sections from full `get_design_context` (tokens, assets, copy). Not yet screenshot-verified in browser.
 - **Shared chrome** — design tokens, dark Topbar, global HakoFooter, ListingCard token restyle.
-- **FAQ `/faq`** — questions/sections from Figma metadata; **answer bodies interim**.
-- **Contact `/contact`** — form labels/placeholders from Figma metadata; hero not design-context verified.
+- **FAQ `/faq`** — Restyled from screenshots: SUPPORT hero, mint accordion sections, dark “Still have questions?” CTA. Answer bodies still interim.
+- **Contact `/contact`** — Restyled from screenshots: SUPPORT image hero, mint form section, green Send Message. Submit is still local-only (no API).
+- **Search `/s`** — Hako layout from user screenshots (top search bar, filter sidebar, map above horizontal cards, footer). Not yet pixel-verified vs Figma MCP.
+- **Listing details** — Hako layout from user screenshot (breadcrumbs, gallery, host bar, amenities chips, vehicle restrictions, about, map note, sticky booking card). Not yet pixel-verified vs Figma MCP.
+- **Merchant listings `/listings`** — Hako Your listings page (filters, sort, status cards, Post CTA). Stats use placeholders until analytics exist.
+- **About Us `/about`** — Hero, Why We Built, Meet the Team, value cards. Image placeholders until final Figma assets are available.
+- **Post a listing `/l/new`** — Hako wizard chrome (numbered stepper, green active step / Next), Details fields (access hours, security, vehicle size/height/length, surface, weight, HOA) merged from local listing config.
+- **Become a Host `/become-a-host`** — Hero, Hosting Made Simple cards, Why Host + Sign Up CTA. Image placeholder until final Figma asset.
 
 ### Not started (need Figma design context)
-Search results, Listing details, Checkout, Merchant listings, Post a listing, Merchant account, About us, Privacy policy (restyle), Sign up/Login layout, Become a host.
+Checkout, Merchant account, Privacy policy (restyle), Sign up/Login layout.
 
 ## ⛔ HARD BLOCKER — Figma MCP rate limit
 
@@ -38,18 +44,18 @@ Figma MCP returned: *"You've reached the Figma MCP tool call limit for your View
 | Foundations (tokens, fonts, Playwright) | Done (assets + tokens + Playwright config) |
 | Shared Topbar / Footer | Done — desktop header remade to Figma nav (263:1925) |
 | Homepage | Implemented + unit tests; visual baselines pending running app |
-| Search results | Not started |
-| Listing details | Not started |
+| Search results | Implemented from screenshots; not pixel-verified |
+| Listing details | Implemented from screenshots; not pixel-verified |
 | Checkout | Not started |
-| Merchant listings | Not started |
-| Post a listing | Not started |
+| Merchant listings | Implemented from screenshots; not pixel-verified |
+| Post a listing | Details step restyled from screenshots; other wizard tabs chrome-aligned |
 | Merchant account | Not started |
-| About us | Not started |
-| FAQ | Implemented from metadata (questions + layout); answers interim; not pixel-verified |
+| About us | Implemented from screenshots; not pixel-verified |
+| FAQ | Restyled from screenshots; answers interim; not pixel-verified |
 | Privacy policy | Not started |
-| Contact us | Implemented from metadata (fields/layout); not pixel-verified |
+| Contact us | Restyled from screenshots; not pixel-verified |
 | Sign up / Login | Not started |
-| Become a host | Not started |
+| Become a host | Implemented from screenshots; not pixel-verified |
 
 ### Fully done & pixel-verified
 _None yet (visual Playwright baselines need a running server + Figma side-by-side)._

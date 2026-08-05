@@ -4,6 +4,7 @@ import classNames from 'classnames';
 import { Page, LayoutSingleColumn, NamedLink } from '../../components';
 import TopbarContainer from '../TopbarContainer/TopbarContainer';
 import FooterContainer from '../FooterContainer/FooterContainer';
+import { HAKO_ASSETS } from '../LandingPage/Hako/assets';
 
 import { FAQ_SECTIONS } from './faqData';
 import css from './FAQPage.module.css';
@@ -21,7 +22,15 @@ const FaqItem = ({ item, isOpen, onToggle }) => {
       >
         <span className={css.questionText}>{item.question}</span>
         <span className={classNames(css.chevron, { [css.chevronOpen]: isOpen })} aria-hidden="true">
-          ▾
+          <svg width="14" height="8" viewBox="0 0 14 8" fill="none" aria-hidden="true">
+            <path
+              d="M1 1l6 6 6-6"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
         </span>
       </button>
       {isOpen ? (
@@ -34,18 +43,29 @@ const FaqItem = ({ item, isOpen, onToggle }) => {
 };
 
 /**
- * FAQ page — structure & question copy from Figma node 90:972.
- * Answer bodies are interim until open accordion states are pulled from Figma.
+ * FAQ page — layout & copy from Figma FAQ desktop/mobile screenshots.
  */
 export const FAQPageComponent = () => {
   const [openKey, setOpenKey] = useState(null);
 
   return (
-    <Page title="FAQ | Hako" scrollingDisabled={false}>
+    <Page title="Frequently Asked Questions | Hako" scrollingDisabled={false}>
       <LayoutSingleColumn topbar={<TopbarContainer />} footer={<FooterContainer />}>
         <section className={css.hero} aria-label="FAQ hero">
-          <h1 className={css.heroTitle}>FAQ</h1>
-          <p className={css.heroSubtitle}>Answers for drivers and hosts</p>
+          <img
+            className={css.heroImage}
+            src={HAKO_ASSETS.listYourSpace}
+            alt=""
+            role="presentation"
+          />
+          <div className={css.heroOverlay} aria-hidden="true" />
+          <div className={css.heroContent}>
+            <p className={css.eyebrow}>Support</p>
+            <h1 className={css.heroTitle}>Frequently Asked Questions</h1>
+            <p className={css.heroSubtitle}>
+              Find answers to the most common questions about using Hako for parking and storage.
+            </p>
+          </div>
         </section>
 
         <section className={css.content} aria-label="FAQ content">

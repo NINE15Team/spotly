@@ -32,6 +32,7 @@ import {
 // Import shared components
 import { NamedRedirect, Page } from '../../components';
 import TopbarContainer from '../../containers/TopbarContainer/TopbarContainer';
+import FooterContainer from '../../containers/FooterContainer/FooterContainer';
 
 // Import modules from this directory
 import {
@@ -312,6 +313,7 @@ export const EditListingPageComponent = props => {
           authScopes={authScopes}
           titleId={titleId}
         />
+        <FooterContainer />
       </Page>
     );
   } else {

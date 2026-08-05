@@ -48,9 +48,8 @@ const HAKO_NAV_LINKS = [
     id: 'about-us',
     messageId: 'TopbarDesktop.aboutUs',
     defaultMessage: 'About Us',
-    name: 'CMSPage',
-    params: { pageId: 'about' },
-    match: ({ currentPage }) => currentPage === 'CMSPage:about',
+    name: 'AboutPage',
+    match: ({ currentPage }) => currentPage === 'AboutPage',
   },
   {
     id: 'faq',
@@ -74,7 +73,7 @@ const LoginLink = () => (
 );
 
 const BecomeAHostLink = () => (
-  <NamedLink name="CMSPage" params={{ pageId: 'become-a-host' }} className={css.topbarLink}>
+  <NamedLink name="BecomeAHostPage" className={css.topbarLink}>
     <FormattedMessage id="TopbarDesktop.becomeAHost" defaultMessage="Become a Host" />
   </NamedLink>
 );

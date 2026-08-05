@@ -81,6 +81,7 @@ const CustomFieldMultiEnum = props => {
       label={label}
       helpText={fieldConfig?.helpText}
       options={createFilterOptions(enumOptions)}
+      twoColumns={!!fieldConfig?.twoColumns}
       {...validateMaybe}
     />
   ) : null;
@@ -137,26 +138,28 @@ const CustomFieldText = props => {
 
 const CustomFieldLong = props => {
   const { name, fieldConfig, defaultRequiredMessage, formId, intl } = props;
-  const { minimum, maximum, saveConfig } = fieldConfig;
+  const { minimum, maximum, saveConfig, numberConfig } = fieldConfig;
   const { placeholderMessage, isRequired, requiredMessage } = saveConfig || {};
+  const min = numberConfig?.minimum ?? minimum;
+  const max = numberConfig?.maximum ?? maximum;
   const label = getLabel(fieldConfig);
   const placeholder =
     placeholderMessage || intl.formatMessage({ id: 'CustomExtendedDataField.placeholderLong' });
   const numberTooSmallMessage = intl.formatMessage(
     { id: 'CustomExtendedDataField.numberTooSmall' },
-    { min: minimum }
+    { min }
   );
   const numberTooBigMessage = intl.formatMessage(
     { id: 'CustomExtendedDataField.numberTooBig' },
-    { max: maximum }
+    { max }
   );
 
   // Field with schema type 'long' will always be validated against min & max
-  const validate = (value, min, max) => {
+  const validate = (value, minVal, maxVal) => {
     const requiredMsg = requiredMessage || defaultRequiredMessage;
     return isRequired && value == null
       ? requiredMsg
-      : validateInteger(value, max, min, numberTooSmallMessage, numberTooBigMessage);
+      : validateInteger(value, maxVal, minVal, numberTooSmallMessage, numberTooBigMessage);
   };
 
   return (
@@ -173,7 +176,7 @@ const CustomFieldLong = props => {
       }}
       label={label}
       placeholder={placeholder}
-      validate={value => validate(value, minimum, maximum)}
+      validate={value => validate(value, min, max)}
       onWheel={e => {
         // fix: number input should not change value on scroll
         if (e.target === document.activeElement) {

@@ -1360,15 +1360,13 @@ const mergeListingConfig = (hostedConfig, defaultConfigs, categoriesInUse) => {
   const { listingTypes: defaultListingTypes, listingFields: defaultListingFields, ...rest } =
     defaultConfigs.listing || {};
 
-  // When debugging, include default configs by passing 'true' here.
-  // Otherwise, use listing types and fields from hosted assets.
-  const shouldMerge = mergeDefaultTypesAndFieldsForDebugging(false);
-  const listingTypes = shouldMerge
+  // Always merge local Hako listing fields with hosted fields (local overrides same key).
+  // Listing types still come from hosted assets unless debugging is enabled.
+  const shouldMergeTypes = mergeDefaultTypesAndFieldsForDebugging(false);
+  const listingTypes = shouldMergeTypes
     ? union(hostedListingTypes, defaultListingTypes, 'listingType')
     : hostedListingTypes;
-  const listingFields = shouldMerge
-    ? union(hostedListingFields, defaultListingFields, 'key')
-    : hostedListingFields;
+  const listingFields = union(hostedListingFields, defaultListingFields, 'key');
 
   const listingTypesInUse = listingTypes.map(lt => `${lt.listingType}`);
 

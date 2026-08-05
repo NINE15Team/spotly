@@ -3,16 +3,10 @@
 :global(.image-gallery-thumbnails-container) {
   text-align: left !important;
 }
-:global(.image-gallery-thumbnails) {
-  padding-top: 24px;
-  padding-bottom: 0;
 
-  /*
-   By default, the gallery controls the scroll position of the thumbnails when
-   browsing the images. We change this logic to a freely scrollable container
-   that the user controls. This overflow works together with the
-   `disableThumbnailScroll` option in the component JS.
-   */
+:global(.image-gallery-thumbnails) {
+  padding-top: 12px;
+  padding-bottom: 0;
   width: 100vw;
   overflow: auto;
 
@@ -23,10 +17,11 @@
     width: unset;
   }
 }
+
 :global(.image-gallery-thumbnail) {
   width: auto;
-  border-radius: 8px;
-
+  border-radius: var(--hakoBorderRadiusSmall);
+  border: 2px solid transparent !important;
   text-align: left !important;
 
   &:first-child {
@@ -46,17 +41,17 @@
 
   &:hover,
   &:global(.active) {
-    border-color: var(--marketplaceColor);
+    border-color: var(--hakoPrimary) !important;
   }
 }
 
 :global(.image-gallery-slide-wrapper) {
-  background-color: var(--colorWhite);
-  border-bottom: 1px solid var(--colorGrey100);
+  background-color: var(--hakoMuted);
+  border-bottom: none;
 
   @media (--viewportMedium) {
-    border-radius: var(--borderRadiusMedium);
-    border: 1px solid var(--colorGrey100);
+    border-radius: var(--hakoBorderRadius);
+    border: none;
     overflow: hidden;
   }
 }
@@ -76,6 +71,40 @@
 }
 
 .root {
+}
+
+.galleryWrap {
+  position: relative;
+}
+
+.imageCounter {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(12, 22, 29, 0.75);
+  color: var(--hakoWhite);
+  font-family: var(--fontFamily);
+  font-size: 12px;
+  line-height: 1.2;
+  pointer-events: none;
+
+  @media (--viewportMedium) {
+    display: none;
+  }
+}
+
+/* Hide thumbnails on mobile — counter badge is used instead */
+:global(.image-gallery-thumbnails) {
+  @media (max-width: 767px) {
+    display: none !important;
+  }
 }
 
 .itemWrapper,
@@ -111,11 +140,10 @@
 }
 
 .thumb {
-  /* With the active thumbnail border (default 4px), make the result
-   height a multiple of the baseline. */
-  max-width: 88px;
-  max-height: 88px;
-  border-radius: var(--borderRadiusMedium);
+  max-width: 100px;
+  max-height: 80px;
+  border-radius: var(--hakoBorderRadiusSmall);
+  object-fit: cover;
 }
 
 .navLeft,
@@ -126,8 +154,6 @@
   border: 0;
   padding: 0;
   z-index: 1;
-
-  /* center content */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -159,15 +185,12 @@
 
 .navArrowWrapper {
   display: none;
-
   width: 40px;
   height: 40px;
   border-radius: 50%;
-
   background-color: rgba(255, 255, 255, 0.5);
 
   @media (--viewportLarge) {
-    /* center content */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -175,18 +198,11 @@
 }
 
 .openFullscreen {
-  /* Hide on mobile. Currently react-image-gallery fullscreen mode is broken on
-     mobile, and mobile doesn't really benefit from fullscreen anyways. */
   display: none;
-
   composes: buttonSmall from global;
-
-  /* Position and dimensions */
   position: absolute;
   bottom: 19px;
   right: 24px;
-
-  /* Ensure the button is on top of the navRight area */
   z-index: 1;
 
   @media (--viewportLarge) {
@@ -196,7 +212,6 @@
 
 .close {
   composes: marketplaceModalCloseStyles from global;
-
   color: var(--colorGrey600);
   transition: var(--transitionStyleButton);
 

@@ -278,3 +278,94 @@
     padding: 0;
   }
 }
+
+/* ================ Hako listing booking card ================ */
+
+.hakoRoot {
+  margin: 32px 20px 40px;
+  padding: 20px;
+  background: var(--hakoWhite);
+  border: 1px solid rgba(12, 22, 29, 0.1);
+  border-radius: var(--hakoBorderRadius);
+  box-shadow: var(--hakoDropShadow);
+  box-sizing: border-box;
+
+  @media (--viewportMedium) {
+    margin: 36px 0 48px;
+  }
+
+  @media (--viewportLarge) {
+    margin: 0;
+    padding: 24px;
+  }
+}
+
+.hakoModalContainer {
+  /* Always inline for Hako (showAsModalMaxWidth=0) */
+  padding: 0 !important;
+  background: transparent !important;
+  margin: 0 !important;
+  min-height: unset !important;
+  height: unset !important;
+  box-shadow: none !important;
+}
+
+.hakoPriceRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding: 0;
+
+  & .priceContainer {
+    margin: 0;
+  }
+
+  & .price {
+    margin: 0;
+    font-family: var(--fontFamilyHeading);
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--hakoPrimaryText);
+
+    @media (--viewportMedium) {
+      font-size: 28px;
+    }
+  }
+
+  & .priceValue,
+  & .perUnit {
+    color: var(--hakoPrimaryText);
+  }
+}
+
+.hakoPanelRating {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--fontFamily);
+  font-size: 14px;
+  color: var(--hakoSecondaryText);
+  white-space: nowrap;
+
+  & span:first-child {
+    color: var(--hakoPrimary);
+  }
+}
+
+.hakoRoot .bookingForm {
+  min-height: unset;
+  padding: 0;
+}
+
+.hakoCta {
+  background-color: var(--hakoPrimary);
+  border-color: var(--hakoPrimary);
+
+  &:hover,
+  &:focus {
+    background-color: var(--colorPrimaryButtonDark);
+    border-color: var(--colorPrimaryButtonDark);
+  }
+}

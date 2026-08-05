@@ -64,8 +64,8 @@
 }
 
 .selectedTabContent {
-  border-bottom-color: var(--colorBlack);
-  color: var(--colorBlack);
+  border-bottom-color: var(--hakoAccent);
+  color: var(--hakoPrimaryText);
 }
 
 .disabled {

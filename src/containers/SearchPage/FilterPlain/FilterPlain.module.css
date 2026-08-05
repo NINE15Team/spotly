@@ -4,12 +4,11 @@
   position: relative;
   padding-top: 24px;
   padding-bottom: 17px;
-  border-bottom: 1px solid var(--colorGrey100);
+  border-bottom: 1px solid rgba(12, 22, 29, 0.12);
 
   @media (--viewportMedium) {
-    padding-top: 16px;
-    padding-bottom: 0;
-    border-bottom: 0;
+    padding-top: 20px;
+    padding-bottom: 20px;
   }
 }
 
@@ -63,7 +62,11 @@
 .label,
 .labelSelected {
   composes: marketplaceSmallFontStyles from global;
+  font-family: var(--fontFamily);
   font-weight: var(--fontWeightBold);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 
   /* Baseline adjustment for label text */
   margin-top: 0;
@@ -75,7 +78,7 @@
 }
 
 .label {
-  color: var(--colorGrey700);
+  color: var(--hakoPrimaryText);
 }
 
 .labelSelected {

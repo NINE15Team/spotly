@@ -5,10 +5,14 @@ import { NamedLink } from '../../components';
 import css from './TabNav.module.css';
 
 const Tab = props => {
-  const { className, id, disabled, text, selected, linkProps } = props;
+  const { className, id, disabled, text, selected, linkProps, skin } = props;
+  const isWizard = skin === 'wizard';
   const linkClasses = classNames(css.link, {
-    [css.selectedLink]: selected,
+    [css.selectedLink]: selected && !isWizard,
     [css.disabled]: disabled,
+    [css.wizardLink]: isWizard,
+    [css.wizardSelectedLink]: isWizard && selected,
+    [css.wizardDisabledLink]: isWizard && disabled,
   });
 
   return (
@@ -40,17 +44,18 @@ const Tab = props => {
  * @param {string} [props.rootClassName] - Custom class that overrides the default class for the root element
  * @param {string} [props.tabRootClassName] - Custom class that overrides the default class for the tab element
  * @param {Array<TabConfig>} props.tabs - The tabs to render
+ * @param {'default'|'wizard'} [props.skin] - Visual skin (wizard = Hako post-a-listing stepper)
  * @returns {JSX.Element}
  */
 const TabNav = props => {
-  const { className, rootClassName, tabRootClassName, tabs, ariaLabel } = props;
+  const { className, rootClassName, tabRootClassName, tabs, ariaLabel, skin = 'default' } = props;
   const classes = classNames(rootClassName || css.root, className);
   const tabClasses = tabRootClassName || css.tab;
   return (
     <nav className={classes} aria-label={ariaLabel}>
       {tabs.map((tab, index) => {
         const id = typeof tab.id === 'string' ? tab.id : `${index}`;
-        return <Tab key={id} id={id} className={tabClasses} {...tab} />;
+        return <Tab key={id} id={id} className={tabClasses} skin={skin} {...tab} />;
       })}
     </nav>
   );

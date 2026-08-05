@@ -12,7 +12,9 @@ import { NamedRedirect } from '../components';
 
 const pageDataLoadingAPI = getPageDataLoadingAPI();
 
+const AboutPage = loadable(() => import(/* webpackChunkName: "AboutPage" */ '../containers/AboutPage/AboutPage'));
 const AuthenticationPage = loadable(() => import(/* webpackChunkName: "AuthenticationPage" */ '../containers/AuthenticationPage/AuthenticationPage'));
+const BecomeAHostPage = loadable(() => import(/* webpackChunkName: "BecomeAHostPage" */ '../containers/BecomeAHostPage/BecomeAHostPage'));
 const CheckoutPage = loadable(() => import(/* webpackChunkName: "CheckoutPage" */ '../containers/CheckoutPage/CheckoutPage'));
 const CMSPage = loadable(() => import(/* webpackChunkName: "CMSPage" */ '../containers/CMSPage/CMSPage'));
 const ContactDetailsPage = loadable(() => import(/* webpackChunkName: "ContactDetailsPage" */ '../containers/ContactDetailsPage/ContactDetailsPage'));
@@ -376,6 +378,16 @@ const routeConfiguration = (layoutConfig, accessControlConfig) => {
       path: '/faq',
       name: 'FAQPage',
       component: FAQPage,
+    },
+    {
+      path: '/about',
+      name: 'AboutPage',
+      component: AboutPage,
+    },
+    {
+      path: '/become-a-host',
+      name: 'BecomeAHostPage',
+      component: BecomeAHostPage,
     },
     {
       path: '/contact',

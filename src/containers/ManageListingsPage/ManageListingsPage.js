@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 import { compose } from 'redux';
 import { connect } from 'react-redux';
+import classNames from 'classnames';
 
 import { useRouteConfiguration } from '../../context/routeConfigurationContext';
 import { useConfiguration } from '../../context/configurationContext';
@@ -9,18 +10,17 @@ import { FormattedMessage, useIntl } from '../../util/reactIntl';
 import { pathByRouteName } from '../../util/routes';
 import { hasPermissionToPostListings, showCreateListingLinkForUser } from '../../util/userHelpers';
 import { NO_ACCESS_PAGE_POST_LISTINGS } from '../../util/urlHelpers';
-import { propTypes } from '../../util/types';
+import { propTypes, LISTING_STATE_DRAFT, LISTING_STATE_PUBLISHED, LISTING_STATE_CLOSED } from '../../util/types';
 import { isErrorNoPermissionToPostListings } from '../../util/errors';
 import { isScrollingDisabled, manageDisableScrolling } from '../../ducks/ui.duck';
 
 import {
-  H3,
+  H1,
   Page,
   PaginationLinks,
   UserNav,
   LayoutSingleColumn,
   NamedLink,
-  Modal,
 } from '../../components';
 
 import TopbarContainer from '../../containers/TopbarContainer/TopbarContainer';
@@ -37,30 +37,32 @@ import {
 import css from './ManageListingsPage.module.css';
 import DiscardDraftModal from './DiscardDraftModal/DiscardDraftModal';
 
-const Heading = props => {
-  const { listingsAreLoaded, pagination } = props;
-  const hasResults = listingsAreLoaded && pagination.totalItems > 0;
-  const hasNoResults = listingsAreLoaded && pagination.totalItems === 0;
+const FILTER_ALL = 'all';
+const FILTER_ACTIVE = 'active';
+const FILTER_DRAFTS = 'drafts';
+const FILTER_PAUSED = 'paused';
 
-  return hasResults ? (
-    <H3 as="h1" className={css.heading}>
-      <FormattedMessage
-        id="ManageListingsPage.youHaveListings"
-        values={{ count: pagination.totalItems }}
-      />
-    </H3>
-  ) : hasNoResults ? (
-    <div className={css.noResultsContainer}>
-      <H3 as="h1" className={css.headingNoListings}>
-        <FormattedMessage id="ManageListingsPage.noResults" />
-      </H3>
-      <p className={css.createListingParagraph}>
-        <NamedLink className={css.createListingLink} name="NewListingPage">
-          <FormattedMessage id="ManageListingsPage.createListing" />
-        </NamedLink>
-      </p>
-    </div>
-  ) : null;
+const matchesFilter = (listing, filter) => {
+  const state = listing?.attributes?.state;
+  if (filter === FILTER_ACTIVE) return state === LISTING_STATE_PUBLISHED;
+  if (filter === FILTER_DRAFTS) return state === LISTING_STATE_DRAFT;
+  if (filter === FILTER_PAUSED) return state === LISTING_STATE_CLOSED;
+  return true;
+};
+
+const sortListings = (listings, sortKey) => {
+  const copy = [...listings];
+  if (sortKey === 'title') {
+    return copy.sort((a, b) =>
+      (a.attributes?.title || '').localeCompare(b.attributes?.title || '')
+    );
+  }
+  // recently updated (fallback: createdAt)
+  return copy.sort((a, b) => {
+    const aTime = new Date(a.attributes?.lastTransitionedAt || a.attributes?.createdAt || 0).getTime();
+    const bTime = new Date(b.attributes?.lastTransitionedAt || b.attributes?.createdAt || 0).getTime();
+    return bTime - aTime;
+  });
 };
 
 const PaginationLinksMaybe = props => {
@@ -76,36 +78,13 @@ const PaginationLinksMaybe = props => {
 };
 
 /**
- * The ManageListingsPage component.
- *
- * @component
- * @param {Object} props
- * @param {propTypes.currentUser} props.currentUser - The current user
- * @param {propTypes.uuid} props.closingListing - The closing listing
- * @param {Object} props.closingListingError - The closing listing error
- * @param {propTypes.error} props.closingListingError.listingId - The closing listing id
- * @param {propTypes.error} props.closingListingError.error - The closing listing error
- * @param {propTypes.ownListing[]} props.listings - The listings
- * @param {function} props.onCloseListing - The onCloseListing function
- * @param {function} props.onDiscardDraft - The onDiscardDraft function
- * @param {function} props.onOpenListing - The onOpenListing function
- * @param {Object} props.openingListing - The opening listing
- * @param {propTypes.uuid} props.openingListing.uuid - The opening listing uuid
- * @param {Object} props.openingListingError - The opening listing error
- * @param {propTypes.uuid} props.openingListingError.listingId - The opening listing id
- * @param {propTypes.error} props.openingListingError.error - The opening listing error
- * @param {propTypes.pagination} props.pagination - The pagination
- * @param {boolean} props.queryInProgress - Whether the query is in progress
- * @param {propTypes.error} props.queryListingsError - The query listings error
- * @param {Object} props.queryParams - The query params
- * @param {boolean} props.scrollingDisabled - Whether the scrolling is disabled
- * @param {function} props.onManageDisableScrolling - The onManageDisableScrolling function
- * @returns {JSX.Element} manage listings page component
+ * The ManageListingsPage component (Hako Your listings).
  */
 export const ManageListingsPageComponent = props => {
-  const [listingMenuOpen, setListingMenuOpen] = useState(null);
   const [discardDraftModalOpen, setDiscardDraftModalOpen] = useState(null);
   const [discardDraftModalId, setDiscardDraftModalId] = useState(null);
+  const [statusFilter, setStatusFilter] = useState(FILTER_ALL);
+  const [sortKey, setSortKey] = useState('recent');
   const history = useHistory();
   const routeConfiguration = useRouteConfiguration();
   const config = useConfiguration();
@@ -140,10 +119,6 @@ export const ManageListingsPageComponent = props => {
     }
   }, [openingListingError]);
 
-  const onToggleMenu = listing => {
-    setListingMenuOpen(listing);
-  };
-
   const handleOpenListing = listingId => {
     const hasPostingRights = hasPermissionToPostListings(currentUser);
 
@@ -170,29 +145,49 @@ export const ManageListingsPageComponent = props => {
 
   const hasPaginationInfo = !!pagination && pagination.totalItems != null;
   const listingsAreLoaded = !queryInProgress && hasPaginationInfo;
+  const totalItems = pagination?.totalItems || 0;
+
+  const counts = useMemo(() => {
+    return listings.reduce(
+      (acc, l) => {
+        const state = l?.attributes?.state;
+        if (state === LISTING_STATE_PUBLISHED) acc.active += 1;
+        else if (state === LISTING_STATE_DRAFT) acc.drafts += 1;
+        else if (state === LISTING_STATE_CLOSED) acc.paused += 1;
+        return acc;
+      },
+      { active: 0, drafts: 0, paused: 0 }
+    );
+  }, [listings]);
+
+  const visibleListings = useMemo(() => {
+    return sortListings(
+      listings.filter(l => matchesFilter(l, statusFilter)),
+      sortKey
+    );
+  }, [listings, statusFilter, sortKey]);
 
   const loadingResults = (
     <div className={css.messagePanel}>
-      <H3 as="h2" className={css.heading}>
+      <H1 as="h2" className={css.heading}>
         <FormattedMessage id="ManageListingsPage.loadingOwnListings" />
-      </H3>
+      </H1>
     </div>
   );
 
   const queryError = (
     <div className={css.messagePanel}>
-      <H3 as="h2" className={css.heading}>
+      <H1 as="h2" className={css.heading}>
         <FormattedMessage id="ManageListingsPage.queryError" />
-      </H3>
+      </H1>
     </div>
   );
 
   const closingErrorListingId = !!closingListingError && closingListingError.listingId;
   const openingErrorListingId = !!openingListingError && openingListingError.listingId;
-  const discardingErrorListingId = !!discardingDraftError && discardingDraft.listingId;
+  const discardingErrorListingId = !!discardingDraftError && discardingDraftError.listingId;
 
   const panelWidth = 62.5;
-  // Render hints for responsive image
   const renderSizes = [
     `(max-width: 767px) 100vw`,
     `(max-width: 1920px) ${panelWidth / 2}vw`,
@@ -200,6 +195,39 @@ export const ManageListingsPageComponent = props => {
   ].join(', ');
 
   const showManageListingsLink = showCreateListingLinkForUser(config, currentUser);
+  const canCreate = showCreateListingLinkForUser(config, currentUser);
+
+  const filters = [
+    {
+      id: FILTER_ALL,
+      label: intl.formatMessage(
+        { id: 'ManageListingsPage.filterAll', defaultMessage: 'All ({count})' },
+        { count: listings.length || totalItems }
+      ),
+    },
+    {
+      id: FILTER_ACTIVE,
+      label: intl.formatMessage(
+        { id: 'ManageListingsPage.filterActive', defaultMessage: 'Active ({count})' },
+        { count: counts.active }
+      ),
+    },
+    {
+      id: FILTER_DRAFTS,
+      label: intl.formatMessage({
+        id: 'ManageListingsPage.filterDraftsLabel',
+        defaultMessage: 'Drafts',
+      }),
+      badge: counts.drafts,
+    },
+    {
+      id: FILTER_PAUSED,
+      label: intl.formatMessage({
+        id: 'ManageListingsPage.filterPaused',
+        defaultMessage: 'Paused',
+      }),
+    },
+  ];
 
   return (
     <Page
@@ -222,27 +250,123 @@ export const ManageListingsPageComponent = props => {
         {queryListingsError ? queryError : null}
 
         <div className={css.listingPanel}>
-          <Heading listingsAreLoaded={listingsAreLoaded} pagination={pagination} />
+          <div className={css.pageHeader}>
+            <div className={css.pageHeaderText}>
+              <H1 className={css.heading}>
+                <FormattedMessage
+                  id="ManageListingsPage.hakoTitle"
+                  defaultMessage="Your listings."
+                />
+              </H1>
+              {listingsAreLoaded ? (
+                <p className={css.subheading}>
+                  <FormattedMessage
+                    id="ManageListingsPage.youHaveListingsCaps"
+                    defaultMessage="You have {count} {count, plural, one {listing} other {listings}}"
+                    values={{ count: totalItems }}
+                  />
+                </p>
+              ) : null}
+            </div>
+            {canCreate && listingsAreLoaded && totalItems > 0 ? (
+              <NamedLink className={css.createListingDesktop} name="NewListingPage">
+                <FormattedMessage
+                  id="ManageListingsPage.createListingPlus"
+                  defaultMessage="+ Post a New Listing"
+                />
+              </NamedLink>
+            ) : null}
+          </div>
+
+          {listingsAreLoaded && totalItems === 0 ? (
+            <div className={css.noResultsContainer}>
+              <p className={css.createListingParagraph}>
+                <NamedLink className={css.createListingLink} name="NewListingPage">
+                  <FormattedMessage id="ManageListingsPage.createListing" />
+                </NamedLink>
+              </p>
+            </div>
+          ) : null}
+
+          {listingsAreLoaded && totalItems > 0 ? (
+            <div className={css.toolbar}>
+              <div className={css.filters} role="group" aria-label="Filter listings">
+                {filters.map(f => (
+                  <button
+                    key={f.id}
+                    type="button"
+                    className={classNames(css.filterBtn, {
+                      [css.filterBtnActive]: statusFilter === f.id,
+                    })}
+                    onClick={() => setStatusFilter(f.id)}
+                    aria-pressed={statusFilter === f.id}
+                  >
+                    {f.label}
+                    {typeof f.badge === 'number' && f.badge > 0 ? (
+                      <span className={css.filterBadge}>{f.badge}</span>
+                    ) : null}
+                  </button>
+                ))}
+              </div>
+              <label className={css.sort}>
+                <span className={css.sortLabel}>
+                  <FormattedMessage id="ManageListingsPage.sortBy" defaultMessage="Sort by:" />
+                </span>
+                <select
+                  className={css.sortSelect}
+                  value={sortKey}
+                  onChange={e => setSortKey(e.target.value)}
+                >
+                  <option value="recent">
+                    {intl.formatMessage({
+                      id: 'ManageListingsPage.sortRecent',
+                      defaultMessage: 'Recently updated',
+                    })}
+                  </option>
+                  <option value="title">
+                    {intl.formatMessage({
+                      id: 'ManageListingsPage.sortTitle',
+                      defaultMessage: 'Title',
+                    })}
+                  </option>
+                </select>
+              </label>
+            </div>
+          ) : null}
 
           <ul className={css.listingCards}>
-            {listings.map(l => (
+            {visibleListings.map(l => (
               <li key={l.id.uuid} className={css.listingCard}>
                 <ManageListingCard
                   listing={l}
-                  isMenuOpen={!!listingMenuOpen && listingMenuOpen.id.uuid === l.id.uuid}
                   actionsInProgressListingId={openingListing || closingListing || discardingDraft}
-                  onToggleMenu={onToggleMenu}
                   onCloseListing={onCloseListing}
                   onOpenListing={handleOpenListing}
                   onDiscardDraft={openDiscardDraftModal}
-                  hasOpeningError={openingErrorListingId.uuid === l.id.uuid}
-                  hasClosingError={closingErrorListingId.uuid === l.id.uuid}
-                  hasDiscardingError={discardingErrorListingId.uuid === l.id.uuid}
+                  hasOpeningError={
+                    !!openingErrorListingId && openingErrorListingId.uuid === l.id.uuid
+                  }
+                  hasClosingError={
+                    !!closingErrorListingId && closingErrorListingId.uuid === l.id.uuid
+                  }
+                  hasDiscardingError={
+                    !!discardingErrorListingId && discardingErrorListingId.uuid === l.id.uuid
+                  }
                   renderSizes={renderSizes}
                 />
               </li>
             ))}
           </ul>
+
+          {canCreate && listingsAreLoaded && totalItems > 0 ? (
+            <NamedLink className={css.createListingMobile} name="NewListingPage">
+              <FormattedMessage
+                id="ManageListingsPage.createListingPlus"
+                defaultMessage="+ Post a New Listing"
+              />
+            </NamedLink>
+          ) : null}
+
           {onManageDisableScrolling && discardDraftModalOpen ? (
             <DiscardDraftModal
               id="ManageListingsPage"

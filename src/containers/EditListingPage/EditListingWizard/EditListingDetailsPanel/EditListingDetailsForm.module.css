@@ -25,7 +25,7 @@
   margin-bottom: 24px;
 
   @media (--viewportMedium) {
-    margin-bottom: 32px;
+    margin-bottom: 28px;
   }
 }
 
@@ -42,7 +42,7 @@
   margin-bottom: 24px;
 
   @media (--viewportMedium) {
-    margin-bottom: 32px;
+    margin-bottom: 28px;
   }
 }
 
@@ -65,13 +65,29 @@
 }
 
 .submitButton {
-  margin-top: auto;
+  margin-top: 32px;
   margin-bottom: 24px;
   flex-shrink: 0;
+  width: 100%;
+  min-height: 48px;
+  border-radius: var(--hakoBorderRadiusSmall);
+  background-color: var(--hakoPrimary);
+  color: var(--hakoWhite);
+  font-family: var(--fontFamily);
+  font-size: 16px;
+  font-weight: 600;
+
+  &:hover,
+  &:focus {
+    background-color: var(--colorPrimaryButtonDark);
+    outline: none;
+  }
 
   @media (--viewportLarge) {
-    display: inline-block;
-    width: 241px;
-    margin-top: 100px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 200px;
+    margin-top: 40px;
   }
 }

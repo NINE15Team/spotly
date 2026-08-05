@@ -25,7 +25,7 @@ class SectionMapMaybe extends Component {
   }
 
   render() {
-    const { className, rootClassName, geolocation, publicData, listingId, mapsConfig } = this.props;
+    const { className, rootClassName, geolocation, publicData, listingId, mapsConfig, showAddressNote } = this.props;
 
     if (!geolocation) {
       return null;
@@ -57,6 +57,14 @@ class SectionMapMaybe extends Component {
         ) : (
           <div className={css.map}>{map}</div>
         )}
+        {showAddressNote ? (
+          <p className={css.mapAddressNote}>
+            <FormattedMessage
+              id="HakoListing.mapAddressNote"
+              defaultMessage="Exact location shared after booking confirmation"
+            />
+          </p>
+        ) : null}
       </section>
     );
   }

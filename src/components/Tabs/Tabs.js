@@ -36,6 +36,7 @@ const Tabs = props => {
     navRootClassName,
     tabRootClassName,
     ariaLabel,
+    skin,
   } = props;
   const rootClasses = rootClassName || css.root;
   const classes = classNames(rootClasses, className);
@@ -77,6 +78,7 @@ const Tabs = props => {
         tabs={tabNavTabs}
         tabRootClassName={tabRootClassName}
         ariaLabel={ariaLabel}
+        skin={skin}
       />
       {selectedTabPanel}
     </div>

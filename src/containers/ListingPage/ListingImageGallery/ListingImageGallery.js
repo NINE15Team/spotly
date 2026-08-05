@@ -63,6 +63,7 @@ const getFirstImageAspectRatio = (firstImage, scaledVariant) => {
  */
 const ListingImageGallery = props => {
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const intl = useIntl();
   const { rootClassName, className, images, imageVariants, thumbnailVariants } = props;
   const thumbVariants = thumbnailVariants || imageVariants;
@@ -172,17 +173,25 @@ const ListingImageGallery = props => {
   const classes = classNames(rootClassName || css.root, className);
 
   return (
-    <ReactImageGallery
-      additionalClass={classes}
-      items={items}
-      renderItem={renderItem}
-      renderThumbInner={renderThumbInner}
-      onScreenChange={onScreenChange}
-      renderLeftNav={renderLeftNav}
-      renderRightNav={renderRightNav}
-      renderFullscreenButton={renderFullscreenButton}
-      {...IMAGE_GALLERY_OPTIONS}
-    />
+    <div className={css.galleryWrap}>
+      <ReactImageGallery
+        additionalClass={classes}
+        items={items}
+        renderItem={renderItem}
+        renderThumbInner={renderThumbInner}
+        onScreenChange={onScreenChange}
+        onSlide={setCurrentIndex}
+        renderLeftNav={renderLeftNav}
+        renderRightNav={renderRightNav}
+        renderFullscreenButton={renderFullscreenButton}
+        {...IMAGE_GALLERY_OPTIONS}
+      />
+      {!isFullscreen && items.length > 0 ? (
+        <span className={css.imageCounter} aria-hidden="true">
+          {currentIndex + 1}/{items.length}
+        </span>
+      ) : null}
+    </div>
   );
 };
 
