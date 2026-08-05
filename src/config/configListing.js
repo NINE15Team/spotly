@@ -52,6 +52,9 @@
  *   - isRequired (optional):         Is the field required for providers to fill
  *   - requiredMessage (optional):    Message for those fields, which are mandatory.
  */
+// Hako parking/storage fields. These are collected on the Details step and shown on the listing
+// page. They intentionally omit filterConfig: turning one into a search filter also requires a
+// search schema for the key in the Marketplace API (Sharetribe CLI) plus showFilter: true.
 export const listingFields = [
   {
     key: 'accessHours',
@@ -62,12 +65,6 @@ export const listingFields = [
       { option: 'business-hours', label: 'Business hours' },
       { option: 'restricted', label: 'Restricted' },
     ],
-    filterConfig: {
-      indexForSearch: true,
-      filterType: 'SelectSingleFilter',
-      label: 'Access hours',
-      group: 'secondary',
-    },
     showConfig: {
       label: 'Access hours',
       isDetail: true,
@@ -90,12 +87,6 @@ export const listingFields = [
       { option: 'fenced', label: 'Fenced' },
       { option: 'on-site-staff', label: 'On-site staff' },
     ],
-    filterConfig: {
-      indexForSearch: true,
-      label: 'Security features',
-      searchMode: 'has_any',
-      group: 'secondary',
-    },
     showConfig: {
       label: 'Security features',
     },
@@ -119,12 +110,6 @@ export const listingFields = [
       { option: 'motorcycles', label: 'Motorcycles' },
       { option: 'bus', label: 'Bus' },
     ],
-    filterConfig: {
-      indexForSearch: true,
-      label: 'Vehicle size',
-      searchMode: 'has_any',
-      group: 'secondary',
-    },
     showConfig: {
       label: 'Vehicle size',
     },
@@ -201,12 +186,6 @@ export const listingFields = [
       { option: 'dirt', label: 'Dirt' },
       { option: 'concrete', label: 'Concrete' },
     ],
-    filterConfig: {
-      indexForSearch: true,
-      filterType: 'SelectSingleFilter',
-      label: 'Surface type',
-      group: 'secondary',
-    },
     showConfig: {
       label: 'Surface type',
       isDetail: true,

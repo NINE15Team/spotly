@@ -1,9 +1,9 @@
 /**
  * Check if a listing field should be shown as a filter.
- * showFilter takes priority and falls back to indexForSearch.
+ * Listing fields may omit filterConfig entirely, in which case they are not filterable.
  */
 export const isFilterEnabled = filterConfig => {
-  return filterConfig.showFilter === true;
+  return filterConfig?.showFilter === true;
 };
 
 /**

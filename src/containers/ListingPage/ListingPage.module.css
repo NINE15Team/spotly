@@ -305,6 +305,10 @@
     margin-left: 40px;
     flex-basis: 360px;
     flex-shrink: 0;
+    /* Sticky on the flex item so the card follows the page while the main column scrolls. */
+    position: sticky;
+    align-self: flex-start;
+    top: calc(var(--topbarHeightDesktop) + 24px);
   }
 }
 
@@ -390,7 +394,16 @@
 }
 
 .hakoOrderPanel {
-  /* marker class for Hako booking card */
+  margin: 24px var(--hakoLateralPaddingMobile) 0;
+  width: auto;
+
+  @media (--viewportMedium) {
+    margin: 24px 0 0;
+  }
+
+  @media (--viewportLarge) {
+    margin: 0;
+  }
 }
 
 .hakoAuthorModalOnly {

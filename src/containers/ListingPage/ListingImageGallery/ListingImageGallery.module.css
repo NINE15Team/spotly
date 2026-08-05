@@ -46,7 +46,7 @@
 }
 
 :global(.image-gallery-slide-wrapper) {
-  background-color: var(--hakoMuted);
+  background-color: transparent;
   border-bottom: none;
 
   @media (--viewportMedium) {
@@ -134,9 +134,21 @@
   height: 100%;
 }
 
+/* Fill the aspect-ratio frame so no backdrop shows behind smaller image variants. */
 .item {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* Fullscreen shows the whole image instead of cropping it to the frame. */
+.itemWrapperFullscreen .item {
+  width: auto;
+  height: auto;
   max-width: 100%;
   max-height: 100%;
+  object-fit: contain;
 }
 
 .thumb {

@@ -1,0 +1,15 @@
+diff --git a/node_modules/buffer-equal-constant-time/index.js b/node_modules/buffer-equal-constant-time/index.js
+index 5462c1f..941ab45 100644
+--- a/node_modules/buffer-equal-constant-time/index.js
++++ b/node_modules/buffer-equal-constant-time/index.js
+@@ -1,7 +1,9 @@
+ /*jshint node:true */
+ 'use strict';
+ var Buffer = require('buffer').Buffer; // browserify
+-var SlowBuffer = require('buffer').SlowBuffer;
++// SlowBuffer was removed in Node 24. Buffer is a safe stand-in: this module only reads and
++// overwrites an `equal` method on the prototype, and both prototypes get the same function.
++var SlowBuffer = require('buffer').SlowBuffer || Buffer;
+ 
+ module.exports = bufferEq;
+ 

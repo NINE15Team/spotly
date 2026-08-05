@@ -86,9 +86,13 @@ const ListingImageGallery = props => {
       image: img,
     };
   });
+  // Widths follow the listing layout: full bleed on mobile, and on large viewports the content
+  // wrapper (max 1512px) minus its padding and the 400px order column.
   const imageSizesMaybe = isFullscreen
     ? {}
-    : { sizes: `(max-width: 1024px) 100vw, (max-width: 1200px) calc(100vw - 192px), 708px` };
+    : {
+        sizes: `(max-width: 767px) calc(100vw - 40px), (max-width: 1023px) calc(100vw - 48px), min(1040px, calc(100vw - 472px))`,
+      };
   const renderItem = item => {
     return (
       <AspectRatioWrapper
