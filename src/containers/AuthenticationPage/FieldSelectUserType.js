@@ -44,6 +44,7 @@ const FieldSelectUserType = props => {
         id={name}
         name={name}
         className={classes}
+        selectClassName={css.userTypeSelectField}
         label={intl.formatMessage({ id: 'FieldSelectUserType.label' })}
         validate={validators.required(intl.formatMessage({ id: 'FieldSelectUserType.required' }))}
       >

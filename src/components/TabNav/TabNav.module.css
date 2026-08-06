@@ -88,3 +88,65 @@
   color: var(--colorGrey300);
   text-decoration: none;
 }
+
+/* Hako post-a-listing wizard stepper */
+.wizardLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+  font-family: var(--fontFamily);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--hakoSecondaryText);
+  padding: 12px 4px 10px;
+  margin-top: auto;
+  height: 100%;
+  border-bottom-width: 2px;
+  border-bottom-style: solid;
+  border-bottom-color: transparent;
+  background-image: none;
+  text-decoration: none;
+  transition: var(--transitionStyleButton);
+
+  &:hover {
+    text-decoration: none;
+    color: var(--hakoPrimaryText);
+  }
+
+  @media (--viewportLarge) {
+    display: flex;
+    width: 200px;
+    font-size: 16px;
+    font-weight: 600;
+    height: unset;
+    margin-top: 0;
+    margin-bottom: 8px;
+    padding: 10px 16px 10px 0;
+    border-bottom-width: 0;
+    border-right: 4px solid transparent;
+    box-sizing: border-box;
+  }
+}
+
+.wizardSelectedLink {
+  color: var(--hakoAccent);
+  border-bottom-color: var(--hakoAccent);
+
+  &:hover {
+    color: var(--hakoAccent);
+  }
+
+  @media (--viewportLarge) {
+    border-bottom-color: transparent;
+    border-right-color: var(--hakoPrimary);
+    color: var(--hakoAccent);
+  }
+}
+
+.wizardDisabledLink {
+  pointer-events: none;
+  color: var(--hakoSecondaryText);
+  opacity: 0.7;
+}

@@ -52,167 +52,189 @@
  *   - isRequired (optional):         Is the field required for providers to fill
  *   - requiredMessage (optional):    Message for those fields, which are mandatory.
  */
+// Hako parking/storage fields. These are collected on the Details step and shown on the listing
+// page. They intentionally omit filterConfig: turning one into a search filter also requires a
+// search schema for the key in the Marketplace API (Sharetribe CLI) plus showFilter: true.
 export const listingFields = [
-  // {
-  //   "scope": "public",
-  //   "label": "Gears",
-  //   "key": "gears",
-  //   "schemaType": "long",
-  //   "numberConfig": {
-  //     "minimum": 1,
-  //     "maximum": 24
-  //   },
-  //   "filterConfig": {
-  //     "indexForSearch": true,
-  //     "group": "primary",
-  //     "label": "Gears"
-  //   }
-  // }
-  // {
-  //   key: 'bikeType',
-  //   scope: 'public',
-  //   schemaType: 'enum',
-  //   enumOptions: [
-  //     { option: 'city-bikes', label: 'City bikes' },
-  //     { option: 'electric-bikes', label: 'Electric bikes' },
-  //     { option: 'mountain-bikes', label: 'Mountain bikes' },
-  //     { option: 'childrens-bikes', label: "Children's bikes" },
-  //   ],
-  //   categoryConfig: {
-  //     limitToCategoryIds: true,
-  //     categoryIds: ['cats'],
-  //   },
-  //   filterConfig: {
-  //     showFilter: true,
-  //     filterType: 'SelectMultipleFilter', //'SelectSingleFilter',
-  //     label: 'Bike type',
-  //     group: 'primary',
-  //   },
-  //   showConfig: {
-  //     label: 'Bike type',
-  //     isDetail: true,
-  //   },
-  //   saveConfig: {
-  //     label: 'Bike type',
-  //     placeholderMessage: 'Select an option…',
-  //     isRequired: true,
-  //     requiredMessage: 'You need to select a bike type.',
-  //   },
-  // },
-  // {
-  //   key: 'tire',
-  //   scope: 'public',
-  //   schemaType: 'enum',
-  //   enumOptions: [
-  //     { option: '29', label: '29' },
-  //     { option: '28', label: '28' },
-  //     { option: '27', label: '27' },
-  //     { option: '26', label: '26' },
-  //     { option: '24', label: '24' },
-  //     { option: '20', label: '20' },
-  //     { option: '18', label: '18' },
-  //   ],
-  //   filterConfig: {
-  //     showFilter: true,
-  //     label: 'Tire size',
-  //     group: 'secondary',
-  //   },
-  //   showConfig: {
-  //     label: 'Tire size',
-  //     isDetail: true,
-  //   },
-  //   saveConfig: {
-  //     label: 'Tire size',
-  //     placeholderMessage: 'Select an option…',
-  //     isRequired: true,
-  //     requiredMessage: 'You need to select a tire size.',
-  //   },
-  // },
-  // {
-  //   key: 'brand',
-  //   scope: 'public',
-  //   schemaType: 'enum',
-  //   enumOptions: [
-  //     { option: 'cube', label: 'Cube' },
-  //     { option: 'diamant', label: 'Diamant' },
-  //     { option: 'ghost', label: 'GHOST' },
-  //     { option: 'giant', label: 'Giant' },
-  //     { option: 'kalkhoff', label: 'Kalkhoff' },
-  //     { option: 'kona', label: 'Kona' },
-  //     { option: 'otler', label: 'Otler' },
-  //     { option: 'vermont', label: 'Vermont' },
-  //   ],
-  //   filterConfig: {
-  //     showFilter: true,
-  //     label: 'Brand',
-  //     group: 'secondary',
-  //   },
-  //   showConfig: {
-  //     label: 'Brand',
-  //     isDetail: true,
-  //   },
-  //   saveConfig: {
-  //     label: 'Brand',
-  //     placeholderMessage: 'Select an option…',
-  //     isRequired: true,
-  //     requiredMessage: 'You need to select a brand.',
-  //   },
-  // },
-  // {
-  //   key: 'accessories',
-  //   scope: 'public',
-  //   schemaType: 'multi-enum',
-  //   enumOptions: [
-  //     { option: 'bell', label: 'Bell' },
-  //     { option: 'lights', label: 'Lights' },
-  //     { option: 'lock', label: 'Lock' },
-  //     { option: 'mudguard', label: 'Mudguard' },
-  //   ],
-  //   filterConfig: {
-  //     showFilter: true,
-  //     label: 'Accessories',
-  //     searchMode: 'has_all',
-  //     group: 'secondary',
-  //   },
-  //   showConfig: {
-  //     label: 'Accessories',
-  //   },
-  //   saveConfig: {
-  //     label: 'Accessories',
-  //     placeholderMessage: 'Select an option…',
-  //     isRequired: false,
-  //   },
-  // },
-  // // An example of how to use transaction type specific custom fields and private data.
-  // {
-  //   key: 'note',
-  //   scope: 'public',
-  //   schemaType: 'text',
-  //   listingTypeConfig: {
-  //     limitToListingTypeIds: true,
-  //     listingTypeIds: ['product-selling'],
-  //   },
-  //   showConfig: {
-  //     label: 'Extra notes',
-  //   },
-  //   saveConfig: {
-  //     label: 'Extra notes',
-  //     placeholderMessage: 'Some public extra note about this bike...',
-  //   },
-  // },
-  // {
-  //   key: 'privatenote',
-  //   scope: 'private',
-  //   schemaType: 'text',
-  //   listingTypeConfig: {
-  //     limitToListingTypeIds: true,
-  //     listingTypeIds: ['daily-booking'],
-  //   },
-  //   saveConfig: {
-  //     label: 'Private notes',
-  //     placeholderMessage: 'Some private note about this bike...',
-  //   },
-  // },
+  {
+    key: 'accessHours',
+    scope: 'public',
+    schemaType: 'enum',
+    enumOptions: [
+      { option: '24-7', label: '24/7' },
+      { option: 'business-hours', label: 'Business hours' },
+      { option: 'restricted', label: 'Restricted' },
+    ],
+    showConfig: {
+      label: 'Access hours',
+      isDetail: true,
+    },
+    saveConfig: {
+      label: 'Access hours',
+      placeholderMessage: '24/7',
+      isRequired: false,
+    },
+    helpText:
+      'If restricted, operators should specify hours in the description or during the availability step.',
+  },
+  {
+    key: 'securityFeatures',
+    scope: 'public',
+    schemaType: 'multi-enum',
+    enumOptions: [
+      { option: 'cctv', label: 'CCTV' },
+      { option: 'gated', label: 'Gated' },
+      { option: 'fenced', label: 'Fenced' },
+      { option: 'on-site-staff', label: 'On-site staff' },
+    ],
+    showConfig: {
+      label: 'Security features',
+    },
+    saveConfig: {
+      label: 'Security features',
+      isRequired: false,
+    },
+    twoColumns: true,
+  },
+  {
+    key: 'vehicleSizes',
+    scope: 'public',
+    schemaType: 'multi-enum',
+    enumOptions: [
+      { option: 'cars', label: 'Cars' },
+      { option: 'trucks', label: 'Trucks' },
+      { option: 'suv', label: 'SUV' },
+      { option: 'trailer', label: 'Trailer' },
+      { option: 'boats', label: 'Boats' },
+      { option: 'camper-vans', label: 'Camper vans' },
+      { option: 'motorcycles', label: 'Motorcycles' },
+      { option: 'bus', label: 'Bus' },
+    ],
+    showConfig: {
+      label: 'Vehicle size',
+    },
+    saveConfig: {
+      label: 'Vehicle Size',
+      isRequired: false,
+    },
+    twoColumns: true,
+  },
+  {
+    key: 'minVehicleHeight',
+    scope: 'public',
+    schemaType: 'long',
+    numberConfig: {
+      minimum: 0,
+      maximum: 50,
+    },
+    showConfig: {
+      label: 'Minimum vehicle height',
+      isDetail: true,
+    },
+    saveConfig: {
+      label: 'Minimum vehicle height',
+      placeholderMessage: '6',
+      isRequired: false,
+    },
+    helpText: 'Unit: feet',
+  },
+  {
+    key: 'vehicleHeight',
+    scope: 'public',
+    schemaType: 'long',
+    numberConfig: {
+      minimum: 0,
+      maximum: 50,
+    },
+    showConfig: {
+      label: 'Maximum vehicle height',
+      isDetail: true,
+    },
+    saveConfig: {
+      label: 'Maximum vehicle height',
+      placeholderMessage: '6',
+      isRequired: false,
+    },
+    helpText: 'Unit: feet',
+  },
+  {
+    key: 'vehicleLength',
+    scope: 'public',
+    schemaType: 'long',
+    numberConfig: {
+      minimum: 0,
+      maximum: 100,
+    },
+    showConfig: {
+      label: 'Maximum vehicle length',
+      isDetail: true,
+    },
+    saveConfig: {
+      label: 'Maximum vehicle length',
+      placeholderMessage: '12',
+      isRequired: false,
+    },
+    helpText: 'Unit: feet',
+  },
+  {
+    key: 'surfaceType',
+    scope: 'public',
+    schemaType: 'enum',
+    enumOptions: [
+      { option: 'paved', label: 'Paved' },
+      { option: 'gravel', label: 'Gravel' },
+      { option: 'dirt', label: 'Dirt' },
+      { option: 'concrete', label: 'Concrete' },
+    ],
+    showConfig: {
+      label: 'Surface type',
+      isDetail: true,
+    },
+    saveConfig: {
+      label: 'Surface type',
+      placeholderMessage: 'Paved',
+      isRequired: false,
+    },
+  },
+  {
+    key: 'vehicleWeight',
+    scope: 'public',
+    schemaType: 'long',
+    numberConfig: {
+      minimum: 0,
+      maximum: 100000,
+    },
+    showConfig: {
+      label: 'Weight limit',
+      isDetail: true,
+    },
+    saveConfig: {
+      label: 'Weight limit',
+      placeholderMessage: '4000',
+      isRequired: false,
+    },
+    helpText: 'Unit: lbs',
+  },
+  {
+    key: 'hoaRestrictions',
+    scope: 'public',
+    schemaType: 'enum',
+    enumOptions: [
+      { option: 'none', label: 'No restrictions' },
+      { option: 'guest-only', label: 'Guest parking only' },
+      { option: 'permit-required', label: 'Permit required' },
+      { option: 'other', label: 'Other (see description)' },
+    ],
+    showConfig: {
+      label: 'HOA restrictions',
+      isDetail: true,
+    },
+    saveConfig: {
+      label: 'HOA restrictions',
+      placeholderMessage: 'No restrictions',
+      isRequired: false,
+    },
+  },
 ];
 
 ///////////////////////////////////////////////////////////////////////

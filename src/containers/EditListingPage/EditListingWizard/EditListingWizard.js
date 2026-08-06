@@ -668,9 +668,10 @@ class EditListingWizard extends Component {
           rootClassName={css.tabsContainer}
           navRootClassName={css.nav}
           tabRootClassName={css.tab}
+          skin="wizard"
           ariaLabel={intl.formatMessage({ id: 'EditListingWizard.screenreader.tabNavigation' })}
         >
-          {tabs.map(tab => {
+          {tabs.map((tab, index) => {
             const tabTranslations = tabLabelAndSubmit(
               intl,
               tab,
@@ -678,15 +679,28 @@ class EditListingWizard extends Component {
               isPriceDisabled,
               resolveLatestProcessName(processName)
             );
+            const isSelected = selectedTab === tab;
             return (
               <EditListingWizardTab
                 {...rest}
                 key={tab}
                 tabId={`${id}_${tab}`}
-                tabLabel={tabTranslations.label}
+                tabLabel={
+                  <span className={css.tabLabelContent}>
+                    <span
+                      className={classNames(css.stepBadge, {
+                        [css.stepBadgeActive]: isSelected,
+                      })}
+                      aria-hidden="true"
+                    >
+                      {index + 1}
+                    </span>
+                    <span className={css.tabLabelText}>{tabTranslations.label}</span>
+                  </span>
+                }
                 tabSubmitButtonText={tabTranslations.submitButton}
                 tabLinkProps={tabLink(tab)}
-                selected={selectedTab === tab}
+                selected={isSelected}
                 disabled={isNewListingFlow && !tabsStatus[tab]}
                 tab={tab}
                 params={params}

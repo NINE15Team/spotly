@@ -1,0 +1,180 @@
+@import '../../../styles/customMediaQueries.css';
+
+.root {
+  width: 100%;
+  padding: 20px;
+  box-sizing: border-box;
+  background-color: var(--hakoWhite);
+  border: 1px solid rgba(12, 22, 29, 0.12);
+  border-radius: 12px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.price {
+  margin: 0;
+  font-family: var(--fontFamily);
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--hakoPrimaryText);
+}
+
+.priceUnit {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.rating {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.stars {
+  display: flex;
+  align-items: center;
+}
+
+.ratingValue {
+  font-family: var(--fontFamily);
+  font-size: 14px;
+  color: var(--hakoPrimaryText);
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.field {
+  padding: 10px 12px;
+  border: 1px solid rgba(12, 22, 29, 0.12);
+  border-radius: 8px;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+.fieldLabel,
+.sectionLabel {
+  display: block;
+  margin: 0;
+  font-family: var(--fontFamily);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--hakoSecondaryText);
+}
+
+.fieldValue {
+  margin: 4px 0 0;
+  font-family: var(--fontFamily);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--hakoPrimaryText);
+}
+
+.sectionLabel {
+  margin: 18px 0 8px;
+}
+
+.timeSlots {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.timeSlot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  padding: 8px 4px;
+  border: 1px solid rgba(12, 22, 29, 0.12);
+  border-radius: 8px;
+  box-sizing: border-box;
+  min-width: 0;
+  font-family: var(--fontFamily);
+  font-size: 12px;
+  line-height: 1.2;
+  white-space: nowrap;
+  color: var(--hakoPrimaryText);
+  background-color: var(--hakoWhite);
+}
+
+.timeSlotSelected {
+  background-color: var(--hakoDark);
+  border-color: var(--hakoDark);
+  color: var(--hakoWhite);
+}
+
+.divider {
+  height: 1px;
+  margin: 18px 0 14px;
+  border: 0;
+  background-color: rgba(12, 22, 29, 0.1);
+}
+
+.lineItem {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 6px;
+  font-family: var(--fontFamily);
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--hakoPrimaryText);
+}
+
+.reserveButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 52px;
+  margin: 16px 0 0;
+  padding: 12px 20px;
+  border: 0;
+  border-radius: 8px;
+  box-sizing: border-box;
+  background-color: var(--hakoPrimary);
+  color: var(--hakoWhite);
+  font-family: var(--fontFamily);
+  font-size: 16px;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.reserveButton:hover,
+.reserveButton:focus {
+  background-color: var(--colorPrimaryButtonDark);
+  outline: none;
+}
+
+.reserveTotal {
+  font-weight: 700;
+}
+
+.note {
+  margin: 10px 0 0;
+  font-family: var(--fontFamily);
+  font-size: 13px;
+  line-height: 1.4;
+  text-align: center;
+  color: var(--hakoMuted);
+}

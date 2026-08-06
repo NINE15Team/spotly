@@ -1,51 +1,92 @@
 @import '../../../styles/customMediaQueries.css';
 
 .root {
-  composes: marketplaceModalFormRootStyles from global;
-
+  display: flex;
+  flex-direction: column;
+  flex: 1;
   justify-content: flex-start;
-
-  @media (--viewportMedium) {
-    justify-content: space-between;
-  }
 }
 
 .defaultUserFields {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+
+  @media (--viewportMedium) {
+    gap: 24px;
+  }
 }
 
 .name {
   display: flex;
-  justify-content: space-between;
-  margin-top: 24px;
+  flex-direction: column;
+  gap: 20px;
+  margin-top: 0;
 
   @media (--viewportMedium) {
-    margin-top: 32px;
+    flex-direction: row;
+    justify-content: space-between;
+    gap: 16px;
   }
 }
 
 .row,
 .customFields {
-  margin-top: 24px;
+  margin-top: 20px;
 
   @media (--viewportMedium) {
-    margin-top: 32px;
+    margin-top: 24px;
+  }
+}
+
+.firstNameRoot,
+.lastNameRoot {
+  width: 100%;
+
+  @media (--viewportMedium) {
+    width: auto;
   }
 }
 
 .firstNameRoot {
-  width: calc(34% - 9px);
+  @media (--viewportMedium) {
+    width: calc(34% - 8px);
+  }
 }
 
 .lastNameRoot {
-  width: calc(66% - 9px);
+  @media (--viewportMedium) {
+    width: calc(66% - 8px);
+  }
 }
 
 .password {
-  composes: marketplaceModalPasswordMargins from global;
+  margin-top: 0;
 }
 
 .bottomWrapper {
-  composes: marketplaceModalBottomWrapper from global;
+  margin-top: 24px;
+  text-align: left;
+  align-self: stretch;
+
+  @media (--viewportMedium) {
+    margin-top: 28px;
+  }
+}
+
+.submitButton {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 8px;
+  border-radius: var(--hakoBorderRadiusSmall);
+  font-family: var(--fontFamily);
+  font-size: 16px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.submitButton:enabled:not(:disabled) {
+  background-color: var(--hakoPrimary);
 }
 
 .error {

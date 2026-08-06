@@ -1,27 +1,28 @@
 @import '../../../styles/customMediaQueries.css';
 
 .root {
-  composes: marketplaceModalBottomWrapperText from global;
-  padding-bottom: 6px;
-
-  @media (--viewportMedium) {
-    padding-bottom: 8px;
-  }
+  margin: 0 0 16px;
+  padding: 0;
+  text-align: left;
 }
 
 .finePrint {
-  composes: marketplaceModalHelperLink from global;
-  padding: 3px 0 5px 0;
+  font-family: var(--fontFamily);
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--hakoSecondaryText);
+  padding: 0;
   text-align: left;
 }
 
 .privacyLink,
 .termsLink {
-  composes: marketplaceModalHelperLink from global;
-  color: var(--marketplaceColor);
+  color: var(--hakoSecondaryText);
+  text-decoration: underline;
+  text-underline-offset: 2px;
 
   &:hover {
-    color: var(--marketplaceColorDark);
+    color: var(--hakoAccent);
     text-decoration: underline;
     cursor: pointer;
   }

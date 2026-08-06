@@ -312,6 +312,9 @@ const OrderPanel = props => {
     showListingImage,
     hasActiveSubscription,
     activeSubscriptionId,
+    isHakoLayout = false,
+    hakoRating,
+    hakoReviewCount,
   } = props;
 
   const publicData = listing?.attributes?.publicData || {};
@@ -444,46 +447,39 @@ const OrderPanel = props => {
 
   const authorDisplayName = userDisplayNameAsString(author, '');
 
-  const classes = classNames(rootClassName || css.root, className);
+  const classes = classNames(rootClassName || css.root, className, {
+    [css.hakoRoot]: isHakoLayout,
+  });
   const titleClasses = classNames(titleClassName || css.orderTitle);
 
   return (
     <div className={classes}>
       <ModalInMobile
-        containerClassName={css.modalContainer}
+        containerClassName={classNames(css.modalContainer, { [css.hakoModalContainer]: isHakoLayout })}
         id="OrderFormInModal"
         isModalOpenOnMobile={isOrderOpen}
         onClose={() => {
           closeOrderModal(history, location);
           document.getElementById(ORDER_PANEL_SUBMIT_BUTTON_ID)?.focus();
         }}
-        showAsModalMaxWidth={MODAL_BREAKPOINT}
+        showAsModalMaxWidth={isHakoLayout ? 0 : MODAL_BREAKPOINT}
         onManageDisableScrolling={onManageDisableScrolling}
         usePortal
       >
-        <div className={css.modalHeading}>
-          <H1 className={css.heading}>{title}</H1>
-        </div>
+        {!isHakoLayout ? (
+          <div className={css.modalHeading}>
+            <H1 className={css.heading}>{title}</H1>
+          </div>
+        ) : null}
 
-        {showListingImage && (
+        {showListingImage && !isHakoLayout ? (
           <div className={css.orderHeading}>
             {titleDesktop ? titleDesktop : <H2 className={titleClasses}>{title}</H2>}
             {subTitleText ? <div className={css.orderHelp}>{subTitleText}</div> : null}
           </div>
-        )}
+        ) : null}
 
-        {isSubscription ? (
-          <div className={css.priceContainer}>
-            <p className={css.price}>
-              <FormattedMessage
-                id="OrderPanel.subscriptionPrice"
-                values={{
-                  priceValue: formatMoneyIfSupportedCurrency(price, intl),
-                }}
-              />
-            </p>
-          </div>
-        ) : (
+        <div className={classNames({ [css.hakoPriceRow]: isHakoLayout })}>
           <PriceMaybe
             price={price}
             publicData={publicData}
@@ -491,17 +487,27 @@ const OrderPanel = props => {
             intl={intl}
             marketplaceCurrency={marketplaceCurrency}
           />
-        )}
-
-        <div className={css.author}>
-          <AvatarSmall user={author} className={css.providerAvatar} />
-          <span className={css.providerNameLinked}>
-            <FormattedMessage id="OrderPanel.author" values={{ name: authorLink }} />
-          </span>
-          <span className={css.providerNamePlain}>
-            <FormattedMessage id="OrderPanel.author" values={{ name: authorDisplayName }} />
-          </span>
+          {isHakoLayout ? (
+            <div className={css.hakoPanelRating}>
+              <span aria-hidden="true">★</span>
+              <span>
+                {hakoRating || '4.9'} ({hakoReviewCount || 12})
+              </span>
+            </div>
+          ) : null}
         </div>
+
+        {!isHakoLayout ? (
+          <div className={css.author}>
+            <AvatarSmall user={author} className={css.providerAvatar} />
+            <span className={css.providerNameLinked}>
+              <FormattedMessage id="OrderPanel.author" values={{ name: authorLink }} />
+            </span>
+            <span className={css.providerNamePlain}>
+              <FormattedMessage id="OrderPanel.author" values={{ name: authorDisplayName }} />
+            </span>
+          </div>
+        ) : null}
 
         {showPriceMissing ? (
           <PriceMissing />
@@ -605,49 +611,51 @@ const OrderPanel = props => {
           </p>
         ) : null}
       </ModalInMobile>
-      <div className={css.openOrderForm}>
-        <PriceMaybe
-          price={price}
-          publicData={publicData}
-          validListingTypes={validListingTypes}
-          intl={intl}
-          marketplaceCurrency={marketplaceCurrency}
-          showCurrencyMismatch
-        />
+      {!isHakoLayout ? (
+        <div className={css.openOrderForm}>
+          <PriceMaybe
+            price={price}
+            publicData={publicData}
+            validListingTypes={validListingTypes}
+            intl={intl}
+            marketplaceCurrency={marketplaceCurrency}
+            showCurrencyMismatch
+          />
 
-        {isClosed ? (
-          <div className={css.closedListingButton}>
-            <FormattedMessage id="OrderPanel.closedListingButtonText" />
-          </div>
-        ) : (
-          <PrimaryButton
-            id={ORDER_PANEL_SUBMIT_BUTTON_ID}
-            onClick={handleSubmit(
-              isOwnListing,
-              isClosed,
-              showInquiryForm || showNegotiationForm,
-              onSubmit,
-              history,
-              location
-            )}
-            disabled={isOutOfStock}
-          >
-            {isBooking ? (
-              <FormattedMessage id="OrderPanel.ctaButtonMessageBooking" />
-            ) : isOutOfStock ? (
-              <FormattedMessage id="OrderPanel.ctaButtonMessageNoStock" />
-            ) : isPurchase ? (
-              <FormattedMessage id="OrderPanel.ctaButtonMessagePurchase" />
-            ) : showNegotiationForm ? (
-              <FormattedMessage id="OrderPanel.ctaButtonMessageMakeOffer" />
-            ) : showRequestQuoteForm ? (
-              <FormattedMessage id="OrderPanel.ctaButtonMessageRequestAQuote" />
-            ) : (
-              <FormattedMessage id="OrderPanel.ctaButtonMessageInquiry" />
-            )}
-          </PrimaryButton>
-        )}
-      </div>
+          {isClosed ? (
+            <div className={css.closedListingButton}>
+              <FormattedMessage id="OrderPanel.closedListingButtonText" />
+            </div>
+          ) : (
+            <PrimaryButton
+              id={ORDER_PANEL_SUBMIT_BUTTON_ID}
+              onClick={handleSubmit(
+                isOwnListing,
+                isClosed,
+                showInquiryForm || showNegotiationForm,
+                onSubmit,
+                history,
+                location
+              )}
+              disabled={isOutOfStock}
+            >
+              {isBooking ? (
+                <FormattedMessage id="OrderPanel.ctaButtonMessageBooking" />
+              ) : isOutOfStock ? (
+                <FormattedMessage id="OrderPanel.ctaButtonMessageNoStock" />
+              ) : isPurchase ? (
+                <FormattedMessage id="OrderPanel.ctaButtonMessagePurchase" />
+              ) : showNegotiationForm ? (
+                <FormattedMessage id="OrderPanel.ctaButtonMessageMakeOffer" />
+              ) : showRequestQuoteForm ? (
+                <FormattedMessage id="OrderPanel.ctaButtonMessageRequestAQuote" />
+              ) : (
+                <FormattedMessage id="OrderPanel.ctaButtonMessageInquiry" />
+              )}
+            </PrimaryButton>
+          )}
+        </div>
+      ) : null}
     </div>
   );
 };

@@ -58,7 +58,7 @@ const UserNav = props => {
       className={classes}
       tabRootClassName={css.tab}
       tabs={tabs}
-      skin="dark"
+      skin="light"
       ariaLabel={intl.formatMessage({ id: 'UserNav.screenreader.userNav' })}
     />
   );

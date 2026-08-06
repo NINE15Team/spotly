@@ -1,0 +1,89 @@
+@import '../../../../styles/customMediaQueries.css';
+
+.root {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 30px;
+  width: 100%;
+  padding: 30px var(--hakoLateralPaddingMobile);
+  background-color: var(--hakoDark);
+  box-sizing: border-box;
+
+  @media (--viewportMedium) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    padding: 30px var(--hakoLateralPaddingDesktop);
+  }
+}
+
+.brand {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 24px;
+  align-self: stretch;
+}
+
+.brandTop {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  align-items: flex-start;
+}
+
+.logoLink {
+  display: block;
+  line-height: 0;
+}
+
+.logo {
+  width: 120px;
+  height: 47px;
+  display: block;
+  object-fit: contain;
+}
+
+.socials {
+  width: 72px;
+  height: 27px;
+  display: block;
+  object-fit: contain;
+}
+
+.copyright {
+  margin: 0;
+  font-family: var(--fontFamily);
+  font-weight: 400;
+  font-size: 12px;
+  line-height: normal;
+  color: var(--hakoSecondaryText);
+  max-width: 189px;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-start;
+  font-family: var(--fontFamily);
+  font-size: 12px;
+  line-height: normal;
+}
+
+.columnTitle {
+  margin: 0;
+  color: var(--hakoAccent);
+  font-weight: 400;
+}
+
+.link {
+  color: var(--hakoLightText);
+  text-decoration: none;
+  font-weight: 400;
+}
+
+.link:hover,
+.link:focus {
+  text-decoration: underline;
+  outline: none;
+}

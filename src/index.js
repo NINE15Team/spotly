@@ -20,6 +20,8 @@ import { loadableReady } from '@loadable/component';
 // This ensures that the styles in marketplaceDefaults.css are included
 // as first ones in the final build CSS build file.
 import './styles/marketplaceDefaults.css';
+// Hako tokens must load after marketplaceDefaults so brand overrides win.
+import './styles/hakoTokens.css';
 
 // Configs and store setup
 import appSettings from './config/settings';

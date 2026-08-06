@@ -4,6 +4,10 @@
   /* Layout */
   display: flex;
   flex-direction: column;
+  background-color: var(--hakoWhite);
+  border-radius: var(--hakoBorderRadius);
+  box-shadow: var(--hakoDropShadow);
+  overflow: hidden;
 
   /* Remove link's hover effect */
   &:hover {
@@ -13,20 +17,20 @@
 
 .aspectRatioWrapper {
   transition: var(--transitionStyleButton);
-  background: var(--colorGrey100); /* Loading BG color */
-  border-radius: var(--borderRadiusMedium);
+  background: var(--hakoMuted); /* Loading BG color */
+  border-radius: var(--hakoBorderRadius) var(--hakoBorderRadius) 0 0;
 
   @media (--viewportMedium) {
     &:hover {
-      transform: scale(1.02);
-      box-shadow: var(--boxShadowListingCard);
+      transform: none;
+      box-shadow: none;
     }
   }
 }
 
 .rootForImage {
-  border: solid 1px var(--colorGrey100);
-  border-radius: var(--borderRadiusMedium);
+  border: none;
+  border-radius: var(--hakoBorderRadius) var(--hakoBorderRadius) 0 0;
   width: 100%;
   height: 100%;
 }
@@ -44,7 +48,8 @@
   display: flex;
   flex-direction: column;
   /* ⚠️ padding width is hardcoded in SectionListings.js calculateCarouselHeight() as cardInfoPadding*/
-  padding: 14px 0 2px 0;
+  padding: var(--hakoCardPadding);
+  gap: 8px;
 }
 
 /* ⚠️ the total calculated height of this selector is hardcoded in SectionListings.js calculateCarouselHeight() as priceHeight*/
@@ -52,14 +57,16 @@
   composes: textSmall from global;
   /* Layout */
   flex-shrink: 0;
-  margin-bottom: 4px;
-  color: var(--colorGrey700);
+  margin-bottom: 0;
+  color: var(--hakoPrimaryText);
+  font-size: 16px;
+  line-height: 23px;
 }
 
 .priceValue {
   /* Font */
-  font-weight: var(--fontWeightSemiBold);
-  color: var(--marketplaceColor);
+  font-weight: var(--fontWeightBold);
+  color: var(--hakoPrimaryText);
 
   /* Remove default margins from font */
   margin-top: 0;
@@ -73,8 +80,8 @@
 
 .perUnit {
   /* Font */
-  font-weight: var(--fontWeightSemiBold);
-  color: var(--marketplaceColor);
+  font-weight: var(--fontWeightRegular);
+  color: var(--hakoPrimaryText);
 
   /* Remove default margins from font */
   margin-top: 0;

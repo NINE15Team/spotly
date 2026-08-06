@@ -63,6 +63,24 @@
   width: 100%;
 }
 
+.hakoRoot {
+  width: 100%;
+}
+
+.listingCardsHako {
+  padding: 0 0 48px 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  list-style: none;
+
+  @media (--viewportMedium) {
+    padding: 0 0 72px 0;
+  }
+}
+
 .pagination {
   /* margin-top: auto; pushes pagination to the end of the page. */
   margin-top: auto;

@@ -63,6 +63,7 @@ const getFirstImageAspectRatio = (firstImage, scaledVariant) => {
  */
 const ListingImageGallery = props => {
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const intl = useIntl();
   const { rootClassName, className, images, imageVariants, thumbnailVariants } = props;
   const thumbVariants = thumbnailVariants || imageVariants;
@@ -85,9 +86,13 @@ const ListingImageGallery = props => {
       image: img,
     };
   });
+  // Widths follow the listing layout: full bleed on mobile, and on large viewports the content
+  // wrapper (max 1512px) minus its padding and the 400px order column.
   const imageSizesMaybe = isFullscreen
     ? {}
-    : { sizes: `(max-width: 1024px) 100vw, (max-width: 1200px) calc(100vw - 192px), 708px` };
+    : {
+        sizes: `(max-width: 767px) calc(100vw - 40px), (max-width: 1023px) calc(100vw - 48px), min(1040px, calc(100vw - 472px))`,
+      };
   const renderItem = item => {
     return (
       <AspectRatioWrapper
@@ -172,17 +177,25 @@ const ListingImageGallery = props => {
   const classes = classNames(rootClassName || css.root, className);
 
   return (
-    <ReactImageGallery
-      additionalClass={classes}
-      items={items}
-      renderItem={renderItem}
-      renderThumbInner={renderThumbInner}
-      onScreenChange={onScreenChange}
-      renderLeftNav={renderLeftNav}
-      renderRightNav={renderRightNav}
-      renderFullscreenButton={renderFullscreenButton}
-      {...IMAGE_GALLERY_OPTIONS}
-    />
+    <div className={css.galleryWrap}>
+      <ReactImageGallery
+        additionalClass={classes}
+        items={items}
+        renderItem={renderItem}
+        renderThumbInner={renderThumbInner}
+        onScreenChange={onScreenChange}
+        onSlide={setCurrentIndex}
+        renderLeftNav={renderLeftNav}
+        renderRightNav={renderRightNav}
+        renderFullscreenButton={renderFullscreenButton}
+        {...IMAGE_GALLERY_OPTIONS}
+      />
+      {!isFullscreen && items.length > 0 ? (
+        <span className={css.imageCounter} aria-hidden="true">
+          {currentIndex + 1}/{items.length}
+        </span>
+      ) : null}
+    </div>
   );
 };
 

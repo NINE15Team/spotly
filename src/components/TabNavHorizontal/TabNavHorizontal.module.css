@@ -34,24 +34,29 @@
   font-size: 14px;
   line-height: 24px;
 
-  color: var(--colorGrey700);
+  color: var(--tabNavColor, var(--colorGrey700));
   padding-bottom: 10px;
 
-  border-bottom-width: 2px;
+  border-bottom-width: var(--tabNavBorderWidth, 2px);
   border-bottom-style: solid;
   border-bottom-color: transparent;
+  padding-bottom: var(--tabNavPaddingBottom, 10px);
+  padding-top: var(--tabNavPaddingTop, 0);
+  padding-left: var(--tabNavPaddingX, 0);
+  padding-right: var(--tabNavPaddingX, 0);
 
   transition: var(--transitionStyleButton);
 
   &:hover,
   &:focus {
     text-decoration: none;
-    color: var(--colorBlack);
+    color: var(--tabNavHoverColor, var(--colorBlack));
   }
 
   @media (--viewportMedium) {
-    border-bottom-width: 4px;
-    padding: 16px 10px 14px 10px;
+    border-bottom-width: var(--tabNavBorderWidthMedium, 4px);
+    padding: var(--tabNavPaddingTopMedium, 16px) var(--tabNavPaddingXMedium, 10px)
+      var(--tabNavPaddingBottomMedium, 14px) var(--tabNavPaddingXMedium, 10px);
   }
 }
 
@@ -64,8 +69,8 @@
 }
 
 .selectedTabContent {
-  border-bottom-color: var(--colorBlack);
-  color: var(--colorBlack);
+  border-bottom-color: var(--tabNavSelectedBorder, var(--hakoAccent));
+  color: var(--tabNavSelectedColor, var(--hakoPrimaryText));
 }
 
 .disabled {

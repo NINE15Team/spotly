@@ -1,0 +1,248 @@
+@import '../../styles/customMediaQueries.css';
+
+.hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 320px;
+  padding: 48px var(--hakoLateralPaddingMobile);
+  box-sizing: border-box;
+  text-align: center;
+  overflow: hidden;
+  background-color: var(--hakoDark);
+
+  @media (--viewportMedium) {
+    min-height: 420px;
+    padding: 72px var(--hakoLateralPaddingDesktop);
+  }
+}
+
+.heroImage {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.heroOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(12, 22, 29, 0.62);
+}
+
+.heroContent {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.eyebrow {
+  margin: 0;
+  font-family: var(--fontFamily);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--hakoPrimary);
+}
+
+.heroTitle {
+  margin: 0;
+  font-family: var(--fontFamilyHeading);
+  font-weight: 700;
+  font-size: 36px;
+  line-height: 1.1;
+  color: var(--hakoWhite);
+
+  @media (--viewportMedium) {
+    font-size: 56px;
+  }
+}
+
+.heroBody {
+  margin: 0;
+  font-family: var(--fontFamily);
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--hakoWhite);
+  max-width: 620px;
+}
+
+.splitSection {
+  width: 100%;
+  padding: var(--hakoSectionPaddingYMobile) var(--hakoLateralPaddingMobile);
+  box-sizing: border-box;
+  background-color: var(--hakoWhite);
+
+  @media (--viewportMedium) {
+    padding: var(--hakoSectionPaddingY) var(--hakoLateralPaddingDesktop);
+  }
+}
+
+.splitSectionAlt {
+  background-color: var(--hakoLightGreen);
+}
+
+.splitInner {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 28px;
+  width: 100%;
+  max-width: var(--hakoContentMaxWidth);
+  margin: 0 auto;
+  align-items: center;
+
+  @media (--viewportMedium) {
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+  }
+}
+
+.splitInnerImageFirst {
+  @media (--viewportMedium) {
+    direction: rtl;
+  }
+}
+
+.splitInnerImageFirst > * {
+  @media (--viewportMedium) {
+    direction: ltr;
+  }
+}
+
+.splitText {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.splitTitle {
+  margin: 0;
+  font-family: var(--fontFamilyHeading);
+  font-weight: 700;
+  font-size: 28px;
+  line-height: 1.2;
+  color: var(--hakoPrimaryText);
+
+  @media (--viewportMedium) {
+    font-size: 36px;
+  }
+}
+
+.splitBody {
+  margin: 0;
+  font-family: var(--fontFamily);
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--hakoPrimaryText);
+}
+
+.mediaPlaceholder {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  min-height: 200px;
+  border-radius: var(--hakoBorderRadius);
+  background: var(--hakoMuted);
+}
+
+.valuesSection {
+  width: 100%;
+  padding: var(--hakoSectionPaddingYMobile) var(--hakoLateralPaddingMobile);
+  box-sizing: border-box;
+  background-color: var(--hakoLightGreen);
+
+  @media (--viewportMedium) {
+    padding: var(--hakoSectionPaddingY) var(--hakoLateralPaddingDesktop);
+  }
+}
+
+.valuesInner {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  width: 100%;
+  max-width: var(--hakoContentMaxWidth);
+  margin: 0 auto;
+}
+
+.valuesTitle {
+  margin: 0;
+  text-align: center;
+  font-family: var(--fontFamilyHeading);
+  font-weight: 700;
+  font-size: 28px;
+  line-height: 1.2;
+  color: var(--hakoPrimaryText);
+
+  @media (--viewportMedium) {
+    font-size: 36px;
+  }
+}
+
+.valueCards {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+
+  @media (--viewportMedium) {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+}
+
+.valueCard {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 24px 20px;
+  background: var(--hakoWhite);
+  border-radius: var(--hakoBorderRadius);
+  box-shadow: var(--hakoDropShadow);
+  box-sizing: border-box;
+}
+
+.iconCircle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--hakoPrimary);
+  color: var(--hakoWhite);
+  flex-shrink: 0;
+}
+
+.iconCircle svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+
+.valueCardTitle {
+  margin: 0;
+  font-family: var(--fontFamily);
+  font-weight: 700;
+  font-size: 18px;
+  line-height: 1.3;
+  color: var(--hakoPrimaryText);
+}
+
+.valueCardBody {
+  margin: 0;
+  font-family: var(--fontFamily);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--hakoPrimaryText);
+}

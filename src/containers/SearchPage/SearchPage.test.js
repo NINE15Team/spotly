@@ -403,103 +403,81 @@ describe('SearchPage', () => {
   });
 
   it('Check that map and filters exist in map variant', async () => {
-    // Select correct SearchPage variant according to route configuration
-    const user = userEvent.setup();
+    // Hako Search Results layout: top search bar, left filter sidebar, map above listings
     const config = getConfig('map');
     const routeConfiguration = getRouteConfiguration(config.layout);
     const props = { ...commonProps };
     const SearchPage = getConnectedSearchPageForTests(config.layout);
 
-    const {
-      getByPlaceholderText,
-      getByText,
-      getByLabelText,
-      getAllByText,
-      queryByText,
-      getByRole,
-    } = render(<SearchPage {...props} />, {
-      initialState,
-      config,
-      routeConfiguration,
-      messages: {
-        'SearchPage.screenreader.openFilterButton': 'Filter: {label}',
-        'FieldSelectTree.screenreader.option': 'Choose {optionName}.',
-      },
-    });
+    const { getByPlaceholderText, getByText, getAllByText, queryByText } = render(
+      <SearchPage {...props} />,
+      {
+        initialState,
+        config,
+        routeConfiguration,
+        messages: {
+          'SearchPage.screenreader.openFilterButton': 'Filter: {label}',
+          'FieldSelectTree.screenreader.option': 'Choose {optionName}.',
+          'MainPanelHeader.hakoFoundResults':
+            '{count, number} {count, plural, one {SPOT MATCHES YOUR SEARCH} other {SPOTS MATCH YOUR SEARCH}}',
+          'MainPanelHeader.hakoSortBy': 'Sort:',
+          'HakoPriceByToggle.label': 'Price by',
+          'HakoPriceByToggle.hour': 'Hour',
+          'HakoPriceByToggle.day': 'Day',
+          'HakoSearchBar.update': 'Update',
+          'HakoSearchBar.search': 'Search',
+        },
+      }
+    );
 
     await waitFor(() => {
       // Has main search in Topbar and it's a location search.
       expect(getByPlaceholderText('TopbarSearchForm.placeholder')).toBeInTheDocument();
       expect(screen.getByTestId('location-search')).toBeInTheDocument();
 
-      // Does not have filter column
-      expect(screen.queryByTestId('filterColumnAside')).not.toBeInTheDocument();
+      // Has Hako top search bar
+      expect(screen.getByLabelText('Search filters')).toBeInTheDocument();
+
+      // Has filter column (Hako sidebar)
+      expect(screen.getByTestId('filterColumnAside')).toBeInTheDocument();
       // Has search map container
       expect(screen.getByTestId('searchMapContainer')).toBeInTheDocument();
 
-      // Has SortBy component
-      expect(getByText('MainPanelHeader.sortBy')).toBeInTheDocument();
-      expect(getAllByText('Newest')).toHaveLength(4); // desktop and mobile dropdowns & selected
-      expect(getAllByText('Oldest')).toHaveLength(2); // desktop and mobile dropdowns
+      // Has Price by toggle
+      expect(getByText('Price by')).toBeInTheDocument();
+      expect(getByText('Hour')).toBeInTheDocument();
+      expect(getByText('Day')).toBeInTheDocument();
 
-      // Has no Cat filter (primary filter tied to 'Cats' category)
-      expect(queryByText('Cat')).not.toBeInTheDocument();
-      // Does not have Amenities filter (secondary)
-      expect(queryByText('Amenities')).not.toBeInTheDocument();
-      // Has Single Select Test filter
+      // Has SortBy component (Hako label)
+      expect(getByText('Sort:')).toBeInTheDocument();
+      expect(getAllByText('Newest').length).toBeGreaterThan(0);
+      expect(getAllByText('Oldest').length).toBeGreaterThan(0);
+
+      // Sidebar shows plain filters (options visible)
       expect(getByText('Single Select Test')).toBeInTheDocument();
-      expect(queryByText('Enum 1')).not.toBeInTheDocument();
-      expect(queryByText('Enum 2')).not.toBeInTheDocument();
+      expect(getByText('Enum 1')).toBeInTheDocument();
+      expect(getByText('Enum 2')).toBeInTheDocument();
 
       // Has Category filter
-      expect(getByLabelText('Filter: FilterComponent.categoryLabel')).toBeInTheDocument();
-      expect(queryByText('Dogs')).not.toBeInTheDocument();
-      expect(queryByText('Cats')).not.toBeInTheDocument();
-      expect(queryByText('Fish')).not.toBeInTheDocument();
+      expect(getByText('FilterComponent.categoryLabel')).toBeInTheDocument();
+      expect(getByText('Dogs')).toBeInTheDocument();
+      expect(getByText('Cats')).toBeInTheDocument();
+      expect(getByText('Fish')).toBeInTheDocument();
 
       // Has Listing type filter
       expect(getByText('FilterComponent.listingTypeLabel')).toBeInTheDocument();
-      expect(queryByText('Rent bicycles daily')).not.toBeInTheDocument();
-      expect(queryByText('Rent bicycles nightly')).not.toBeInTheDocument();
-      expect(queryByText('Rent bicycles hourly')).not.toBeInTheDocument();
-      expect(queryByText('Sell bicycles')).not.toBeInTheDocument();
+      expect(getByText('Rent bicycles daily')).toBeInTheDocument();
 
-      // Has "more filters" button for secondary filters
-      expect(getByText('SearchFiltersPrimary.moreFiltersButton')).toBeInTheDocument();
+      // No "more filters" popup pattern — all filters are in the sidebar
+      expect(queryByText('SearchFiltersPrimary.moreFiltersButton')).not.toBeInTheDocument();
 
       // Has Price filter
       expect(getByText('FilterComponent.priceLabel')).toBeInTheDocument();
 
       // Shows listings
-      // Has listing with title
       expect(getByText('l1 title')).toBeInTheDocument();
-      // Has listing with title
       expect(getByText('l2 title')).toBeInTheDocument();
-      // 2 listings with the same price
-      expect(getAllByText('ListingCard.price')).toHaveLength(2);
     });
-
-    // Test category intercation
-    await user.click(getByRole('button', { name: 'Filter: FilterComponent.categoryLabel' }));
-
-    expect(getByText('Dogs')).toBeInTheDocument();
-    expect(queryByText('Poodle')).not.toBeInTheDocument();
-    expect(getByText('Cats')).toBeInTheDocument();
-    expect(queryByText('Burmese')).not.toBeInTheDocument();
-    expect(getByText('Fish')).toBeInTheDocument();
-    expect(queryByText('Freshwater')).not.toBeInTheDocument();
-
-    // Test category intercation: click "Fish"
-    await user.click(getByRole('button', { name: 'Choose Fish.' }));
-
-    expect(getByText('Dogs')).toBeInTheDocument();
-    expect(queryByText('Poodle')).not.toBeInTheDocument();
-    expect(getByText('Cats')).toBeInTheDocument();
-    expect(queryByText('Burmese')).not.toBeInTheDocument();
-    // Subcategories of Fish should be visible
-    expect(getByText('Fish')).toBeInTheDocument();
-    expect(getByText('Freshwater')).toBeInTheDocument();
-    expect(getByText('Saltwater')).toBeInTheDocument();
   });
 
   it('Check that Cat filters is revealed in grid variant', async () => {

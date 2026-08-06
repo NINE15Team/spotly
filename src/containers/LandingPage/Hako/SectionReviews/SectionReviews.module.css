@@ -1,0 +1,141 @@
+@import '../../../../styles/customMediaQueries.css';
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: var(--hakoSectionPaddingYMobile) var(--hakoLateralPaddingMobile);
+  background-color: var(--hakoLightGreen);
+  box-sizing: border-box;
+
+  @media (--viewportMedium) {
+    padding: var(--hakoSectionPaddingY) var(--hakoLateralPaddingDesktop);
+  }
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  text-align: center;
+}
+
+.heading {
+  margin: 0;
+  width: 100%;
+  font-family: var(--fontFamilyHeading);
+  font-weight: 600;
+  font-size: 28px;
+  line-height: 34px;
+  color: var(--hakoPrimaryText);
+
+  @media (--viewportMedium) {
+    font-size: 36px;
+    line-height: 40px;
+  }
+}
+
+.subtitle {
+  margin: 0;
+  max-width: 720px;
+  width: 100%;
+  font-family: var(--fontFamily);
+  font-size: 16px;
+  line-height: 23px;
+  color: var(--hakoSecondaryText);
+}
+
+.cards {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+
+  @media (--viewportMedium) {
+    flex-direction: row;
+    align-items: stretch;
+  }
+}
+
+.card {
+  flex: 1 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-items: flex-start;
+  min-width: 0;
+  padding: var(--hakoCardPadding);
+  background-color: var(--hakoWhite);
+  border-radius: var(--hakoBorderRadius);
+  box-shadow: var(--hakoDropShadow);
+  box-sizing: border-box;
+}
+
+.stars {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.star {
+  width: 15px;
+  height: 15px;
+  display: block;
+}
+
+.quote {
+  margin: 0;
+  flex: 1 0 auto;
+  font-family: var(--fontFamily);
+  font-size: 16px;
+  line-height: 23px;
+  color: var(--hakoSecondaryText);
+}
+
+.customer {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+}
+
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 20px;
+  background-color: var(--hakoLightGreen);
+  flex-shrink: 0;
+}
+
+.avatarIcon {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+.meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-family: var(--fontFamily);
+  font-size: 12px;
+  line-height: normal;
+  color: var(--hakoSecondaryText);
+}
+
+.name {
+  font-weight: 700;
+}
+
+.location {
+  font-weight: 400;
+}

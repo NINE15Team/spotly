@@ -5,7 +5,7 @@
 }
 
 .desktopInputRoot {
-  height: var(--topbarHeightDesktop);
+  height: 35px;
 }
 
 .mobileIcon {
@@ -65,57 +65,67 @@
 }
 
 .desktopIcon {
-  height: var(--topbarHeightDesktop);
-  border: none;
-  padding-top: 2px;
-
-  display: flex;
+  height: 24px;
   width: 24px;
-  align-self: stretch;
-  background-color: var(--colorWhite);
+  border: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+  background-color: transparent;
+  order: 2;
+  flex-shrink: 0;
 }
 
 .desktopInput {
-  composes: p from global;
   flex-grow: 1;
-  /* Font */
-  height: var(--topbarHeightDesktop);
-  line-height: unset;
+  order: 1;
+  height: 35px;
+  line-height: normal;
   border: none;
-  padding-top: 0;
-  padding-bottom: 0;
-
-  /* Search text gets ellipsis if it's too wide */
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  background-color: transparent;
+  font-family: var(--fontFamily);
+  font-weight: 400;
+  font-size: 12px;
+  color: var(--hakoLightText);
   text-overflow: ellipsis;
   overflow-x: hidden;
-
-  margin-top: 0;
-  margin-bottom: 0;
-  margin-left: 10px;
+  box-shadow: none;
+  -webkit-appearance: none;
+  appearance: none;
 
   &:hover,
   &:focus {
-    border-bottom-color: var(--marketplaceColor);
     outline: none;
     border: 0;
     box-shadow: none;
+    background: transparent;
+    background-color: transparent;
+  }
+
+  &::placeholder {
+    color: var(--hakoMuted);
+    text-overflow: ellipsis;
+    overflow-x: hidden;
   }
 
   &:hover::placeholder,
   &:focus::placeholder {
-    color: var(--colorGrey700);
+    color: var(--hakoMuted);
   }
 
-  /* Placeholder text might be too wide */
-  &::placeholder {
-    text-overflow: ellipsis;
-    overflow-x: hidden;
-    transition: var(--transitionStyleButton);
-  }
-
-  @media (--viewportMedium) {
-    margin-top: 0;
-    margin-bottom: 0;
+  /* Prevent browser autofill / UA styles from painting a white field in the dark header */
+  &:-webkit-autofill,
+  &:-webkit-autofill:hover,
+  &:-webkit-autofill:focus {
+    -webkit-text-fill-color: var(--hakoLightText);
+    -webkit-box-shadow: 0 0 0 1000px transparent inset;
+    transition: background-color 99999s ease-in-out 0s;
+    caret-color: var(--hakoLightText);
   }
 }
 
@@ -126,7 +136,7 @@
   /* searchContainer margin-top (94px) + mobileInput height (50px) = 144px */
   min-height: calc(100vh - 144px);
   width: 100%;
-  background-color: var(--marketplaceColor);
+  background-color: var(--hakoDark);
   border-bottom-left-radius: var(--borderRadius);
   border-bottom-right-radius: var(--borderRadius);
   box-shadow: var(--boxShadowPopup);
@@ -151,24 +161,36 @@
 .desktopPredictions {
   position: absolute;
   width: 100%;
-  top: var(--topbarHeightDesktop);
+  top: 40px;
   left: 0;
-  background-color: var(--marketplaceColor);
-  border-bottom-left-radius: var(--borderRadius);
-  border-bottom-right-radius: var(--borderRadius);
+  background-color: var(--hakoDark);
+  border-bottom-left-radius: var(--hakoBorderRadiusSmall);
+  border-bottom-right-radius: var(--hakoBorderRadiusSmall);
   box-shadow: var(--boxShadowPopup);
   z-index: calc(var(--zIndexPopup) + 1);
-
   margin-top: 0;
-  max-width: 434px;
+  max-width: 300px;
+  padding-bottom: 8px;
+}
+
+.desktopPredictions :global(li) {
+  color: var(--hakoLightText);
+}
+
+.desktopPredictions :global(li:hover),
+.desktopPredictions :global(li.highlighted) {
+  color: var(--hakoWhite);
 }
 
 /**
- * Keyword search
+ * Keyword search — Hako compact field
  */
 .keywordSearchWrapper {
   position: relative;
   display: flex;
+  align-items: center;
+  width: 100%;
+  height: 35px;
 }
 
 .searchSubmit {
@@ -176,44 +198,53 @@
   border: 0;
   padding: 0;
   cursor: pointer;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  order: 2;
 
   &:hover,
   &:focus {
     outline: none;
 
     & .iconSvgGroup {
-      stroke: var(--colorGrey700);
+      stroke: var(--hakoLightText);
     }
   }
 
-  /* This increases the size of the clicable area for better accessibility */
+  /* This increases the size of the clickable area for better accessibility */
   &:after {
     content: '';
     position: absolute;
-    top: 0px;
-    bottom: 0px;
-    left: -24px;
-    right: 0px;
+    top: -6px;
+    bottom: -6px;
+    left: -6px;
+    right: -6px;
   }
 }
 
 .icon {
   display: flex;
   width: 24px;
-  align-self: stretch;
-  border-bottom: 2px solid var(--marketplaceColor);
-  background-color: var(--colorWhite);
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 0;
+  background-color: transparent;
 }
 
 .iconSvg {
-  margin: auto;
+  display: block;
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
 }
 
 .iconSvgGroup {
-  stroke: var(--marketplaceColor);
-  stroke-width: 2.5px;
-
-  @media (--viewportMedium) {
-    stroke-width: 2px;
-  }
+  stroke: var(--hakoMuted);
+  stroke-width: 2px;
 }

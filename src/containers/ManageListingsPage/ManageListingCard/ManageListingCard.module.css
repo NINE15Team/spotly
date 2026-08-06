@@ -1,186 +1,269 @@
 @import '../../../styles/customMediaQueries.css';
 
 .root {
-  /* Layout */
   display: flex;
   flex-direction: column;
-  position: relative;
+  width: 100%;
+  background: var(--hakoWhite);
+  border-radius: var(--hakoBorderRadius);
+  overflow: hidden;
+  box-shadow: var(--hakoDropShadow);
+}
 
-  /* Remove link's hover effect */
+.imageWrap {
+  position: relative;
+  width: 100%;
+  background: var(--hakoMuted);
+}
+
+.imageLink {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+
   &:hover {
     text-decoration: none;
   }
 }
 
-.thumbnailContainer {
-  /* Layout */
-  display: block;
+.aspect {
   width: 100%;
-  position: relative;
-  transition: var(--transitionStyleButton);
-
-  &:hover {
-    transform: scale(1.02);
-    box-shadow: var(--boxShadowListingCard);
-  }
 }
 
-.clickWrapperClickable {
-  cursor: pointer;
+.image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border: 0;
+  border-radius: 0;
+}
+
+.imagePlaceholder {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  min-height: 160px;
+  background: var(--hakoMuted);
+}
+
+.badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: var(--hakoBorderRadiusSmall);
+  font-family: var(--fontFamily);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--hakoWhite);
+}
+
+.badgeDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--hakoWhite);
+}
+
+.badge_active {
+  background: var(--hakoPrimary);
+}
+
+.badge_draft {
+  background: var(--hakoSecondaryText);
+}
+
+.badge_paused {
+  background: var(--hakoDark);
+}
+
+.badge_pending {
+  background: var(--hakoAccent);
 }
 
 .info {
-  /* Layout */
   display: flex;
   flex-direction: column;
-  padding: 8px 0 2px 0;
+  gap: 14px;
+  padding: 18px 16px 16px;
+  background: var(--hakoLightGreen);
+  flex-grow: 1;
+}
 
-  @media (--viewportMedium) {
-    padding: 14px 0 2px 0;
+.titleRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--fontFamily);
+  font-weight: 700;
+  font-size: 16px;
+  line-height: 1.3;
+  color: var(--hakoPrimaryText);
+  text-decoration: none;
+  min-width: 0;
+
+  &:hover {
+    text-decoration: underline;
   }
 }
 
 .price {
-  composes: textSmall from global;
-
-  /* Layout */
+  margin: 0;
   flex-shrink: 0;
-  margin-bottom: 4px;
-  color: var(--colorGrey700);
+  font-family: var(--fontFamily);
+  font-weight: 700;
+  font-size: 16px;
+  line-height: 1.3;
+  color: var(--hakoPrimaryText);
+  white-space: nowrap;
 }
 
-.priceValue {
-  /* Font */
-  font-weight: var(--fontWeightSemiBold);
-  color: var(--marketplaceColor);
-
-  /* Remove default margins from font */
-  margin-top: 0;
-  margin-bottom: 0;
-
-  @media (--viewportMedium) {
-    margin-top: 0;
-    margin-bottom: 0;
-  }
-}
-
-.perUnit {
-  /* Font */
-  font-weight: var(--fontWeightSemiBold);
-  color: var(--marketplaceColor);
-
-  /* Remove default margins from font */
-  margin-top: 0;
-  margin-bottom: 0;
-
-  @media (--viewportMedium) {
-    margin-top: 0;
-    margin-bottom: 0;
-  }
-}
-
-.noPrice {
-  composes: perUnit;
-  padding: 5px 0 3px 0;
-}
-
-.mainInfo {
+.metaRow {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 44px;
+
+  @media (--viewportMedium) {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+}
+
+.draftSpacer {
   flex-grow: 1;
+  min-height: 44px;
+
+  @media (--viewportMedium) {
+    min-height: 52px;
+  }
 }
 
-.titleWrapper {
-  line-height: 24px;
+.stats {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  min-width: 0;
+  width: 100%;
+
+  @media (--viewportMedium) {
+    width: auto;
+  }
 }
 
-.title {
-  composes: p from global;
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 10px;
+  border-left: 1px solid rgba(12, 22, 29, 0.15);
 
-  /* Position and dimensions */
-  display: inline;
+  &:first-child {
+    padding-left: 0;
+    border-left: 0;
+  }
+}
 
-  /* Borders */
-  border: none;
+.statLabel {
+  font-family: var(--fontFamily);
+  font-size: 11px;
+  line-height: 1.2;
+  color: var(--hakoSecondaryText);
+}
 
-  /* Text size should be inherited */
+.statValue {
+  font-family: var(--fontFamily);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--hakoPrimaryText);
+}
+
+.rating {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  order: -1;
+
+  @media (--viewportMedium) {
+    order: 0;
+  }
+}
+
+.stars {
+  display: flex;
+  align-items: center;
+}
+
+.ratingValue {
+  font-family: var(--fontFamily);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--hakoPrimaryText);
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: auto;
+}
+
+.actionBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 8px 12px;
+  border-radius: var(--hakoBorderRadiusSmall);
+  font-family: var(--fontFamily);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.2;
+  text-align: center;
   text-decoration: none;
-
-  /* Font */
-  font-weight: var(--fontWeightSemiBold);
-  line-height: 24px;
-
-  color: var(--colorGrey700);
-  text-align: left;
-
-  padding: 3px 0;
-
-  /* Remove default margins from font */
+  cursor: pointer;
+  box-sizing: border-box;
   margin: 0;
 
   &:hover {
-    text-decoration: underline;
-    cursor: pointer;
-  }
-
-  @media (--viewportMedium) {
-    padding: 0;
-    margin: 0;
+    text-decoration: none;
   }
 }
 
-.edit {
-  composes: buttonSecondary from global;
+.actionOutline {
+  background: var(--hakoWhite);
+  border: 1px solid var(--hakoPrimary);
+  color: var(--hakoPrimary);
 
-  /* TODO: Odd font-size */
-  font-size: 14px;
-
-  /* Reset min-height from button styles */
-  min-height: 0;
-
-  /* Reserve space for button */
-  flex-shrink: 0;
-  width: auto;
-  height: 41px;
-  padding: 7px 14px 7px 35px;
-
-  /* Add edit icon as a background image */
-  background-image: url('data:image/svg+xml;utf8,<svg width="14" height="14" viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg"><g stroke="%234A4A4A" fill="none" fill-rule="evenodd" stroke-linecap="round" stroke-linejoin="round"><path d="M5.307 11.155L1 13l1.846-4.308L10.54 1 13 3.46zM11 5L9 3M5 11L3 9"/></g></svg>');
-  background-repeat: no-repeat;
-  background-position: 15px center;
-}
-
-.manageLinks {
-  composes: marketplaceTinyFontStyles from global;
-  line-height: 18px;
-  padding-top: 2px;
-  padding-bottom: 4px;
-
-  /* Remove default margins from font */
-  margin-top: 0;
-  margin-bottom: 0;
-
-  @media (--viewportMedium) {
-    line-height: 24px;
-    padding-top: 0;
-    padding-bottom: 0;
-
-    margin-top: 0;
-    margin-bottom: 0;
+  &:hover,
+  &:focus {
+    background: rgba(113, 179, 64, 0.08);
+    outline: none;
   }
 }
 
-.manageLink {
-  text-decoration: underline;
-  color: var(--colorGrey700);
-  white-space: pre;
+.actionPrimary {
+  background: var(--hakoPrimary);
+  border: 1px solid var(--hakoPrimary);
+  color: var(--hakoWhite);
 
-  &:hover {
-    text-decoration: underline;
-    color: var(--colorBlack);
+  &:hover,
+  &:focus {
+    background: var(--colorPrimaryButtonDark);
+    border-color: var(--colorPrimaryButtonDark);
+    outline: none;
   }
-}
-
-.manageLinksSeparator {
-  margin: 0 3px 0 3px;
 }

@@ -222,7 +222,12 @@ const SignupFormComponent = props => (
                 <FormattedMessage id="SignupForm.passwordRepeatedOnOtherFields" />
               </div>
             ) : null}
-            <PrimaryButton type="submit" inProgress={submitInProgress} disabled={submitDisabled}>
+            <PrimaryButton
+              type="submit"
+              className={css.submitButton}
+              inProgress={submitInProgress}
+              disabled={submitDisabled}
+            >
               <FormattedMessage id="SignupForm.signUp" />
             </PrimaryButton>
           </div>

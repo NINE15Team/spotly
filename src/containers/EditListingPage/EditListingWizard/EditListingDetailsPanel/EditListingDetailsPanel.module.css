@@ -11,3 +11,17 @@
 .form {
   flex-grow: 1;
 }
+
+.panelTitle {
+  margin: 0 0 24px;
+  font-family: var(--fontFamilyHeading);
+  font-weight: 700;
+  font-size: 28px;
+  line-height: 1.2;
+  color: var(--hakoPrimaryText);
+
+  @media (--viewportMedium) {
+    font-size: 36px;
+    margin-bottom: 28px;
+  }
+}

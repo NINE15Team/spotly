@@ -13,10 +13,10 @@
       cursor: pointer;
 
       /* Same as active */
-      background-color: var(--marketplaceColor);
-      border-color: var(--marketplaceColor);
-      color: var(--colorWhite);
-      box-shadow: var(--boxShadowPopup);
+      background-color: var(--hakoAccent);
+      border-color: var(--hakoAccent);
+      color: var(--hakoWhite);
+      box-shadow: var(--hakoDropShadow);
     }
   }
 }
@@ -30,18 +30,20 @@
   position: relative;
 
   /* Font */
+  font-family: var(--fontFamily);
   font-weight: var(--fontWeightSemiBold);
-  color: var(--colorGrey700);
+  font-size: 12px;
+  color: var(--hakoPrimaryText);
   letter-spacing: 0.1px;
 
-  background-color: var(--colorWhite);
+  background-color: var(--hakoWhite);
 
   /* Borders */
   border-style: solid;
-  border-color: var(--colorGrey100);
+  border-color: var(--hakoMuted);
   border-width: 1px;
-  border-radius: var(--borderRadiusMedium);
-  box-shadow: var(--boxShadowPopupLight);
+  border-radius: var(--hakoBorderRadiusSmall);
+  box-shadow: var(--hakoDropShadow);
 
   /* Dimensions */
   padding: 6px 10px;
@@ -62,10 +64,10 @@
 
 .mapLabelActive {
   /* Same as hover */
-  background-color: var(--marketplaceColor);
-  border-color: var(--marketplaceColor);
-  color: var(--colorWhite);
-  box-shadow: var(--boxShadowPopup);
+  background-color: var(--hakoPrimary);
+  border-color: var(--hakoPrimary);
+  color: var(--hakoWhite);
+  box-shadow: var(--hakoDropShadow);
 }
 
 .caretShadow {
@@ -106,6 +108,6 @@
 
 .caretActive {
   /* Same as hover */
-  background-color: var(--marketplaceColor);
-  border-color: var(--marketplaceColor);
+  background-color: var(--hakoPrimary);
+  border-color: var(--hakoPrimary);
 }

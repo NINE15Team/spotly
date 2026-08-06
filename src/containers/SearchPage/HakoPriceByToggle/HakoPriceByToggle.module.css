@@ -1,0 +1,52 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 0 24px 0;
+  border-bottom: 1px solid rgba(12, 22, 29, 0.12);
+  margin-bottom: 8px;
+}
+
+.label {
+  margin: 0;
+  font-family: var(--fontFamily);
+  font-weight: 700;
+  font-size: 12px;
+  line-height: normal;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--hakoPrimaryText);
+}
+
+.toggle {
+  display: flex;
+  width: 100%;
+  gap: 0;
+  border: 1px solid var(--hakoPrimaryText);
+  border-radius: var(--hakoBorderRadiusSmall);
+  overflow: hidden;
+}
+
+.option {
+  flex: 1 1 50%;
+  height: 36px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background-color: var(--hakoWhite);
+  font-family: var(--fontFamily);
+  font-size: 14px;
+  line-height: normal;
+  color: var(--hakoPrimaryText);
+  cursor: pointer;
+}
+
+.optionActive {
+  background-color: var(--hakoDark);
+  color: var(--hakoWhite);
+}
+
+.option:focus {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--hakoAccent);
+}

@@ -1,32 +1,69 @@
 @import '../../../styles/customMediaQueries.css';
 
 .root {
-  composes: marketplaceModalFormRootStyles from global;
-
+  display: flex;
+  flex-direction: column;
+  flex: 1;
   justify-content: flex-start;
+  gap: 20px;
 
   @media (--viewportMedium) {
-    justify-content: space-between;
+    gap: 24px;
   }
 }
 
 .password {
-  composes: marketplaceModalPasswordMargins from global;
+  margin-top: 20px;
+
+  @media (--viewportMedium) {
+    margin-top: 24px;
+  }
 }
 
 .bottomWrapper {
-  composes: marketplaceModalBottomWrapper from global;
+  margin-top: 24px;
+  text-align: left;
+  align-self: stretch;
+
+  @media (--viewportMedium) {
+    margin-top: 28px;
+  }
+}
+
+.submitButton {
+  width: 100%;
+  min-height: 48px;
+  border-radius: var(--hakoBorderRadiusSmall);
+  font-family: var(--fontFamily);
+  font-size: 16px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.submitButton:enabled:not(:disabled) {
+  background-color: var(--hakoPrimary);
 }
 
 /* Adjust the bottomWrapper's margin to match modals without the helper text */
 .bottomWrapperText {
-  composes: marketplaceModalBottomWrapperText from global;
+  margin: 0 0 16px;
+  padding: 0;
 }
 
 .recoveryLink {
-  composes: marketplaceModalHelperLink from global;
+  color: var(--hakoAccent);
+  font-weight: 500;
+
+  &:hover {
+    color: var(--hakoAccent);
+    text-decoration: underline;
+  }
 }
 
 .recoveryLinkInfo {
-  composes: marketplaceModalHelperText from global;
+  font-family: var(--fontFamily);
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--hakoSecondaryText);
+  margin: 0;
 }
