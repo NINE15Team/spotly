@@ -1,31 +1,91 @@
 @import '../../styles/customMediaQueries.css';
 
 .layoutWrapperMain {
+  background-color: var(--hakoDark);
 }
 
 .root {
   flex-grow: 1;
+  min-height: 100vh;
+  background-color: var(--hakoDark);
+}
+
+.backgroundOverlay {
+  background: rgba(12, 22, 29, 0.45);
 }
 
 .contentContainer {
-  composes: marketplaceModalRootStyles from global;
-  min-height: calc(100vh - 60px);
-  height: auto;
+  display: flex;
+  flex-grow: 1;
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 100vh;
+  padding: 24px var(--hakoLateralPaddingMobile);
 
   @media (--viewportMedium) {
-    height: unset;
-    min-height: unset;
+    padding: 40px var(--hakoLateralPaddingDesktop);
   }
 }
 
 .content {
-  composes: marketplaceModalBaseStyles from global;
-  padding-top: 29px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 480px;
+  margin: 0;
+  padding: 28px 24px 32px;
+  background-color: var(--hakoWhite);
+  border-radius: var(--hakoBorderRadius);
+  border-bottom: none;
+  box-shadow: 0 8px 32px rgba(12, 22, 29, 0.28);
 
   @media (--viewportMedium) {
-    margin-top: 5vh;
-    margin-bottom: 7.5vh;
-    min-height: 700px;
+    flex-basis: auto;
+    flex-grow: 0;
+    padding: 36px 40px 40px;
+    margin: 0;
+  }
+}
+
+.content label {
+  font-family: var(--fontFamily);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  color: var(--hakoSecondaryText);
+  margin-bottom: 8px;
+  padding: 0;
+}
+
+.content input[type='email'],
+.content input[type='text'],
+.content input[type='password'] {
+  border: 1px solid var(--hakoMuted);
+  border-radius: var(--hakoBorderRadiusSmall);
+  color: var(--hakoPrimaryText);
+  padding: 12px 14px;
+  line-height: 22px;
+
+  @media (--viewportMedium) {
+    padding: 12px 16px;
+    line-height: 24px;
+  }
+
+  &:hover {
+    border-color: var(--hakoSecondaryText);
+  }
+
+  &:focus {
+    border-color: var(--hakoAccent);
+    box-shadow: 0 0 0 2px rgba(62, 120, 178, 0.2);
+  }
+
+  &::placeholder {
+    color: var(--hakoMuted);
   }
 }
 
@@ -39,88 +99,75 @@
 /* ================ Tabs & Form ================ */
 
 .tabs {
+  --tabNavColor: var(--hakoSecondaryText);
+  --tabNavHoverColor: var(--hakoAccent);
+  --tabNavSelectedColor: var(--hakoAccent);
+  --tabNavSelectedBorder: var(--hakoAccent);
+  --tabNavBorderWidth: 2px;
+  --tabNavBorderWidthMedium: 2px;
+  --tabNavPaddingTop: 0;
+  --tabNavPaddingBottom: 8px;
+  --tabNavPaddingX: 0;
+  --tabNavPaddingTopMedium: 0;
+  --tabNavPaddingBottomMedium: 8px;
+  --tabNavPaddingXMedium: 0;
+  gap: 28px;
+  margin: 0 0 28px;
+
   @media (--viewportMedium) {
-    margin-top: 6px;
+    gap: 36px;
+    margin: 0 0 32px;
   }
 }
 
-.tab {
-  composes: marketplaceModalTitleStyles from global;
-  padding: 0;
-  margin-top: 0;
-  margin-bottom: 0;
+.tabItem {
+  margin-left: 0;
+}
 
-  /* Break long words into multiple lines to avoid overflow */
+.tab {
+  margin: 0;
+  padding: 0;
+  font-family: var(--fontFamily);
+  font-weight: 600;
+  font-size: 18px;
+  line-height: 24px;
+  color: inherit;
+  text-transform: capitalize;
   word-break: break-word;
   hyphens: auto;
-  font-size: 20px;
-
-  @media (min-width: 375px) {
-    font-size: 24px;
-  }
-
-  @media (min-width: 450px) {
-    font-size: 30px;
-  }
 
   @media (--viewportMedium) {
+    font-size: 20px;
+    line-height: 28px;
     word-break: unset;
     hyphens: unset;
-    padding: 0;
-    margin-top: 0;
   }
 }
 
 .form {
-  margin-top: 24px;
-
-  @media (--viewportMedium) {
-    margin-top: 30px;
-    padding-top: 2px;
-  }
+  margin-top: 0;
 }
 
 .loginForm {
-  margin-top: 24px;
-
-  /* We don't want the form to take the whole space so that on mobile view
-  the social login buttons will be after the sign up button
-  and not in the bottom of the page.
-  We also need to add flex-basis value so that Safari will show the
-  whole form correctly.  */
+  margin-top: 0;
   flex-grow: 0;
-  flex-basis: 260px;
-
-  @media (--viewportMedium) {
-    flex-basis: 330px;
-    margin-top: 30px;
-    padding-top: 2px;
-  }
+  flex-basis: auto;
 }
 
 .signupForm {
-  margin-top: 24px;
-
-  /* We don't want the form to take the whole space so that on mobile view
-  the social login buttons will be after the sign up button
-  and not in the bottom of the page.
-  We also need to add flex-basis value so that Safari will show the
-  whole form correctly.  */
+  margin-top: 0;
   flex-grow: 0;
-  flex-basis: 340px;
-
-  @media (--viewportMedium) {
-    flex-basis: 410px;
-    margin-top: 30px;
-    padding-top: 2px;
-  }
+  flex-basis: auto;
 }
 
 .bottomWrapper {
   composes: marketplaceModalBottomWrapper from global;
-
-  /* Align the helper links to the left since there isn't a Primary Button anymore */
+  margin-top: 24px;
   text-align: left;
+
+  @media (--viewportMedium) {
+    margin-top: 28px;
+  }
 }
 
 /* Terms of Service modal*/
@@ -138,19 +185,59 @@
 
 /* userType selection */
 .userTypeSelect {
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 
   @media (--viewportMedium) {
-    margin-bottom: 32px;
+    margin-bottom: 24px;
+  }
+}
+
+.userTypeSelect label {
+  font-family: var(--fontFamily);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  color: var(--hakoSecondaryText);
+  margin-bottom: 8px;
+}
+
+.userTypeSelectField {
+  font-family: var(--fontFamily);
+  font-size: 15px;
+  line-height: 22px;
+  color: var(--hakoPrimaryText);
+  border: 1px solid var(--hakoMuted);
+  border-radius: var(--hakoBorderRadiusSmall);
+  background-color: var(--hakoWhite);
+  padding: 12px 36px 12px 14px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%237D8491' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-position: center right 14px;
+  background-size: 12px 8px;
+  background-repeat: no-repeat;
+
+  @media (--viewportMedium) {
+    padding: 12px 40px 12px 16px;
+    line-height: 24px;
+  }
+
+  &:hover {
+    border-color: var(--hakoSecondaryText);
+  }
+
+  &:focus {
+    border-color: var(--hakoAccent);
+    box-shadow: 0 0 0 2px rgba(62, 120, 178, 0.2);
   }
 }
 
 .selectedLabel {
   composes: label from global;
+  color: var(--hakoSecondaryText);
 }
 .selectedValue {
   margin-top: 0;
   margin-bottom: 6px;
+  color: var(--hakoPrimaryText);
 
   @media (--viewportMedium) {
     margin-top: 0;
@@ -191,11 +278,14 @@
 /* Title of the modal */
 .modalTitle {
   composes: marketplaceModalTitleStyles from global;
+  font-family: var(--fontFamilyHeading);
+  color: var(--hakoPrimaryText);
 }
 
 /* Paragraph for the Modal */
 .modalMessage {
   composes: marketplaceModalParagraphStyles from global;
+  color: var(--hakoSecondaryText);
 }
 
 /* Make the email pop */
@@ -213,11 +303,13 @@
 .modalHelperLink {
   composes: a from global;
   composes: marketplaceModalHelperLink from global;
+  color: var(--hakoAccent);
 }
 
 /* Helper texts for the links, not the actual links */
 .modalHelperText {
   composes: marketplaceModalHelperText from global;
+  color: var(--hakoSecondaryText);
 }
 
 .modalIcon {
@@ -235,6 +327,8 @@
 
 .error {
   composes: marketplaceModalPasswordMargins from global;
+  color: var(--colorFail);
+  margin-bottom: 16px;
 }
 
 /* ================ Social logins & SSO ================ */
@@ -244,7 +338,8 @@
   margin-top: 0;
   margin-bottom: 0;
   padding-top: 16px;
-  color: var(--colorBlack);
+  font-family: var(--fontFamilyHeading);
+  color: var(--hakoPrimaryText);
 
   @media (--viewportMedium) {
     padding: 0;
@@ -253,4 +348,15 @@
 }
 
 .confirmInfoText {
+  color: var(--hakoSecondaryText);
+}
+
+.submitButton {
+  width: 100%;
+  min-height: 48px;
+  border-radius: var(--hakoBorderRadiusSmall);
+  font-family: var(--fontFamily);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0;
 }

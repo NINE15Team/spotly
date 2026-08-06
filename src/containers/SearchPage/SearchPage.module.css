@@ -50,15 +50,19 @@
   display: block;
   width: 100%;
   padding: 24px 0 8px;
+  box-sizing: border-box;
 
   @media (--viewportMedium) {
-    flex: 0 0 360px;
-    width: 360px;
-    padding: 0;
+    flex: 0 0 400px;
+    width: 400px;
+    padding: 24px;
     position: sticky;
     top: calc(var(--topbarHeightDesktop) + 20px);
     max-height: calc(100vh - var(--topbarHeightDesktop) - 40px);
     overflow-y: auto;
+    background-color: var(--hakoWhite);
+    border-radius: var(--hakoBorderRadius);
+    box-shadow: var(--hakoDropShadow);
   }
 }
 

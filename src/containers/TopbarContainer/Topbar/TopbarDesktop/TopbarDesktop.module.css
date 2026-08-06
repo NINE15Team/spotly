@@ -104,6 +104,7 @@
   flex: 0 0 auto;
   width: 220px;
   max-width: 300px;
+  position: relative;
 
   @media (--viewportLarge) {
     width: 300px;
@@ -129,6 +130,26 @@
   background-color: rgba(255, 255, 255, 0.05);
   border-radius: var(--hakoBorderRadiusSmall);
   box-sizing: border-box;
+
+  &:focus-within {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+
+  /* Keep the location input transparent inside the dark header field */
+  & input {
+    background: transparent !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+    border: 0 !important;
+
+    &:hover,
+    &:focus {
+      background: transparent !important;
+      background-color: transparent !important;
+      box-shadow: none !important;
+      border: 0 !important;
+    }
+  }
 }
 
 .right {

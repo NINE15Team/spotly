@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Redirect } from 'react-router-dom';
 import Cookies from 'js-cookie';
-import classNames from 'classnames';
 
 import { useConfiguration } from '../../context/configurationContext';
 import { camelize } from '../../util/string';
@@ -31,13 +30,11 @@ import {
   LayoutSingleColumn,
 } from '../../components';
 
-import TopbarContainer from '../../containers/TopbarContainer/TopbarContainer';
-import FooterContainer from '../../containers/FooterContainer/FooterContainer';
+import NotFoundPage from '../../containers/NotFoundPage/NotFoundPage';
 // We need to get ToS asset and get it rendered for the modal on this page.
 import { TermsOfServiceContent } from '../../containers/TermsOfServicePage/TermsOfServicePage';
 // We need to get PrivacyPolicy asset and get it rendered for the modal on this page.
 import { PrivacyPolicyContent } from '../../containers/PrivacyPolicyPage/PrivacyPolicyPage';
-import NotFoundPage from '../../containers/NotFoundPage/NotFoundPage';
 
 import {
   getAuthInfoFromCookies,
@@ -131,7 +128,7 @@ const ResendVerificationErrorMessage = props => {
 };
 
 const BlankPage = props => {
-  const { schemaTitle, schemaDescription, scrollingDisabled, topbarClasses } = props;
+  const { schemaTitle, schemaDescription, scrollingDisabled } = props;
   return (
     <Page
       title={schemaTitle}
@@ -143,10 +140,7 @@ const BlankPage = props => {
         description: schemaDescription,
       }}
     >
-      <LayoutSingleColumn
-        topbar={<TopbarContainer className={topbarClasses} />}
-        footer={<FooterContainer />}
-      >
+      <LayoutSingleColumn topbar={null} footer={null}>
         <div className={css.spinnerContainer}>
           <IconSpinner />
         </div>
@@ -277,9 +271,6 @@ export const AuthenticationPageComponent = props => {
   const schemaDescription = isLogin
     ? intl.formatMessage({ id: 'AuthenticationPage.schemaDescriptionLogin' }, { marketplaceName })
     : intl.formatMessage({ id: 'AuthenticationPage.schemaDescriptionSignup' }, { marketplaceName });
-  const topbarClasses = classNames({
-    [css.hideOnMobile]: showEmailVerification,
-  });
 
   const shouldRedirectToFrom = isAuthenticated && from;
   const shouldRedirectToLandingPage =
@@ -292,7 +283,7 @@ export const AuthenticationPageComponent = props => {
       <BlankPage
         schemaTitle={schemaTitle}
         schemaDescription={schemaDescription}
-        topbarClasses={topbarClasses}
+        scrollingDisabled={scrollingDisabled}
       />
     );
   }
@@ -343,12 +334,13 @@ export const AuthenticationPageComponent = props => {
     >
       <LayoutSingleColumn
         mainColumnClassName={css.layoutWrapperMain}
-        topbar={<TopbarContainer className={topbarClasses} />}
-        footer={<FooterContainer />}
+        topbar={null}
+        footer={null}
       >
         <ResponsiveBackgroundImageContainer
           className={css.root}
           childrenWrapperClassName={css.contentContainer}
+          overlayClassName={css.backgroundOverlay}
           as="section"
           image={config.branding.brandImage}
           sizes="100%"
@@ -358,6 +350,7 @@ export const AuthenticationPageComponent = props => {
             <div className={css.content}>
               <LinkTabNavHorizontal
                 className={css.tabs}
+                tabRootClassName={css.tabItem}
                 tabs={getAuthenticationTabs({
                   isLogin,
                   signupRouteName,

@@ -51,6 +51,7 @@ const createFakeImageEntity = url => {
  * @param {string} [props.alt] - The alt text for the image
  * @param {string} props.sizes - The sizes attribute for the image
  * @param {boolean} [props.useOverlay] - Whether to use an overlay
+ * @param {string} [props.overlayClassName] - Custom class that extends the default overlay class
  * @returns {JSX.Element}
  */
 const ResponsiveBackgroundImageContainer = props => {
@@ -65,6 +66,7 @@ const ResponsiveBackgroundImageContainer = props => {
     alt,
     sizes,
     useOverlay,
+    overlayClassName,
     ...otherProps
   } = props;
   const Tag = as || 'div';
@@ -74,7 +76,9 @@ const ResponsiveBackgroundImageContainer = props => {
   const variantNames = Object.keys(variants);
 
   const classes = classNames(rootClassName || css.root, className);
-  const overlayMaybe = useOverlay ? <div className={css.overlay}></div> : null;
+  const overlayMaybe = useOverlay ? (
+    <div className={classNames(css.overlay, overlayClassName)}></div>
+  ) : null;
   const childrenWrapperClassNameMaybe = childrenWrapperClassName
     ? { className: childrenWrapperClassName }
     : {};
