@@ -31,6 +31,8 @@ import {
 } from '../../components';
 
 import NotFoundPage from '../../containers/NotFoundPage/NotFoundPage';
+import TopbarContainer from '../../containers/TopbarContainer/TopbarContainer';
+import FooterContainer from '../../containers/FooterContainer/FooterContainer';
 // We need to get ToS asset and get it rendered for the modal on this page.
 import { TermsOfServiceContent } from '../../containers/TermsOfServicePage/TermsOfServicePage';
 // We need to get PrivacyPolicy asset and get it rendered for the modal on this page.
@@ -334,8 +336,8 @@ export const AuthenticationPageComponent = props => {
     >
       <LayoutSingleColumn
         mainColumnClassName={css.layoutWrapperMain}
-        topbar={null}
-        footer={null}
+        topbar={<TopbarContainer />}
+        footer={<FooterContainer />}
       >
         <ResponsiveBackgroundImageContainer
           className={css.root}

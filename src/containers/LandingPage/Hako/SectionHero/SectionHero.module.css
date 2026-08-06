@@ -201,6 +201,57 @@
   font-weight: 700;
 }
 
+.fieldValueInput {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--hakoWhite);
+  font-family: var(--fontFamily);
+  font-size: 12px;
+  line-height: normal;
+  outline: none;
+
+  &::placeholder {
+    color: rgba(241, 247, 237, 0.7);
+  }
+}
+
+.locationField {
+  flex: 1 1 auto;
+  min-width: 0;
+  position: relative;
+}
+
+.locationInputRoot {
+  width: 100%;
+  position: relative;
+}
+
+.locationIconHidden {
+  display: none;
+}
+
+.locationInput {
+  composes: fieldValueInput;
+  font-weight: 400;
+}
+
+.locationPredictions {
+  position: absolute;
+  top: calc(100% + 12px);
+  left: 0;
+  min-width: 260px;
+  width: max(100%, 280px);
+  z-index: var(--zIndexPopup);
+  background: var(--hakoWhite);
+  border-radius: var(--hakoBorderRadiusSmall);
+  box-shadow: var(--hakoDropShadow);
+  color: var(--hakoPrimaryText);
+}
+
 .divider {
   display: none;
   width: 1px;

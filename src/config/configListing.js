@@ -303,6 +303,21 @@ export const listingFields = [
 
 export const listingTypes = [
   {
+    listingType: 'monthly-storage',
+    label: 'Monthly storage',
+    transactionType: {
+      process: 'subscription-rental',
+      alias: 'subscription-rental/release-5',
+      unitType: 'day',
+    },
+    availabilityType: 'oneSeat',
+    defaultListingFields: {
+      location: true,
+      payoutDetails: true,
+    },
+  },
+  {
+    // Alias kept for listings created before the monthly-storage rename
     listingType: 'monthly-subscription',
     label: 'Monthly subscription',
     transactionType: {
@@ -316,6 +331,21 @@ export const listingTypes = [
       payoutDetails: true,
     },
   },
+  {
+    listingType: 'day-parking',
+    label: 'Day parking',
+    transactionType: {
+      process: 'default-booking',
+      alias: 'default-booking/release-1',
+      unitType: 'hour',
+    },
+    availabilityType: 'oneSeat',
+    defaultListingFields: {
+      location: true,
+      payoutDetails: true,
+    },
+  },
+
   // // Here are some examples of listingTypes
   // // TODO: SearchPage does not work well if both booking and product selling are used at the same time
   // {

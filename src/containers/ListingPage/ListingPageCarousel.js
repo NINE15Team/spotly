@@ -5,8 +5,8 @@ import { useDispatch, useSelector, useStore } from 'react-redux';
 // Utils
 import { formatMoney } from '../../util/currency';
 import { FormattedMessage } from '../../util/reactIntl';
-import { propTypes } from '../../util/types';
-import { OFFER } from '../../transactions/transaction';
+import { LISTING_STATE_CLOSED, propTypes } from '../../util/types';
+import { OFFER, REQUEST } from '../../transactions/transaction';
 
 // Global ducks (for Redux actions and thunks)
 import { getMarketplaceEntities } from '../../ducks/marketplaceData.duck';
@@ -14,7 +14,7 @@ import { manageDisableScrolling, isScrollingDisabled } from '../../ducks/ui.duck
 import { initializeCardPaymentData } from '../../ducks/stripe.duck.js';
 
 // Shared components
-import { Page, LayoutSingleColumn } from '../../components';
+import { Page, LayoutSingleColumn, OrderPanel, NamedLink } from '../../components';
 
 // Related components and modules
 import TopbarContainer from '../TopbarContainer/TopbarContainer';
@@ -33,6 +33,9 @@ import {
   ErrorPage,
   handleContactUser,
   handleSubmitInquiry,
+  handleSubmit,
+  handleNavigateToMakeOfferPage,
+  handleNavigateToRequestQuotePage,
   priceForSchemaMaybe,
   getDerivedRenderData,
 } from './ListingPage.shared';
@@ -48,7 +51,6 @@ import {
   HakoHostBar,
   HakoAmenities,
   HakoVehicleRestrictions,
-  HakoBookingCard,
 } from './Hako';
 
 import css from './ListingPage.module.css';
@@ -88,6 +90,9 @@ export const ListingPageComponent = props => {
     config,
     routeConfiguration,
     showOwnListingsOnly,
+    hasActiveSubscription,
+    activeSubscriptionId,
+    ...restOfProps
   } = props;
 
   const derivedData = getDerivedRenderData({
@@ -118,6 +123,10 @@ export const ListingPageComponent = props => {
     isOwnListing,
     showListingImage,
     processType,
+    isVariant,
+    richTitle,
+    ensuredAuthor,
+    payoutDetailsWarning,
     noPayoutDetailsSetWithOwnListing,
     authorDisplayName,
     schemaTitle,
@@ -200,6 +209,34 @@ export const ListingPageComponent = props => {
     onSendInquiry,
     setInquiryModalOpen,
   });
+
+  const handleOrderSubmit = values => {
+    const isCurrentlyClosed = currentListing.attributes.state === LISTING_STATE_CLOSED;
+    if (isOwnListing || isCurrentlyClosed) {
+      window.scrollTo(0, 0);
+    } else if (isNegotiation && unitType === REQUEST) {
+      const onNavigateToMakeOfferPage = handleNavigateToMakeOfferPage({
+        ...commonParams,
+        getListing,
+      });
+      onNavigateToMakeOfferPage(values);
+    } else if (isNegotiation && unitType === OFFER) {
+      const onNavigateToRequestQuotePage = handleNavigateToRequestQuotePage({
+        ...commonParams,
+        getListing,
+      });
+      onNavigateToRequestQuotePage(values);
+    } else {
+      const onSubmit = handleSubmit({
+        ...commonParams,
+        currentUser,
+        callSetInitialValues,
+        getListing,
+        onInitializeCardPaymentData,
+      });
+      onSubmit(values);
+    }
+  };
 
   return (
     <Page
@@ -288,7 +325,38 @@ export const ListingPageComponent = props => {
             <SectionReviews reviews={reviews} fetchReviewsError={fetchReviewsError} />
           </div>
           <div className={css.orderColumnForProductLayout}>
-            <HakoBookingCard className={css.hakoOrderPanel} />
+            <OrderPanel
+              className={css.hakoOrderPanel}
+              isHakoLayout
+              hakoRating={ratingDisplay}
+              hakoReviewCount={reviewCount}
+              listing={currentListing}
+              isOwnListing={isOwnListing}
+              onSubmit={handleOrderSubmit}
+              authorLink={
+                <NamedLink
+                  className={css.authorNameLink}
+                  name={isVariant ? 'ListingPageVariant' : 'ListingPage'}
+                  params={params}
+                  to={{ hash: '#author' }}
+                >
+                  {authorDisplayName}
+                </NamedLink>
+              }
+              title={<FormattedMessage id="ListingPage.orderTitle" values={{ title: richTitle }} />}
+              payoutDetailsWarning={payoutDetailsWarning}
+              author={ensuredAuthor}
+              onManageDisableScrolling={onManageDisableScrolling}
+              onContactUser={onContactUser}
+              hasActiveSubscription={hasActiveSubscription}
+              activeSubscriptionId={activeSubscriptionId}
+              {...restOfProps}
+              validListingTypes={config.listing.listingTypes}
+              marketplaceCurrency={config.currency}
+              dayCountAvailableForBooking={config.stripe.dayCountAvailableForBooking}
+              marketplaceName={config.marketplaceName}
+              showListingImage={showListingImage}
+            />
           </div>
         </div>
         <div className={css.hakoAuthorModalOnly}>

@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { bool, func, string, array, node } from 'prop-types';
 import { Form as FinalForm } from 'react-final-form';
 import classNames from 'classnames';
 
@@ -155,22 +156,22 @@ SubscriptionOrderForm.defaultProps = {
 };
 
 SubscriptionOrderForm.propTypes = {
-  rootClassName: propTypes.className,
-  className: propTypes.className,
+  rootClassName: string,
+  className: string,
   listingId: propTypes.uuid.isRequired,
-  isOwnListing: propTypes.bool,
-  marketplaceName: propTypes.string.isRequired,
-  onFetchTransactionLineItems: propTypes.func.isRequired,
-  lineItems: propTypes.array,
-  fetchLineItemsInProgress: propTypes.bool,
+  isOwnListing: bool,
+  marketplaceName: string.isRequired,
+  onFetchTransactionLineItems: func.isRequired,
+  lineItems: array,
+  fetchLineItemsInProgress: bool,
   fetchLineItemsError: propTypes.error,
-  onSubmit: propTypes.func.isRequired,
-  timeZone: propTypes.string.isRequired,
-  payoutDetailsWarning: propTypes.node,
-  processName: propTypes.string,
+  onSubmit: func.isRequired,
+  timeZone: string.isRequired,
+  payoutDetailsWarning: node,
+  processName: string,
   price: propTypes.money,
-  hasActiveSubscription: propTypes.bool,
-  activeSubscriptionId: propTypes.string,
+  hasActiveSubscription: bool,
+  activeSubscriptionId: string,
 };
 
 export default SubscriptionOrderForm;

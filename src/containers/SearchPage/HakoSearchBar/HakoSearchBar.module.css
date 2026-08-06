@@ -99,6 +99,40 @@
   }
 }
 
+.locationField {
+  position: relative;
+  cursor: default;
+}
+
+.locationInputRoot {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  position: relative;
+}
+
+.locationIconHidden {
+  display: none;
+}
+
+.locationInput {
+  composes: input;
+  height: 43px;
+  cursor: text;
+}
+
+.locationPredictions {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: -36px;
+  right: 0;
+  z-index: var(--zIndexPopup);
+  background: var(--hakoWhite);
+  border: 1px solid rgba(125, 132, 145, 0.35);
+  border-radius: var(--hakoBorderRadiusSmall);
+  box-shadow: var(--hakoDropShadow);
+}
+
 .dropdown {
   position: absolute;
   top: calc(100% + 4px);

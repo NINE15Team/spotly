@@ -6,6 +6,11 @@ import classNames from 'classnames';
 import { isOriginInUse } from '../../util/search';
 import { parse } from '../../util/urlHelpers';
 import { createResourceLocatorString, pathByRouteName } from '../../util/routes';
+import {
+  isMonthlyListingType,
+  listingTypeForSearch,
+  parkingOptionFromListingType,
+} from '../../util/hakoListingTypes';
 import { makeGetListingsByIdSelector } from '../../ducks/marketplaceData.duck';
 import { manageDisableScrolling, isScrollingDisabled } from '../../ducks/ui.duck';
 
@@ -207,10 +212,28 @@ export class SearchPageComponent extends Component {
       currentPathParams: this.props.params || {},
     };
 
-    const address = values.location?.trim();
+    const locationValue = values.location;
+    const selectedPlace = locationValue?.selectedPlace;
+    const address =
+      selectedPlace?.address ||
+      (typeof locationValue === 'string' ? locationValue.trim() : locationValue?.search?.trim());
+    const { origin, bounds } = selectedPlace || {};
+    const originMaybe = origin && isOriginInUse(config) ? { origin } : {};
+    const boundsMaybe = bounds ? { bounds } : {};
+    const addressMaybe = address ? { address } : {};
+
+    const parkingOption = values.parkingOption;
+    const listingType = listingTypeForSearch(parkingOption);
+    const isMonthly = isMonthlyListingType(listingType);
+
     const searchParams = {
       ...validFilterParams(urlQueryParams, filterConfigs, false),
-      ...(address ? { address } : {}),
+      ...addressMaybe,
+      ...boundsMaybe,
+      ...originMaybe,
+      pub_listingType: listingType,
+      // Clear day-parking-only query params when switching to monthly storage
+      ...(isMonthly ? { dates: undefined, hours: undefined, duration: undefined } : {}),
     };
 
     history.push(createResourceLocatorString(routeName, routes, pathParams, searchParams));
@@ -291,13 +314,28 @@ export class SearchPageComponent extends Component {
 
     const { bounds, origin } = searchParamsInURL || {};
     const addressFromUrl = searchParamsInURL?.address || '';
+    const listingTypeFromUrl = searchParamsInURL?.pub_listingType || '';
+    const parkingOption = parkingOptionFromListingType(listingTypeFromUrl);
+    const isMonthlySearch = isMonthlyListingType(parkingOption);
+    const locationInitialValue = addressFromUrl
+      ? {
+          search: addressFromUrl,
+          selectedPlace: {
+            address: addressFromUrl,
+            origin,
+            bounds,
+          },
+        }
+      : null;
 
     const filterList = (
       <>
-        <HakoPriceByToggle
-          value={this.state.priceBy}
-          onChange={priceBy => this.setState({ priceBy })}
-        />
+        {!isMonthlySearch ? (
+          <HakoPriceByToggle
+            value={this.state.priceBy}
+            onChange={priceBy => this.setState({ priceBy })}
+          />
+        ) : null}
         {availableFilters.map(filterConfig => {
           const key = `SearchFiltersDesktop.${filterConfig.scope || 'built-in'}.${
             filterConfig.key
@@ -335,7 +373,10 @@ export class SearchPageComponent extends Component {
         <TopbarContainer rootClassName={css.topbar} currentSearchParams={validQueryParams} />
         <div className={css.hakoPage}>
           <HakoSearchBar
-            initialValues={{ location: addressFromUrl }}
+            initialValues={{
+              location: locationInitialValue,
+              parkingOption,
+            }}
             onSubmit={this.handleSearchBarSubmit}
           />
           <div className={css.hakoBody}>

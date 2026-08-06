@@ -352,6 +352,9 @@ describe('Duck', () => {
         sendInquiryInProgress: false,
         sendInquiryError: null,
         inquiryModalOpenForListingId: null,
+        hasActiveSubscription: false,
+        activeSubscriptionId: null,
+        checkSubscriptionInProgress: false,
       });
     });
 

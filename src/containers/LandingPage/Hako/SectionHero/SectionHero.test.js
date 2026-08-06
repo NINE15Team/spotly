@@ -32,6 +32,16 @@ describe('SectionHero', () => {
     expect(day).toHaveAttribute('aria-pressed', 'false');
   });
 
+  it('hides hours field for monthly storage', async () => {
+    const user = userEvent.setup();
+    render(<SectionHero onSearch={() => {}} />);
+
+    expect(screen.getByLabelText('HakoLanding.hero.hours')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'HakoLanding.hero.monthlyStorage' }));
+    expect(screen.queryByLabelText('HakoLanding.hero.hours')).not.toBeInTheDocument();
+  });
+
   it('calls onSearch with the active listing mode when Search is clicked', async () => {
     const user = userEvent.setup();
     const onSearch = jest.fn();
@@ -39,5 +49,11 @@ describe('SectionHero', () => {
 
     await user.click(screen.getByRole('button', { name: 'HakoLanding.hero.search' }));
     expect(onSearch).toHaveBeenCalledWith(expect.objectContaining({ mode: 'day-parking' }));
+  });
+
+  it('exposes an editable location field', async () => {
+    render(<SectionHero onSearch={() => {}} locationLabel="Oakland" />);
+
+    expect(await screen.findByDisplayValue('Oakland')).toBeInTheDocument();
   });
 });

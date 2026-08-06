@@ -486,6 +486,7 @@
   "HakoLanding.hero.line1": "Find parking &",
   "HakoLanding.hero.line2": "storage ",
   "HakoLanding.hero.location": "Location",
+  "HakoLanding.hero.locationPlaceholder": "Enter a city or address",
   "HakoLanding.hero.monthlyStorage": "Monthly Storage",
   "HakoLanding.hero.search": "Search",
   "HakoLanding.howItWorks.step1Description": "Enter your destination and dates. Browse spots on the map or in list view.",

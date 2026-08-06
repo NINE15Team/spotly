@@ -51,6 +51,10 @@
   width: 100%;
   padding: 24px 0 8px;
   box-sizing: border-box;
+  /* Filter actives (checkboxes, slider, selected labels) are black on the white sidebar */
+  --marketplaceColor: var(--hakoDark);
+  --marketplaceColorLight: #2a3540;
+  --marketplaceColorDark: #000000;
 
   @media (--viewportMedium) {
     flex: 0 0 400px;

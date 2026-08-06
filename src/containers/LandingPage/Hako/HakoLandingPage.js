@@ -3,8 +3,13 @@ import { useHistory } from 'react-router-dom';
 
 import { useRouteConfiguration } from '../../../context/routeConfigurationContext';
 import { createResourceLocatorString } from '../../../util/routes';
+import { isOriginInUse } from '../../../util/search';
+import {
+  listingTypeForSearch,
+} from '../../../util/hakoListingTypes';
 import { Page, LayoutComposer } from '../../../components';
 import TopbarContainer from '../../TopbarContainer/TopbarContainer';
+import { useConfiguration } from '../../../context/configurationContext';
 
 import SectionHero from './SectionHero';
 import SectionHowItWorks from './SectionHowItWorks';
@@ -29,12 +34,20 @@ const layoutAreas = `
 export const HakoLandingPage = () => {
   const history = useHistory();
   const routeConfiguration = useRouteConfiguration();
+  const config = useConfiguration();
 
-  const handleSearch = ({ mode }) => {
-    const searchParams =
-      mode === 'monthly-storage'
-        ? { pub_listingType: 'monthly-storage' }
-        : { pub_listingType: 'day-parking' };
+  const handleSearch = ({ mode, locationLabel, origin, bounds }) => {
+    const listingType = listingTypeForSearch(mode);
+    const originMaybe = origin && isOriginInUse(config) ? { origin } : {};
+    const boundsMaybe = bounds ? { bounds } : {};
+    const addressMaybe = locationLabel ? { address: locationLabel } : {};
+
+    const searchParams = {
+      pub_listingType: listingType,
+      ...addressMaybe,
+      ...boundsMaybe,
+      ...originMaybe,
+    };
     history.push(createResourceLocatorString('SearchPage', routeConfiguration, {}, searchParams));
   };
 

@@ -6,8 +6,12 @@
 
 .root {
   flex-grow: 1;
-  min-height: 100vh;
+  min-height: calc(100vh - var(--topbarHeight) - 120px);
   background-color: var(--hakoDark);
+
+  @media (--viewportMedium) {
+    min-height: calc(100vh - var(--topbarHeightDesktop) - 160px);
+  }
 }
 
 .backgroundOverlay {
@@ -21,10 +25,11 @@
   align-items: center;
   box-sizing: border-box;
   width: 100%;
-  min-height: 100vh;
+  min-height: calc(100vh - var(--topbarHeight) - 120px);
   padding: 24px var(--hakoLateralPaddingMobile);
 
   @media (--viewportMedium) {
+    min-height: calc(100vh - var(--topbarHeightDesktop) - 160px);
     padding: 40px var(--hakoLateralPaddingDesktop);
   }
 }
