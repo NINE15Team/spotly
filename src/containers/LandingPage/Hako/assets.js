@@ -2,6 +2,15 @@
  * Local paths for Hako Figma assets committed under public/static/hako.
  * Served as static files from the Express public root.
  */
+import californiaImage from '../../../assets/california.jpeg';
+import marylandImage from '../../../assets/maryland.jpeg';
+import massachusettsImage from '../../../assets/Massachusetts.jpeg';
+import michiganImage from '../../../assets/Michigan.jpeg';
+import newJerseyImage from '../../../assets/new-jersey.jpeg';
+import newYorkImage from '../../../assets/newyork.jpeg';
+import pennsylvaniaImage from '../../../assets/Pennsylvania.jpeg';
+import washingtonImage from '../../../assets/washington.jpeg';
+
 export const HAKO_ASSETS = {
   logoMark: '/static/hako/icons/logo-mark.svg',
   logoWordmark: '/static/hako/icons/logo-wordmark.svg',
@@ -40,14 +49,14 @@ export const HOW_IT_WORKS_STEPS = [
 ];
 
 export const EXPLORE_LOCATIONS = [
-  { name: 'New York', tone: 'blue' },
-  { name: 'Colorado', tone: 'green' },
-  { name: 'Florida', tone: 'blue' },
-  { name: 'Texas', tone: 'green' },
-  { name: 'Illinois', tone: 'blue' },
-  { name: 'Arizona', tone: 'green' },
-  { name: 'Washington', tone: 'blue' },
-  { name: 'Indiana', tone: 'green' },
+  { name: 'California', image: californiaImage, tone: 'blue' },
+  { name: 'Maryland', image: marylandImage, tone: 'green' },
+  { name: 'Massachusetts', image: massachusettsImage, tone: 'blue' },
+  { name: 'Michigan', image: michiganImage, tone: 'green' },
+  { name: 'New Jersey', image: newJerseyImage, tone: 'blue' },
+  { name: 'New York', image: newYorkImage, tone: 'green' },
+  { name: 'Pennsylvania', image: pennsylvaniaImage, tone: 'blue' },
+  { name: 'Washington', image: washingtonImage, tone: 'green' },
 ];
 
 export const DEFAULT_REVIEWS = [

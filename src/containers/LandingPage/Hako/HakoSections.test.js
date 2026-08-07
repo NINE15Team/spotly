@@ -22,8 +22,14 @@ describe('Homepage remaining sections', () => {
   it('SectionExploreLocations renders all location cards', () => {
     render(<SectionExploreLocations />);
     expect(screen.getByRole('heading', { name: 'HakoLanding.explore.title' })).toBeInTheDocument();
+    expect(screen.getByText('California')).toBeInTheDocument();
+    expect(screen.getByText('Maryland')).toBeInTheDocument();
+    expect(screen.getByText('Massachusetts')).toBeInTheDocument();
+    expect(screen.getByText('Michigan')).toBeInTheDocument();
+    expect(screen.getByText('New Jersey')).toBeInTheDocument();
     expect(screen.getByText('New York')).toBeInTheDocument();
-    expect(screen.getByText('Indiana')).toBeInTheDocument();
+    expect(screen.getByText('Pennsylvania')).toBeInTheDocument();
+    expect(screen.getByText('Washington')).toBeInTheDocument();
   });
 
   it('SectionReviews renders review quotes and authors', () => {

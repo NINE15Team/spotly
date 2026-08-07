@@ -20,6 +20,9 @@ export const SectionExploreLocations = () => {
       to={{ search: `?address=${encodeURIComponent(location.name)}` }}
       className={classNames(css.card, location.tone === 'green' ? css.cardGreen : css.cardBlue)}
     >
+      {location.image ? (
+        <img className={css.cardImage} src={location.image} alt="" />
+      ) : null}
       <div className={css.cardOverlay} aria-hidden="true" />
       <div className={css.cardInfo}>
         <span className={css.cardName}>{location.name}</span>

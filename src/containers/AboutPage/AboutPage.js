@@ -76,7 +76,17 @@ export const AboutPageComponent = () => {
                   </p>
                 ))}
               </div>
-              <div className={css.mediaPlaceholder} aria-hidden="true" />
+              <div className={css.mediaFrame}>
+                {section.imageSrc ? (
+                  <img
+                    className={css.mediaImage}
+                    src={section.imageSrc}
+                    alt={section.imageAlt || ''}
+                  />
+                ) : (
+                  <div className={css.mediaPlaceholder} aria-hidden="true" />
+                )}
+              </div>
             </div>
           </section>
         ))}

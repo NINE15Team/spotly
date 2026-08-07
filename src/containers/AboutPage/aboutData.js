@@ -1,3 +1,5 @@
+import whyWeBuiltImage from '../../assets/Why We Built.jpeg';
+import whyHostImage from '../../assets/Why Host.jpeg';
 import { HAKO_ASSETS } from '../LandingPage/Hako/assets';
 
 /**
@@ -19,6 +21,8 @@ export const ABOUT_SECTIONS = [
       'Finding parking shouldn\'t be stressful. Too often, drivers waste time circling blocks or settling for spots that don\'t fit — while nearby driveways, garages, and lots sit empty.',
       'We built Hako to connect those spaces with people who need them. Whether it\'s day parking near an event or monthly storage for a vehicle, Hako makes finding and listing space simple, trusted, and fair.',
     ],
+    imageSrc: whyWeBuiltImage,
+    imageAlt: 'Why we built Hako',
     imageFirst: false,
   },
   {
@@ -28,6 +32,8 @@ export const ABOUT_SECTIONS = [
       'Alpine is a premium automotive technology brand with 50+ years of innovation. Hako was launched as part of our vision for mobility — making space as easy to access as the cars that need it.',
       'Our team brings marketplace, parking, and product experience together to build a platform drivers and hosts can rely on every day.',
     ],
+    imageSrc: whyHostImage,
+    imageAlt: 'Why host with Hako',
     imageFirst: true,
   },
 ];
