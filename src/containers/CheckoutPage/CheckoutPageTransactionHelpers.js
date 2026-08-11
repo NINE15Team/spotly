@@ -10,6 +10,7 @@ import {
   resolveLatestProcessName,
   resolveTransactionProcessAlias,
 } from '../../transactions/transaction';
+import { sendSecondaryWaivers } from '../../util/api';
 import { storeData } from './CheckoutPageSessionHelpers';
 
 /**
@@ -314,6 +315,17 @@ export const processCheckoutWithPayment = (orderParams, extraPaymentParams) => {
     orderPromise.then(order => {
       // Store the returned transaction (order)
       persistTransaction(order, pageData, storeData, setPageData, sessionStorageKey);
+
+      // Multi-participant waiver signing: for BOOKING, create + email the
+      // secondary participants' waivers right after payment is confirmed.
+      // Fire-and-forget so it never blocks the redirect to the order page; the
+      // reconciliation job is the backstop. For SUBSCRIPTION we intentionally do
+      // NOT send here — secondaries go out on provider acceptance (server-side).
+      if (order?.id && !isSubscriptionCheckout) {
+        sendSecondaryWaivers({ transactionId: order.id }).catch(() => {
+          // Non-critical: reconciliation will retry secondary waiver delivery.
+        });
+      }
     });
 
     return orderPromise;

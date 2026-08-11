@@ -1,0 +1,77 @@
+.root {
+  margin: 24px 0;
+  padding: 16px 0;
+  border-top: 1px solid var(--colorGrey100);
+}
+
+.title {
+  composes: h4 from global;
+  margin: 0 0 16px 0;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.item {
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--colorGrey100);
+}
+
+.item:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.itemMain {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.name {
+  composes: marketplaceSmallFontStyles from global;
+  font-weight: var(--fontWeightBold);
+}
+
+.email {
+  composes: marketplaceTinyFontStyles from global;
+  color: var(--colorGrey700);
+}
+
+.badge {
+  composes: marketplaceTinyFontStyles from global;
+  display: inline-block;
+  margin-top: 4px;
+  font-weight: var(--fontWeightBold);
+}
+
+.badgeSigned {
+  color: var(--colorSuccess);
+}
+.badgePending {
+  color: var(--colorAttention);
+}
+
+.updateButton {
+  margin-top: 12px;
+}
+.swapForm {
+  margin-top: 12px;
+}
+
+.swapActions {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.error {
+  composes: marketplaceTinyFontStyles from global;
+  color: var(--colorFail);
+  margin-top: 8px;
+}

@@ -74,6 +74,8 @@ const defaultDirectives = {
     '*.youtube-nocookie.com',
     'https://bid.g.doubleclick.net',
     'https://td.doubleclick.net',
+    // PandaDoc embedded waiver signing session (iFrame at app.pandadoc.com/s/...)
+    '*.pandadoc.com',
   ],
   imgSrc: [
     self,

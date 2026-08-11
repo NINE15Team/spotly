@@ -1,9 +1,11 @@
+const log = require('../log');
 const { handleError, serialize } = require('../api-util/sdk');
 const { isIntegrationSdkConfigured } = require('../api-util/integrationSdk');
 const { isStripeConfigured } = require('../api-util/stripeClient');
 const { assertCustomerOnTransaction } = require('../api-util/subscriptionAuth');
 const { activateSubscription } = require('../api-util/subscriptionService');
 const { TRANSITIONS } = require('../api-util/subscriptionConstants');
+const { sendSecondaryWaiversForTransaction } = require('../api-util/waiverDelivery');
 
 /**
  * POST /api/activate-subscription
@@ -37,6 +39,14 @@ module.exports = async (req, res) => {
     }
 
     const result = await activateSubscription(transactionId, { paymentIntentId });
+
+    // Subscription is now live — issue secondary participant waivers. Best-effort;
+    // idempotent (waiversSentAt guard), and the reconciliation job is the backstop.
+    try {
+      await sendSecondaryWaiversForTransaction(transactionId);
+    } catch (waiverErr) {
+      log.error(waiverErr, 'activate-subscription-send-secondary-waivers-failed', { transactionId });
+    }
 
     res
       .status(200)

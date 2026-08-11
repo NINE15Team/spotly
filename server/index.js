@@ -112,11 +112,20 @@ if (cspEnabled) {
 
   // When a CSP directive is violated, the browser posts a JSON body
   // to the defined report URL and we need to parse this body.
-  app.use(
-    bodyParser.json({
-      type: ['json', 'application/csp-report'],
-    })
-  );
+  //
+  // NOTE: skip the webhook paths — they need the RAW request body for signature
+  // verification (Stripe: stripe-signature header; PandaDoc: HMAC-SHA256 of the
+  // raw body). This JSON parser would otherwise consume the stream and both
+  // webhooks would fail whenever CSP is enabled (report or block).
+  const cspJsonParser = bodyParser.json({
+    type: ['json', 'application/csp-report'],
+  });
+  app.use((req, res, next) => {
+    if (req.path === '/api/stripe-webhooks' || req.path === '/api/webhooks/pandadoc') {
+      return next();
+    }
+    return cspJsonParser(req, res, next);
+  });
 
   // CSP can be turned on in report or block mode. In report mode, the
   // browser checks the policy and calls the report URL when the

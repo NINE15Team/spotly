@@ -1,0 +1,43 @@
+@import '../../../styles/customMediaQueries.css';
+
+.root {
+  margin-bottom: 32px;
+
+  @media (--viewportMedium) {
+    margin-bottom: 40px;
+  }
+}
+
+.heading {
+  composes: p from global;
+  font-weight: var(--fontWeightBold);
+  padding: 0;
+  margin-bottom: 8px;
+}
+
+.info {
+  composes: textSmall from global;
+  margin: 0 0 16px 0;
+  color: var(--colorGrey700);
+}
+
+.participantBlock {
+  margin-bottom: 24px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--colorGrey100);
+}
+
+.participantBlock:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.participantLabel {
+  composes: marketplaceSmallFontStyles from global;
+  font-weight: var(--fontWeightBold);
+  margin: 0 0 12px 0;
+}
+
+.field {
+  margin-bottom: 12px;
+}

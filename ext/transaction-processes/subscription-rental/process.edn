@@ -111,6 +111,23 @@
    :actions [{:name :action/cancel-booking}],
    :from :state/payment-overdue,
    :to :state/cancelled,
+   :privileged? true}
+  ;; --- Multi-participant waiver signing -------------------------------------
+  ;; Operator self-loops that only update protectedData (participant waiver
+  ;; statuses). They keep the transaction in the same state and let the backend
+  ;; write waiver_status while a subscription is awaiting approval
+  ;; (payment-confirmed) or live (active).
+  {:name :transition/update-waiver-status,
+   :actor :actor.role/operator,
+   :actions [{:name :action/update-protected-data}],
+   :from :state/payment-confirmed,
+   :to :state/payment-confirmed,
+   :privileged? true}
+  {:name :transition/update-waiver-status-from-active,
+   :actor :actor.role/operator,
+   :actions [{:name :action/update-protected-data}],
+   :from :state/active,
+   :to :state/active,
    :privileged? true}],
  :notifications
  [{:name :notification/subscription-request-received-customer,

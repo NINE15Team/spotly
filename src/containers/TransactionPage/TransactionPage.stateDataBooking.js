@@ -28,7 +28,7 @@ export const getStateDataForBookingProcess = (txInfo, processInfo) => {
     leaveReviewProps,
   } = processInfo;
 
-  return new ConditionalResolver([processState, transactionRole])
+  const result = new ConditionalResolver([processState, transactionRole])
     .cond([states.INQUIRY, CUSTOMER], () => {
       const transitionNames = Array.isArray(nextTransitions)
         ? nextTransitions.map(t => t.attributes.name)
@@ -94,4 +94,9 @@ export const getStateDataForBookingProcess = (txInfo, processInfo) => {
       return { processName, processState, showDetailCardHeadings: true };
     })
     .resolve();
+
+  // Multi-participant waiver signing: show the status panel in the states a
+  // booking can sit in while waivers may still be pending.
+  const waiverPanelStates = [states.PREAUTHORIZED, states.ACCEPTED, states.DELIVERED];
+  return { ...result, showWaiverStatusPanel: waiverPanelStates.includes(processState) };
 };

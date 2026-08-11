@@ -62,6 +62,12 @@ export const transitions = {
   EXPIRE_CUSTOMER_REVIEW_PERIOD: 'transition/expire-customer-review-period',
   EXPIRE_PROVIDER_REVIEW_PERIOD: 'transition/expire-provider-review-period',
   EXPIRE_REVIEW_PERIOD: 'transition/expire-review-period',
+
+  // Multi-participant waiver signing: operator self-loops that only update
+  // protectedData (participant waiver statuses) without changing state.
+  UPDATE_WAIVER_STATUS: 'transition/update-waiver-status',
+  UPDATE_WAIVER_STATUS_ACCEPTED: 'transition/update-waiver-status-from-accepted',
+  UPDATE_WAIVER_STATUS_DELIVERED: 'transition/update-waiver-status-from-delivered',
 };
 
 /**
@@ -136,6 +142,7 @@ export const graph = {
         [transitions.EXPIRE]: states.EXPIRED,
         [transitions.ACCEPT]: states.ACCEPTED,
         [transitions.OPERATOR_ACCEPT]: states.ACCEPTED,
+        [transitions.UPDATE_WAIVER_STATUS]: states.PREAUTHORIZED,
       },
     },
 
@@ -146,6 +153,7 @@ export const graph = {
         [transitions.CANCEL]: states.CANCELED,
         [transitions.COMPLETE]: states.DELIVERED,
         [transitions.OPERATOR_COMPLETE]: states.DELIVERED,
+        [transitions.UPDATE_WAIVER_STATUS_ACCEPTED]: states.ACCEPTED,
       },
     },
 
@@ -155,6 +163,7 @@ export const graph = {
         [transitions.EXPIRE_REVIEW_PERIOD]: states.REVIEWED,
         [transitions.REVIEW_1_BY_CUSTOMER]: states.REVIEWED_BY_CUSTOMER,
         [transitions.REVIEW_1_BY_PROVIDER]: states.REVIEWED_BY_PROVIDER,
+        [transitions.UPDATE_WAIVER_STATUS_DELIVERED]: states.DELIVERED,
       },
     },
 

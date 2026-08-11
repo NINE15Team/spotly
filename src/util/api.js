@@ -157,6 +157,34 @@ export const billingPortal = body => {
   return post('/api/billing-portal', body);
 };
 
+// ================ Multi-participant waiver signing (PandaDoc) ================ //
+
+// Is the waiver feature enabled on the server (PandaDoc configured)?
+export const getWaiversConfig = () => {
+  return request('/api/waivers/config', { method: methods.GET });
+};
+
+// Create a PandaDoc embedded signing session for the primary renter at checkout.
+export const createPrimaryWaiverSession = body => {
+  return post('/api/waivers/primary-session', body);
+};
+
+// Create + email secondary participant waivers (booking, after confirm-payment).
+export const sendSecondaryWaivers = body => {
+  return post('/api/waivers/send-secondary', body);
+};
+
+// Replace a still-pending secondary participant (voids old doc, issues a new one).
+export const swapParticipant = body => {
+  return post('/api/participants/swap', body);
+};
+
+// Re-check pending waiver documents against PandaDoc and sync their status.
+// Used as a fallback when a PandaDoc webhook was missed or rejected.
+export const refreshWaiverStatus = body => {
+  return post('/api/waivers/refresh-status', body);
+};
+
 // Create user with identity provider (e.g. Facebook or Google)
 //
 // If loginWithIdp api call fails and user can't authenticate to Marketplace API with idp

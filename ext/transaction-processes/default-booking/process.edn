@@ -158,7 +158,30 @@
     [{:fn/timepoint [:time/booking-end]} {:fn/period ["P7D"]}]},
    :actions [{:name :action/publish-reviews}],
    :from :state/reviewed-by-provider,
-   :to :state/reviewed}],
+   :to :state/reviewed}
+  ;; --- Multi-participant waiver signing -------------------------------------
+  ;; Operator self-loops that only update protectedData (participant waiver
+  ;; statuses). They keep the transaction in the same state and let the backend
+  ;; (PandaDoc webhook, refresh-status, reconciliation) write waiver_status at
+  ;; any point a booking can sit in while waivers are still pending.
+  {:name :transition/update-waiver-status,
+   :actor :actor.role/operator,
+   :actions [{:name :action/update-protected-data}],
+   :from :state/preauthorized,
+   :to :state/preauthorized,
+   :privileged? true}
+  {:name :transition/update-waiver-status-from-accepted,
+   :actor :actor.role/operator,
+   :actions [{:name :action/update-protected-data}],
+   :from :state/accepted,
+   :to :state/accepted,
+   :privileged? true}
+  {:name :transition/update-waiver-status-from-delivered,
+   :actor :actor.role/operator,
+   :actions [{:name :action/update-protected-data}],
+   :from :state/delivered,
+   :to :state/delivered,
+   :privileged? true}],
  :notifications
  [{:name :notification/booking-new-request,
    :on :transition/confirm-payment,

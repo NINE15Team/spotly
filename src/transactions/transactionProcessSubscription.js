@@ -19,6 +19,11 @@ export const transitions = {
   EXPIRE: 'transition/expire',
   CANCEL_SUBSCRIPTION: 'transition/cancel-subscription',
   CANCEL_SUBSCRIPTION_FROM_OVERDUE: 'transition/cancel-subscription-from-overdue',
+
+  // Multi-participant waiver signing: operator self-loops that only update
+  // protectedData (participant waiver statuses) without changing state.
+  UPDATE_WAIVER_STATUS: 'transition/update-waiver-status',
+  UPDATE_WAIVER_STATUS_ACTIVE: 'transition/update-waiver-status-from-active',
 };
 
 export const states = {
@@ -55,6 +60,7 @@ export const graph = {
         [transitions.EXPIRE_ACCEPTANCE]: states.EXPIRED,
         [transitions.ABORT_SUBSCRIPTION]: states.CANCELLED,
         [transitions.CONFIRM_SUBSCRIPTION]: states.ACTIVE,
+        [transitions.UPDATE_WAIVER_STATUS]: states.PAYMENT_CONFIRMED,
       },
     },
     [states.ACTIVE]: {
@@ -62,6 +68,7 @@ export const graph = {
         [transitions.EXTEND_SUBSCRIPTION]: states.ACTIVE,
         [transitions.PAYMENT_OVERDUE]: states.PAYMENT_OVERDUE,
         [transitions.CANCEL_SUBSCRIPTION]: states.CANCELLED,
+        [transitions.UPDATE_WAIVER_STATUS_ACTIVE]: states.ACTIVE,
       },
     },
     [states.PAYMENT_OVERDUE]: {

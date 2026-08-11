@@ -56,6 +56,25 @@
 // page. They intentionally omit filterConfig: turning one into a search filter also requires a
 // search schema for the key in the Marketplace API (Sharetribe CLI) plus showFilter: true.
 export const listingFields = [
+  // --- Multi-participant waiver signing ---------------------------------------
+  // Maximum number of participants (including the primary renter) that can be
+  // added at checkout. The buyer chooses how many, up to this maximum. Applies
+  // to both booking and subscription listings. Defaults to 1 (buyer only) when
+  // unset. If you manage listing fields in Console (hosted config), create the
+  // same field there: key `waiverMaxParticipants`, scope public, type long.
+  {
+    key: 'waiverMaxParticipants',
+    scope: 'public',
+    schemaType: 'long',
+    numberConfig: { minimum: 1, maximum: 50 },
+    showConfig: { label: 'Maximum waiver participants', isDetail: false },
+    saveConfig: {
+      label: 'Maximum number of participants (including you)',
+      placeholderMessage: 'e.g. 4',
+      isRequired: false,
+    },
+  },
+  // ---------------------------------------------------------------------------
   {
     key: 'accessHours',
     scope: 'public',

@@ -121,6 +121,33 @@ const BookingTimeInfoMaybe = props => {
   );
 };
 
+// Simplified waiver status summary for the inbox row (both buyer and merchant).
+// Reads protectedData.participants written by the multi-participant waiver flow;
+// renders nothing for transactions without waivers.
+const WaiverSummaryMaybe = props => {
+  const { transaction } = props;
+  const participants = transaction?.attributes?.protectedData?.participants;
+
+  if (!Array.isArray(participants) || participants.length === 0) {
+    return null;
+  }
+
+  const signedCount = participants.filter(p => p.waiver_status === 'signed').length;
+  const totalCount = participants.length;
+  const allSigned = signedCount === totalCount;
+
+  const summaryClasses = classNames(css.itemWaivers, {
+    [css.waiversComplete]: allSigned,
+    [css.waiversPending]: !allSigned,
+  });
+
+  return (
+    <div className={summaryClasses}>
+      <FormattedMessage id="InboxPage.waiverSummary" values={{ signedCount, totalCount }} />
+    </div>
+  );
+};
+
 // Build and push path string for routing - based on sort selection as selected in InboxSearchForm
 const handleSortSelect = (tab, routeConfiguration, history) => urlParam => {
   const pathParams = {
@@ -219,6 +246,7 @@ export const InboxItem = props => {
             <FormattedMessage id="InboxPage.seats" values={{ seats: unitLineItem.seats }} />
           </div>
         ) : null}
+        <WaiverSummaryMaybe transaction={tx} />
         <div className={css.itemState}>
           <div className={stateClasses}>
             <FormattedMessage
