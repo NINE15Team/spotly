@@ -9,7 +9,7 @@ import css from './HakoLogo.module.css';
 
 /**
  * Hako wordmark used in desktop and mobile/tablet topbars.
- * Figma header logo: 70×40 desktop, 64×30 mobile.
+ * Figma header logo: 84×50 desktop, 64×30 mobile.
  */
 const HakoLogo = props => {
   const { marketplaceName, layout = 'desktop' } = props;
