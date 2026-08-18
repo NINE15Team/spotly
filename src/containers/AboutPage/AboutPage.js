@@ -53,12 +53,10 @@ export const AboutPageComponent = () => {
           </div>
         </section>
 
-        {ABOUT_SECTIONS.map((section, index) => (
+        {ABOUT_SECTIONS.map(section => (
           <section
             key={section.id}
-            className={classNames(css.splitSection, {
-              [css.splitSectionAlt]: index > 0,
-            })}
+            className={css.splitSection}
             aria-labelledby={`about-${section.id}-heading`}
           >
             <div

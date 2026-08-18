@@ -49,9 +49,9 @@
 .eyebrow {
   margin: 0;
   font-family: var(--fontFamily);
-  font-size: 12px;
+  font-size: 16px;
   font-weight: 600;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.25em;
   text-transform: uppercase;
   color: var(--hakoPrimary);
 }
@@ -73,8 +73,9 @@
   margin: 0;
   font-family: var(--fontFamily);
   font-size: 16px;
+  font-weight: 400;
   line-height: 1.5;
-  color: var(--hakoWhite);
+  color: var(--hakoLightText);
   max-width: 620px;
 }
 
@@ -83,14 +84,11 @@
   padding: var(--hakoSectionPaddingYMobile) var(--hakoLateralPaddingMobile);
   box-sizing: border-box;
   background-color: var(--hakoWhite);
+  border-top: 1px solid var(--hakoPrimary);
 
   @media (--viewportMedium) {
     padding: var(--hakoSectionPaddingY) var(--hakoLateralPaddingDesktop);
   }
-}
-
-.splitSectionAlt {
-  background-color: var(--hakoLightGreen);
 }
 
 .splitInner {
@@ -144,8 +142,9 @@
   margin: 0;
   font-family: var(--fontFamily);
   font-size: 16px;
+  font-weight: 400;
   line-height: 1.55;
-  color: var(--hakoPrimaryText);
+  color: var(--hakoSecondaryText);
 }
 
 .mediaFrame {
@@ -177,6 +176,7 @@
   padding: var(--hakoSectionPaddingYMobile) var(--hakoLateralPaddingMobile);
   box-sizing: border-box;
   background-color: var(--hakoLightGreen);
+  border-top: 1px solid var(--hakoPrimary);
 
   @media (--viewportMedium) {
     padding: var(--hakoSectionPaddingY) var(--hakoLateralPaddingDesktop);
@@ -259,6 +259,7 @@
   margin: 0;
   font-family: var(--fontFamily);
   font-size: 15px;
+  font-weight: 400;
   line-height: 1.5;
-  color: var(--hakoPrimaryText);
+  color: var(--hakoSecondaryText);
 }

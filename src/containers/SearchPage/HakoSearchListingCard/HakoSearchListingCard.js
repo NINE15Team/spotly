@@ -6,7 +6,7 @@ import { useIntl, FormattedMessage } from '../../../util/reactIntl';
 import { formatMoney } from '../../../util/currency';
 import { createSlug } from '../../../util/urlHelpers';
 import { requireListingImage } from '../../../util/configHelpers';
-import { NamedLink, ResponsiveImage, AspectRatioWrapper } from '../../../components';
+import { NamedLink, ResponsiveImage } from '../../../components';
 import { HAKO_ASSETS } from '../../LandingPage/Hako/assets';
 
 import css from './HakoSearchListingCard.module.css';
@@ -32,11 +32,7 @@ export const HakoSearchListingCard = props => {
   );
   const showListingImage = requireListingImage(foundListingTypeConfig);
   const firstImage = listing?.images?.[0] || null;
-  const {
-    aspectWidth = 1,
-    aspectHeight = 1,
-    variantPrefix = 'listing-card',
-  } = config.layout.listingImage;
+  const { variantPrefix = 'listing-card' } = config.layout?.listingImage || {};
   const variants = firstImage
     ? Object.keys(firstImage?.attributes?.variants || {}).filter(k => k.startsWith(variantPrefix))
     : [];
@@ -94,15 +90,13 @@ export const HakoSearchListingCard = props => {
     >
       <div className={css.imageWrap}>
         {showListingImage && firstImage ? (
-          <AspectRatioWrapper width={aspectWidth} height={aspectHeight} className={css.aspect}>
-            <ResponsiveImage
-              rootClassName={css.image}
-              alt={title}
-              image={firstImage}
-              variants={variants}
-              sizes="200px"
-            />
-          </AspectRatioWrapper>
+          <ResponsiveImage
+            rootClassName={css.image}
+            alt={title}
+            image={firstImage}
+            variants={variants}
+            sizes="(min-width: 1200px) 200px, 100vw"
+          />
         ) : (
           <div className={css.imagePlaceholder} aria-hidden="true" />
         )}

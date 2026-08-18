@@ -4,6 +4,7 @@
   display: flex;
   flex-direction: column;
   width: 100%;
+  min-width: 0;
   background-color: var(--hakoWhite);
   border-radius: var(--hakoBorderRadius);
   box-shadow: var(--hakoDropShadow);
@@ -15,7 +16,7 @@
     text-decoration: none;
   }
 
-  @media (--viewportMedium) {
+  @media (min-width: 1200px) {
     flex-direction: row;
     align-items: stretch;
     min-height: 160px;
@@ -27,20 +28,20 @@
   width: 100%;
   height: 180px;
   background-color: var(--hakoMuted);
+  overflow: hidden;
+  position: relative;
 
-  @media (--viewportMedium) {
+  @media (min-width: 1200px) {
     width: 200px;
     height: auto;
     min-height: 160px;
+    align-self: stretch;
   }
 }
 
-.aspect {
-  width: 100%;
-  height: 100%;
-}
-
 .image {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -49,6 +50,8 @@
 }
 
 .imagePlaceholder {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   min-height: 160px;
@@ -68,9 +71,17 @@
 
 .topRow {
   display: flex;
+  flex-direction: column;
   align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
+  gap: 8px;
+  min-width: 0;
+
+  @media (min-width: 1200px) {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
 }
 
 .meta {
@@ -78,6 +89,7 @@
   flex-direction: column;
   gap: 5px;
   min-width: 0;
+  flex: 1 1 auto;
 }
 
 .title {
@@ -87,6 +99,7 @@
   font-size: 16px;
   line-height: 23px;
   color: var(--hakoPrimaryText);
+  overflow-wrap: anywhere;
 }
 
 .location {

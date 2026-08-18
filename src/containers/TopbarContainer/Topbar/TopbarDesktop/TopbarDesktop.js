@@ -14,7 +14,7 @@ import {
 } from '../../../../components';
 
 import TopbarSearchForm from '../TopbarSearchForm/TopbarSearchForm';
-import { HAKO_ASSETS } from '../../../LandingPage/Hako/assets';
+import HakoLogo from '../HakoLogo';
 
 import css from './TopbarDesktop.module.css';
 
@@ -153,18 +153,6 @@ const ProfileMenu = ({ currentPage, currentUser, onLogout, showManageListingsLin
   );
 };
 
-const HakoLogo = ({ marketplaceName }) => (
-  <NamedLink name="LandingPage" className={css.logoLink} id="logo-topbar-desktop">
-    <img
-      className={css.logoImage}
-      src={HAKO_ASSETS.logoMark}
-      alt={marketplaceName || 'Hako'}
-      width={64}
-      height={32}
-    />
-  </NamedLink>
-);
-
 const HakoNavLinks = ({ currentPage }) => (
   <div className={css.navLinks} role="navigation" aria-label="Primary">
     {HAKO_NAV_LINKS.map(link => {
@@ -252,7 +240,7 @@ const TopbarDesktop = props => {
       aria-label={intl.formatMessage({ id: 'TopbarDesktop.screenreader.topbarNavigation' })}
     >
       <div className={css.left}>
-        <HakoLogo marketplaceName={marketplaceName} />
+        <HakoLogo marketplaceName={marketplaceName} layout="desktop" />
         <HakoNavLinks currentPage={currentPage} />
       </div>
 

@@ -433,7 +433,7 @@ describe('SearchPage', () => {
     await waitFor(() => {
       // Has main search in Topbar and it's a location search.
       expect(getByPlaceholderText('TopbarSearchForm.placeholder')).toBeInTheDocument();
-      expect(screen.getByTestId('location-search')).toBeInTheDocument();
+      expect(screen.getAllByTestId('location-search').length).toBeGreaterThan(0);
 
       // Has Hako top search bar
       expect(screen.getByLabelText('Search filters')).toBeInTheDocument();
@@ -443,7 +443,7 @@ describe('SearchPage', () => {
       // Has search map container
       expect(screen.getByTestId('searchMapContainer')).toBeInTheDocument();
 
-      // Has Price by toggle
+      // Has Price by toggle (Day Parking mode)
       expect(getByText('Price by')).toBeInTheDocument();
       expect(getByText('Hour')).toBeInTheDocument();
       expect(getByText('Day')).toBeInTheDocument();
@@ -464,15 +464,29 @@ describe('SearchPage', () => {
       expect(getByText('Cats')).toBeInTheDocument();
       expect(getByText('Fish')).toBeInTheDocument();
 
-      // Has Listing type filter
-      expect(getByText('FilterComponent.listingTypeLabel')).toBeInTheDocument();
-      expect(getByText('Rent bicycles daily')).toBeInTheDocument();
+      // Listing Type, Dates, and Keywords are omitted — they duplicate the top search bar
+      expect(queryByText('FilterComponent.listingTypeLabel')).not.toBeInTheDocument();
+      expect(queryByText('FilterComponent.datesLabel')).not.toBeInTheDocument();
+      expect(queryByText('FilterComponent.keywordsLabel')).not.toBeInTheDocument();
+
+      // Price title is hidden when Price by is shown (header uses the hidden attribute)
+      const priceTitle = queryByText('FilterComponent.priceLabel');
+      if (priceTitle) {
+        expect(priceTitle).not.toBeVisible();
+      }
+
+      // Figma sidebar filters (label + screen-reader legend)
+      expect(getAllByText('Space Type').length).toBeGreaterThan(0);
+      expect(getByText('Outdoor lot')).toBeInTheDocument();
+      expect(getAllByText('Vehicle Size').length).toBeGreaterThan(0);
+      expect(getByText('Sedan / compact')).toBeInTheDocument();
+      expect(getAllByText('Vehicle Height').length).toBeGreaterThan(0);
+      expect(getByText('20 ft+')).toBeInTheDocument();
+      expect(getAllByText('Vehicle Length').length).toBeGreaterThan(0);
+      expect(getByText('6 ft+')).toBeInTheDocument();
 
       // No "more filters" popup pattern — all filters are in the sidebar
       expect(queryByText('SearchFiltersPrimary.moreFiltersButton')).not.toBeInTheDocument();
-
-      // Has Price filter
-      expect(getByText('FilterComponent.priceLabel')).toBeInTheDocument();
 
       // Shows listings
       expect(getByText('l1 title')).toBeInTheDocument();

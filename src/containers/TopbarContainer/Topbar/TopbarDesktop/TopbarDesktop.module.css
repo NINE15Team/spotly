@@ -32,28 +32,6 @@
   flex: 1 1 auto;
 }
 
-.logoLink {
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
-  line-height: 0;
-  border-bottom: 0;
-  text-decoration: none;
-
-  &:hover {
-    opacity: 0.9;
-    border-bottom: 0;
-    text-decoration: none;
-  }
-}
-
-.logoImage {
-  width: 64px;
-  height: 32px;
-  display: block;
-  object-fit: contain;
-}
-
 .navLinks {
   display: none;
   flex: 1 1 auto;

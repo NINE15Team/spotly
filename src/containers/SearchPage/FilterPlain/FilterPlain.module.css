@@ -1,15 +1,12 @@
 @import '../../../styles/customMediaQueries.css';
 
-.root {
-  position: relative;
-  padding-top: 24px;
-  padding-bottom: 17px;
-  border-bottom: 1px solid rgba(12, 22, 29, 0.12);
+.hideLabel {
+  padding-top: 0;
+  border-bottom: 0;
+}
 
-  @media (--viewportMedium) {
-    padding-top: 20px;
-    padding-bottom: 20px;
-  }
+.hideLabel .filterHeader {
+  display: none;
 }
 
 .filterHeader {

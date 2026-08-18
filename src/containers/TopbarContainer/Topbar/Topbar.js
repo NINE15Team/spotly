@@ -14,7 +14,6 @@ import {
   Button,
   IconArrowHead,
   LimitedAccessBanner,
-  LinkedLogo,
   Modal,
   ModalMissingInformation,
 } from '../../../components';
@@ -25,6 +24,7 @@ import SearchIcon from './SearchIcon';
 import TopbarSearchForm from './TopbarSearchForm/TopbarSearchForm';
 import TopbarMobileMenu from './TopbarMobileMenu/TopbarMobileMenu';
 import TopbarDesktop from './TopbarDesktop/TopbarDesktop';
+import HakoLogo from './HakoLogo';
 
 import css from './Topbar.module.css';
 import { getCurrentUserTypeRoles, showCreateListingLinkForUser } from '../../../util/userHelpers';
@@ -358,12 +358,7 @@ const TopbarComponent = props => {
           />
           {notificationDot}
         </Button>
-        <LinkedLogo
-          id="logo-topbar-mobile"
-          layout={'mobile'}
-          alt={intl.formatMessage({ id: 'Topbar.logoIcon' })}
-          linkToExternalSite={config?.topbar?.logoLink}
-        />
+        <HakoLogo marketplaceName={config.marketplaceName} layout="mobile" />
         {mobileSearchButtonMaybe}
       </nav>
       <div className={css.desktop}>

@@ -129,9 +129,12 @@ class FilterPlainComponent extends Component {
       keepDirtyOnReinitialize = false,
       ariaLabel,
       containerId, // Note: this could be used to identify different filter containers
+      hideLabel = false,
     } = this.props;
     const formId = `${id}.form`;
-    const classes = classNames(rootClassName || css.root, className);
+    const classes = classNames(rootClassName || css.root, className, {
+      [css.hideLabel]: hideLabel,
+    });
     const inertMaybe = this.state.isOpen ? {} : { inert: '' };
     const isInput = element => element?.tagName?.toLowerCase() === 'input';
 
@@ -240,7 +243,7 @@ class FilterPlainComponent extends Component {
           },
         }}
       >
-        <div className={css.filterHeader}>
+        <div className={css.filterHeader} hidden={hideLabel}>
           <button
             id={`${id}.toggle`}
             className={css.labelButton}
@@ -248,6 +251,7 @@ class FilterPlainComponent extends Component {
             aria-label={ariaLabel}
             aria-expanded={this.state.isOpen}
             aria-controls={this.state.isOpen ? formId : ''}
+            tabIndex={hideLabel ? -1 : undefined}
           >
             <span className={css.labelButtonContent}>
               <span className={css.labelWrapper}>

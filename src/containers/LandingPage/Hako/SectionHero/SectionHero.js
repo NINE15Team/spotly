@@ -16,23 +16,39 @@ import css from './SectionHero.module.css';
 const MODE_DAY = DAY_PARKING_LISTING_TYPE;
 const MODE_MONTHLY = MONTHLY_STORAGE_LISTING_TYPE;
 const identity = v => v;
+const HOUR_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+const DEFAULT_HOURS = 3;
+
+const toISODate = date => {
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, '0');
+  const day = `${date.getDate()}`.padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const parseHoursValue = value => {
+  const match = String(value || '').match(/\d+/);
+  return match ? match[0] : String(DEFAULT_HOURS);
+};
 
 /**
  * Homepage hero — Figma node 6:37
- * Location is editable via LocationAutocompleteInput.
+ * Location opens autocomplete. Date opens a date picker. Hours opens a duration select.
  * Hours field is hidden for monthly storage.
  */
 export const SectionHero = props => {
   const {
     onSearch,
     locationLabel = 'San Francisco',
-    dateLabel = 'April 18',
-    hoursLabel = '3 hours',
+    dateLabel,
+    hoursLabel = String(DEFAULT_HOURS),
     className,
   } = props;
 
   const intl = useIntl();
   const [mode, setMode] = useState(MODE_DAY);
+  const todayISO = toISODate(new Date());
+  const initialDate = dateLabel && /^\d{4}-\d{2}-\d{2}$/.test(dateLabel) ? dateLabel : todayISO;
 
   const handleSearch = values => {
     if (typeof onSearch !== 'function') {
@@ -44,7 +60,7 @@ export const SectionHero = props => {
       mode,
       location: locationValue,
       locationLabel: selectedPlace?.address || locationValue?.search || locationLabel,
-      dateLabel: values?.date || dateLabel,
+      dateLabel: values?.date || initialDate,
       hoursLabel: values?.hours || hoursLabel,
       origin: selectedPlace?.origin,
       bounds: selectedPlace?.bounds,
@@ -102,8 +118,8 @@ export const SectionHero = props => {
               search: locationLabel,
               selectedPlace: { address: locationLabel },
             },
-            date: dateLabel,
-            hours: hoursLabel,
+            date: initialDate,
+            hours: parseHoursValue(hoursLabel),
           }}
           render={({ handleSubmit }) => (
             <form className={css.searchBar} onSubmit={handleSubmit}>
@@ -143,7 +159,7 @@ export const SectionHero = props => {
                   </div>
                 </div>
                 <div className={css.divider} aria-hidden="true" />
-                <div className={css.field}>
+                <label className={classNames(css.field, css.dateField)}>
                   <img
                     className={css.fieldIcon}
                     src={HAKO_ASSETS.calendar}
@@ -160,7 +176,9 @@ export const SectionHero = props => {
                       render={({ input }) => (
                         <input
                           {...input}
-                          className={classNames(css.fieldValueInput, css.fieldValueBold)}
+                          type="date"
+                          min={todayISO}
+                          className={classNames(css.fieldValueInput, css.fieldValueBold, css.dateInput)}
                           aria-label={intl.formatMessage({
                             id: 'HakoLanding.hero.date',
                             defaultMessage: 'Date',
@@ -169,11 +187,11 @@ export const SectionHero = props => {
                       )}
                     />
                   </div>
-                </div>
+                </label>
                 {mode === MODE_DAY ? (
                   <>
                     <div className={css.divider} aria-hidden="true" />
-                    <div className={classNames(css.field, css.hoursField)}>
+                    <label className={classNames(css.field, css.hoursField)}>
                       <img
                         className={css.fieldIcon}
                         src={HAKO_ASSETS.schedule}
@@ -188,18 +206,35 @@ export const SectionHero = props => {
                         <Field
                           name="hours"
                           render={({ input }) => (
-                            <input
+                            <select
                               {...input}
-                              className={classNames(css.fieldValueInput, css.fieldValueBold)}
+                              className={classNames(
+                                css.fieldValueInput,
+                                css.fieldValueBold,
+                                css.hoursSelect
+                              )}
                               aria-label={intl.formatMessage({
                                 id: 'HakoLanding.hero.hours',
                                 defaultMessage: 'Hours',
                               })}
-                            />
+                            >
+                              {HOUR_OPTIONS.map(count => (
+                                <option key={count} value={String(count)}>
+                                  {intl.formatMessage(
+                                    {
+                                      id: 'HakoLanding.hero.hoursOption',
+                                      defaultMessage:
+                                        '{count, plural, one {# hour} other {# hours}}',
+                                    },
+                                    { count }
+                                  )}
+                                </option>
+                              ))}
+                            </select>
                           )}
                         />
                       </div>
-                    </div>
+                    </label>
                   </>
                 ) : null}
               </div>

@@ -225,6 +225,8 @@ export class SearchPageComponent extends Component {
     const parkingOption = values.parkingOption;
     const listingType = listingTypeForSearch(parkingOption);
     const isMonthly = isMonthlyListingType(listingType);
+    const dateISO = values.date && /^\d{4}-\d{2}-\d{2}$/.test(values.date) ? values.date : null;
+    const durationHours = values.duration ? String(values.duration).replace(/\D/g, '') : '';
 
     const searchParams = {
       ...validFilterParams(urlQueryParams, filterConfigs, false),
@@ -232,8 +234,9 @@ export class SearchPageComponent extends Component {
       ...boundsMaybe,
       ...originMaybe,
       pub_listingType: listingType,
-      // Clear day-parking-only query params when switching to monthly storage
-      ...(isMonthly ? { dates: undefined, hours: undefined, duration: undefined } : {}),
+      dates: dateISO ? `${dateISO},${dateISO}` : undefined,
+      duration: !isMonthly && durationHours ? durationHours : undefined,
+      hours: undefined,
     };
 
     history.push(createResourceLocatorString(routeName, routes, pathParams, searchParams));
@@ -317,6 +320,9 @@ export class SearchPageComponent extends Component {
     const listingTypeFromUrl = searchParamsInURL?.pub_listingType || '';
     const parkingOption = parkingOptionFromListingType(listingTypeFromUrl);
     const isMonthlySearch = isMonthlyListingType(parkingOption);
+    const datesFromUrl = searchParamsInURL?.dates || '';
+    const dateFromUrl = datesFromUrl.split(',')[0] || '';
+    const durationFromUrl = searchParamsInURL?.duration || '';
     const locationInitialValue = addressFromUrl
       ? {
           search: addressFromUrl,
@@ -330,36 +336,68 @@ export class SearchPageComponent extends Component {
 
     const filterList = (
       <>
-        {!isMonthlySearch ? (
-          <HakoPriceByToggle
-            value={this.state.priceBy}
-            onChange={priceBy => this.setState({ priceBy })}
-          />
-        ) : null}
-        {availableFilters.map(filterConfig => {
-          const key = `SearchFiltersDesktop.${filterConfig.scope || 'built-in'}.${
-            filterConfig.key
-          }`;
-          const filterId = `SearchFiltersDesktop.${filterConfig.key.toLowerCase()}`;
-          return (
-            <FilterComponent
-              key={key}
-              id={filterId}
-              className={css.filter}
-              config={filterConfig}
-              containerId="SearchPageWithMap_Filters"
-              listingCategories={listingCategories}
-              marketplaceCurrency={marketplaceCurrency}
-              urlQueryParams={validQueryParams}
-              initialValues={initialValues(this.props, this.state.currentQueryParams)}
-              getHandleChangedValueFn={this.getHandleChangedValueFn}
-              intl={intl}
-              liveEdit
-              showAsPopup={false}
-              isDesktop
+        <div className={css.priceBlock}>
+          {!isMonthlySearch ? (
+            <HakoPriceByToggle
+              className={css.priceByInGroup}
+              value={this.state.priceBy}
+              onChange={priceBy => this.setState({ priceBy })}
             />
-          );
-        })}
+          ) : null}
+          {availableFilters
+            .filter(filterConfig => filterConfig.schemaType === 'price')
+            .map(filterConfig => {
+              const key = `SearchFiltersDesktop.${filterConfig.scope || 'built-in'}.${
+                filterConfig.key
+              }`;
+              const filterId = `SearchFiltersDesktop.${filterConfig.key.toLowerCase()}`;
+              return (
+                <FilterComponent
+                  key={key}
+                  id={filterId}
+                  className={classNames(css.filter, css.priceFilter)}
+                  config={filterConfig}
+                  containerId="SearchPageWithMap_Filters"
+                  listingCategories={listingCategories}
+                  marketplaceCurrency={marketplaceCurrency}
+                  urlQueryParams={validQueryParams}
+                  initialValues={initialValues(this.props, this.state.currentQueryParams)}
+                  getHandleChangedValueFn={this.getHandleChangedValueFn}
+                  intl={intl}
+                  liveEdit
+                  showAsPopup={false}
+                  isDesktop
+                  hideLabel={!isMonthlySearch}
+                />
+              );
+            })}
+        </div>
+        {availableFilters
+          .filter(filterConfig => filterConfig.schemaType !== 'price')
+          .map(filterConfig => {
+            const key = `SearchFiltersDesktop.${filterConfig.scope || 'built-in'}.${
+              filterConfig.key
+            }`;
+            const filterId = `SearchFiltersDesktop.${filterConfig.key.toLowerCase()}`;
+            return (
+              <FilterComponent
+                key={key}
+                id={filterId}
+                className={css.filter}
+                config={filterConfig}
+                containerId="SearchPageWithMap_Filters"
+                listingCategories={listingCategories}
+                marketplaceCurrency={marketplaceCurrency}
+                urlQueryParams={validQueryParams}
+                initialValues={initialValues(this.props, this.state.currentQueryParams)}
+                getHandleChangedValueFn={this.getHandleChangedValueFn}
+                intl={intl}
+                liveEdit
+                showAsPopup={false}
+                isDesktop
+              />
+            );
+          })}
       </>
     );
 
@@ -376,6 +414,8 @@ export class SearchPageComponent extends Component {
             initialValues={{
               location: locationInitialValue,
               parkingOption,
+              date: dateFromUrl,
+              duration: durationFromUrl,
             }}
             onSubmit={this.handleSearchBarSubmit}
           />

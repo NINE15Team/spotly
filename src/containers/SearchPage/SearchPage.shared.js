@@ -20,6 +20,7 @@ import {
   stringifyDateToISO8601,
 } from '../../util/dates';
 import { isFieldForCategory, isFieldForListingType } from '../../util/fieldHelpers';
+import { HAKO_SIDEBAR_FILTERS, isHakoHiddenSidebarFilter } from './hakoSearchFilters';
 
 const validURLParamForCategoryData = (prefix, categories, level, params) => {
   const levelKey = constructQueryParamName(`${prefix}${level}`, 'public');
@@ -597,15 +598,22 @@ export const getDerivedRenderData = ({
   const marketplaceCurrency = config.currency;
   const categoryConfiguration = config.categoryConfiguration;
   const listingCategories = categoryConfiguration.categories;
+  const isHakoSearchLayout = config?.layout?.searchPage?.variantType === 'map';
   const listingFieldsConfig = pickListingFieldFilters({
-    listingFields,
+    listingFields: listingFields || [],
     locationSearch: location.search,
     categoryConfiguration,
     activeListingTypes,
     currentPathParams,
   });
+  const hakoSidebarFilters = isHakoSearchLayout
+    ? HAKO_SIDEBAR_FILTERS.filter(
+        hakoFilter => !listingFieldsConfig.some(existing => existing.key === hakoFilter.key)
+      )
+    : [];
+  const listingFieldsWithHakoFilters = [...listingFieldsConfig, ...hakoSidebarFilters];
   const filterConfigs = {
-    listingFieldsConfig,
+    listingFieldsConfig: listingFieldsWithHakoFilters,
     defaultFiltersConfig,
     listingCategories,
     activeListingTypes,
@@ -625,29 +633,39 @@ export const getDerivedRenderData = ({
   const validQueryParams = urlQueryParams;
 
   const isKeywordSearch = isMainSearchTypeKeywords(config);
-  const builtInPrimaryFilters = defaultFiltersConfig.filter(f =>
-    ['categoryLevel', 'listingType'].includes(f.key)
+  const hideHakoRedundantFilter = f => isHakoSearchLayout && isHakoHiddenSidebarFilter(f);
+  const builtInPrimaryFilters = defaultFiltersConfig.filter(
+    f => ['categoryLevel', 'listingType'].includes(f.key) && !hideHakoRedundantFilter(f)
   );
   const builtInFilters = isKeywordSearch
     ? defaultFiltersConfig.filter(
-        f => !['keywords', 'categoryLevel', 'listingType'].includes(f.key)
+        f =>
+          !['keywords', 'categoryLevel', 'listingType'].includes(f.key) &&
+          !hideHakoRedundantFilter(f)
       )
-    : defaultFiltersConfig.filter(f => !['categoryLevel', 'listingType'].includes(f.key));
+    : defaultFiltersConfig.filter(
+        f => !['categoryLevel', 'listingType'].includes(f.key) && !hideHakoRedundantFilter(f)
+      );
   const [customPrimaryFilters, customSecondaryFilters] = groupListingFieldConfigs(
-    listingFieldsConfig,
+    listingFieldsWithHakoFilters,
     activeListingTypes
   );
-  const availablePrimaryFilters = [
-    ...builtInPrimaryFilters,
-    ...customPrimaryFilters,
-    ...builtInFilters,
-  ];
-  const availableFilters = [
+  const unorderedFilters = [
     ...builtInPrimaryFilters,
     ...customPrimaryFilters,
     ...builtInFilters,
     ...customSecondaryFilters,
   ];
+  const hakoFilterKeys = new Set(HAKO_SIDEBAR_FILTERS.map(f => f.key));
+  const priceFilters = unorderedFilters.filter(f => f.schemaType === 'price');
+  const hakoFilters = unorderedFilters.filter(f => hakoFilterKeys.has(f.key));
+  const restFilters = unorderedFilters.filter(
+    f => f.schemaType !== 'price' && !hakoFilterKeys.has(f.key)
+  );
+  const availablePrimaryFilters = unorderedFilters;
+  const availableFilters = isHakoSearchLayout
+    ? [...priceFilters, ...hakoFilters, ...restFilters]
+    : unorderedFilters;
 
   const hasSecondaryFilters = !!(customSecondaryFilters && customSecondaryFilters.length > 0);
 

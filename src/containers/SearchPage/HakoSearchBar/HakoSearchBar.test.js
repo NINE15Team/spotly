@@ -8,56 +8,55 @@ import HakoPriceByToggle from '../HakoPriceByToggle';
 
 const { screen, userEvent, waitFor } = testingLibrary;
 
+const searchBarMessages = {
+  'HakoSearchBar.dayParking': 'Day Parking',
+  'HakoSearchBar.monthlyStorage': 'Monthly Storage',
+  'HakoSearchBar.update': 'Update',
+  'HakoSearchBar.search': 'Search',
+  'HakoSearchBar.locationPlaceholder': 'Any city/region',
+  'HakoSearchBar.date': 'Date',
+  'HakoSearchBar.startDate': 'Start date',
+  'HakoSearchBar.duration': 'Duration',
+  'HakoSearchBar.durationPlaceholder': 'Duration',
+  'HakoSearchBar.hoursOption': '{count, plural, one {# hour} other {# hours}}',
+};
+
 describe('HakoSearchBar', () => {
-  it('renders parking option, location and CTA for day parking', async () => {
+  it('renders parking option, location, date picker and duration select for day parking', async () => {
     render(<HakoSearchBar />, {
-      messages: {
-        'HakoSearchBar.dayParking': 'Day Parking',
-        'HakoSearchBar.update': 'Update',
-        'HakoSearchBar.search': 'Search',
-        'HakoSearchBar.locationPlaceholder': 'Any city/region',
-        'HakoSearchBar.datePlaceholder': 'Date',
-        'HakoSearchBar.durationPlaceholder': 'Duration',
-      },
+      messages: searchBarMessages,
     });
 
     expect(screen.getByLabelText('Search filters')).toBeInTheDocument();
     expect(await screen.findByPlaceholderText('Any city/region')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('Date')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('Duration')).toBeInTheDocument();
+
+    const dateInput = screen.getByLabelText('Date');
+    expect(dateInput).toHaveAttribute('type', 'date');
+    expect(dateInput.tagName).toBe('INPUT');
+
+    const durationSelect = screen.getByLabelText('Duration');
+    expect(durationSelect.tagName).toBe('SELECT');
     expect(screen.getByText('Update')).toBeInTheDocument();
     expect(screen.getByText('Search')).toBeInTheDocument();
   });
 
-  it('hides date and duration for monthly storage', async () => {
+  it('shows start date and hides duration for monthly storage', async () => {
     render(<HakoSearchBar initialValues={{ parkingOption: 'monthly-storage' }} />, {
-      messages: {
-        'HakoSearchBar.monthlyStorage': 'Monthly Storage',
-        'HakoSearchBar.update': 'Update',
-        'HakoSearchBar.search': 'Search',
-        'HakoSearchBar.locationPlaceholder': 'Any city/region',
-        'HakoSearchBar.datePlaceholder': 'Date',
-        'HakoSearchBar.durationPlaceholder': 'Duration',
-      },
+      messages: searchBarMessages,
     });
 
     expect(screen.getByText('Monthly Storage')).toBeInTheDocument();
     await waitFor(() => {
-      expect(screen.queryByPlaceholderText('Date')).not.toBeInTheDocument();
+      expect(screen.getByLabelText('Start date')).toHaveAttribute('type', 'date');
     });
-    expect(screen.queryByPlaceholderText('Duration')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Duration')).not.toBeInTheDocument();
   });
 
   it('calls onSubmit with parking option', async () => {
     const user = userEvent.setup();
     const onSubmit = jest.fn();
     render(<HakoSearchBar onSubmit={onSubmit} />, {
-      messages: {
-        'HakoSearchBar.update': 'Update',
-        'HakoSearchBar.search': 'Search',
-        'HakoSearchBar.locationPlaceholder': 'Any city/region',
-        'HakoSearchBar.dayParking': 'Day Parking',
-      },
+      messages: searchBarMessages,
     });
 
     await screen.findByPlaceholderText('Any city/region');

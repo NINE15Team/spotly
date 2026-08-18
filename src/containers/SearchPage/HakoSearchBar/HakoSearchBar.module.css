@@ -84,6 +84,9 @@
   flex: 1 1 auto;
   min-width: 0;
   border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  appearance: none;
   background: transparent;
   font-family: var(--fontFamily);
   font-size: 12px;
@@ -93,9 +96,77 @@
   padding: 0;
   margin: 0;
   width: 100%;
+  cursor: pointer;
 
   &::placeholder {
     color: var(--hakoSecondaryText);
+  }
+}
+
+.selectorField {
+  position: relative;
+}
+
+.dateInput {
+  color-scheme: light;
+  min-width: 0;
+  position: relative;
+  z-index: 1;
+
+  &::-webkit-calendar-picker-indicator {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+}
+
+.dateInputEmpty {
+  color: transparent;
+
+  &::-webkit-datetime-edit,
+  &::-webkit-datetime-edit-fields-wrapper,
+  &::-webkit-datetime-edit-text,
+  &::-webkit-datetime-edit-month-field,
+  &::-webkit-datetime-edit-day-field,
+  &::-webkit-datetime-edit-year-field {
+    color: transparent;
+  }
+}
+
+.datePlaceholder {
+  position: absolute;
+  left: 45px;
+  right: 28px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--hakoSecondaryText);
+  font-family: var(--fontFamily);
+  font-size: 12px;
+  line-height: normal;
+  pointer-events: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.durationSelect {
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  &::-ms-expand {
+    display: none;
+  }
+
+  option {
+    color: var(--hakoPrimaryText);
+    background-color: var(--hakoWhite);
   }
 }
 

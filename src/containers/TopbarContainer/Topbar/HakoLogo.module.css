@@ -1,0 +1,38 @@
+@import '../../../styles/customMediaQueries.css';
+
+.logoLink {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  line-height: 0;
+  border-bottom: 0;
+  text-decoration: none;
+
+  &:hover,
+  &:focus {
+    opacity: 0.9;
+    border-bottom: 0;
+    text-decoration: none;
+  }
+}
+
+.logoLinkMobile {
+  flex: 1 1 auto;
+  justify-content: center;
+  min-width: 0;
+  height: 100%;
+  padding: 0 8px;
+}
+
+.logoImage {
+  display: block;
+  width: auto;
+  height: 56px;
+  max-width: 160px;
+  object-fit: contain;
+}
+
+.logoImageMobile {
+  height: 48px;
+  max-width: min(160px, calc(100vw - 148px));
+}

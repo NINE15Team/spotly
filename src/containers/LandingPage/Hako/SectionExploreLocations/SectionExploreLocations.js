@@ -7,39 +7,10 @@ import { EXPLORE_LOCATIONS, HAKO_ASSETS } from '../assets';
 import css from './SectionExploreLocations.module.css';
 
 /**
- * Explore by Location — Figma node 61:809
+ * Explore by Location — Figma node 61:809 / mobile 61:1171
+ * Mobile: horizontal scroll. Tablet: 1:1 cards. Desktop: 4-column grid.
  */
 export const SectionExploreLocations = () => {
-  const row1 = EXPLORE_LOCATIONS.slice(0, 4);
-  const row2 = EXPLORE_LOCATIONS.slice(4);
-
-  const renderCard = location => (
-    <NamedLink
-      key={location.name}
-      name="SearchPage"
-      to={{ search: `?address=${encodeURIComponent(location.name)}` }}
-      className={classNames(css.card, location.tone === 'green' ? css.cardGreen : css.cardBlue)}
-    >
-      {location.image ? (
-        <img className={css.cardImage} src={location.image} alt="" />
-      ) : null}
-      <div className={css.cardOverlay} aria-hidden="true" />
-      <div className={css.cardInfo}>
-        <span className={css.cardName}>{location.name}</span>
-        <span className={css.cardCta}>
-          <FormattedMessage id="HakoLanding.explore.viewListings" defaultMessage="View Listings" />
-          <img
-            className={css.cardArrow}
-            src={HAKO_ASSETS.arrowRightAlt}
-            alt=""
-            width={17}
-            height={17}
-          />
-        </span>
-      </div>
-    </NamedLink>
-  );
-
   return (
     <section className={css.root} aria-labelledby="hako-explore-heading">
       <div className={css.titleBlock}>
@@ -60,8 +31,37 @@ export const SectionExploreLocations = () => {
         </p>
       </div>
 
-      <div className={css.row}>{row1.map(renderCard)}</div>
-      <div className={css.row}>{row2.map(renderCard)}</div>
+      <div className={css.scroller}>
+        {EXPLORE_LOCATIONS.map(location => (
+          <NamedLink
+            key={location.name}
+            name="SearchPage"
+            to={{ search: `?address=${encodeURIComponent(location.name)}` }}
+            className={classNames(css.card, location.tone === 'green' ? css.cardGreen : css.cardBlue)}
+          >
+            {location.image ? (
+              <img className={css.cardImage} src={location.image} alt="" />
+            ) : null}
+            <div className={css.cardOverlay} aria-hidden="true" />
+            <div className={css.cardInfo}>
+              <span className={css.cardName}>{location.name}</span>
+              <span className={css.cardCta}>
+                <FormattedMessage
+                  id="HakoLanding.explore.viewListings"
+                  defaultMessage="View Listings"
+                />
+                <img
+                  className={css.cardArrow}
+                  src={HAKO_ASSETS.arrowRightAlt}
+                  alt=""
+                  width={17}
+                  height={17}
+                />
+              </span>
+            </div>
+          </NamedLink>
+        ))}
+      </div>
     </section>
   );
 };

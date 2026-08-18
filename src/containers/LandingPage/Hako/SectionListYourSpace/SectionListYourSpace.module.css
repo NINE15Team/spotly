@@ -120,4 +120,5 @@
 .cta:focus {
   background-color: var(--colorPrimaryButtonDark);
   outline: none;
+  text-decoration: none;
 }

@@ -56,4 +56,15 @@ describe('SectionHero', () => {
 
     expect(await screen.findByDisplayValue('Oakland')).toBeInTheDocument();
   });
+
+  it('opens a date picker and hours selector instead of plain text inputs', () => {
+    render(<SectionHero onSearch={() => {}} />);
+
+    const date = screen.getByLabelText('HakoLanding.hero.date');
+    expect(date).toHaveAttribute('type', 'date');
+
+    const hours = screen.getByLabelText('HakoLanding.hero.hours');
+    expect(hours.tagName).toBe('SELECT');
+    expect(hours).toHaveValue('3');
+  });
 });

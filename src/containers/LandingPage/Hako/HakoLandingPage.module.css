@@ -18,3 +18,7 @@
   width: 100%;
   background-color: var(--hakoWhite);
 }
+
+.main p {
+  font-weight: 400;
+}

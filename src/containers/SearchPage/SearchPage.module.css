@@ -57,9 +57,9 @@
   --marketplaceColorDark: #000000;
 
   @media (--viewportMedium) {
-    flex: 0 0 400px;
-    width: 400px;
-    padding: 24px;
+    flex: 0 0 280px;
+    width: 280px;
+    padding: 20px;
     position: sticky;
     top: calc(var(--topbarHeightDesktop) + 20px);
     max-height: calc(100vh - var(--topbarHeightDesktop) - 40px);
@@ -67,6 +67,12 @@
     background-color: var(--hakoWhite);
     border-radius: var(--hakoBorderRadius);
     box-shadow: var(--hakoDropShadow);
+  }
+
+  @media (min-width: 1200px) {
+    flex: 0 0 400px;
+    width: 400px;
+    padding: 24px;
   }
 }
 
@@ -113,20 +119,43 @@
   display: flex;
   flex-direction: column;
   width: 100%;
+  min-width: 0;
+  flex-shrink: 0;
 }
 
 .hakoResultsHeader {
   display: flex;
+  width: 100%;
 }
 
 .hakoListings {
   flex-grow: 1;
   display: flex;
   flex-direction: column;
+  width: 100%;
+  min-width: 0;
 }
 
 .filter {
   /* spacing handled by FilterPlain */
+}
+
+.priceBlock {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(12, 22, 29, 0.12);
+  margin-bottom: 8px;
+}
+
+.priceByInGroup {
+  padding-bottom: 12px;
+  border-bottom: 0;
+  margin-bottom: 0;
+}
+
+.priceFilter {
+  padding-top: 0;
 }
 
 /* Legacy layout classes kept for SearchPageWithGrid */
