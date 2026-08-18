@@ -13,7 +13,7 @@ import washingtonImage from '../../../assets/washington.jpeg';
 
 export const HAKO_ASSETS = {
   logoMark: '/static/hako/icons/logo-mark.svg',
-  logoWordmark: '/static/hako/icons/logo-wordmark.svg',
+  logoWordmark: '/static/hako/icons/logo-wordmark.png',
   search: '/static/hako/icons/search.svg',
   location: '/static/hako/icons/location.svg',
   calendar: '/static/hako/icons/calendar.svg',

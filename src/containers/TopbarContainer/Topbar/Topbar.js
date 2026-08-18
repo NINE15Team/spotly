@@ -346,20 +346,22 @@ const TopbarComponent = props => {
         currentPage={resolvedCurrentPage}
       />
       <nav className={classNames(mobileRootClassName || css.container, mobileClassName)}>
-        <Button
-          id={MOBILE_MENU_BUTTON_ID}
-          rootClassName={css.menu}
-          onClick={() => redirectToURLWithModalState(history, location, 'mobilemenu')}
-          title={intl.formatMessage({ id: 'Topbar.menuIcon' })}
-        >
-          <MenuIcon
-            className={css.menuIcon}
-            ariaLabel={intl.formatMessage({ id: 'Topbar.menuIcon' })}
-          />
-          {notificationDot}
-        </Button>
         <HakoLogo marketplaceName={config.marketplaceName} layout="mobile" />
-        {mobileSearchButtonMaybe}
+        <div className={css.mobileRightActions}>
+          {mobileSearchButtonMaybe}
+          <Button
+            id={MOBILE_MENU_BUTTON_ID}
+            rootClassName={css.menu}
+            onClick={() => redirectToURLWithModalState(history, location, 'mobilemenu')}
+            title={intl.formatMessage({ id: 'Topbar.menuIcon' })}
+          >
+            <MenuIcon
+              className={css.menuIcon}
+              ariaLabel={intl.formatMessage({ id: 'Topbar.menuIcon' })}
+            />
+            {notificationDot}
+          </Button>
+        </div>
       </nav>
       <div className={css.desktop}>
         <TopbarDesktop

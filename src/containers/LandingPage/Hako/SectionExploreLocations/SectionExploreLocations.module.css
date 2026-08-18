@@ -59,7 +59,8 @@
 .scroller {
   display: flex;
   gap: 20px;
-  width: auto;
+  width: 100%;
+  min-width: 0;
   margin-right: calc(-1 * var(--hakoLateralPaddingMobile));
   padding-right: var(--hakoLateralPaddingMobile);
   overflow-x: auto;

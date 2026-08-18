@@ -17,22 +17,20 @@
 }
 
 .logoLinkMobile {
-  flex: 1 1 auto;
-  justify-content: center;
-  min-width: 0;
+  flex-shrink: 0;
+  justify-content: flex-start;
   height: 100%;
-  padding: 0 8px;
+  padding: 0 0 0 24px;
 }
 
 .logoImage {
   display: block;
-  width: auto;
-  height: 56px;
-  max-width: 160px;
+  width: 70px;
+  height: 40px;
   object-fit: contain;
 }
 
 .logoImageMobile {
-  height: 48px;
-  max-width: min(160px, calc(100vw - 148px));
+  width: 64px;
+  height: 30px;
 }

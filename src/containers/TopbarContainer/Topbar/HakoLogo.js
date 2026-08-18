@@ -9,7 +9,7 @@ import css from './HakoLogo.module.css';
 
 /**
  * Hako wordmark used in desktop and mobile/tablet topbars.
- * Sized large enough that the slogan and "by Alpine" stay readable.
+ * Figma header logo: 70×40 desktop, 64×30 mobile.
  */
 const HakoLogo = props => {
   const { marketplaceName, layout = 'desktop' } = props;
