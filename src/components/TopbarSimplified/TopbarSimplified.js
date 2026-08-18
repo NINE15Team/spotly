@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useIntl } from 'react-intl';
 import classNames from 'classnames';
 
 import { useConfiguration } from '../../context/configurationContext';
 
-import { LinkedLogo } from '../../components';
+import HakoLogo from '../../containers/TopbarContainer/Topbar/HakoLogo';
 
 import css from './TopbarSimplified.module.css';
 
@@ -19,14 +18,11 @@ import css from './TopbarSimplified.module.css';
  * @param {Object} props
  * @param {string} props.className - The class name for the topbar
  * @param {string} props.rootClassName - The root class name for the topbar
- * @param {Object} props.intl - The intl object
- * @param {boolean} props.linkToExternalSite - Whether to link to the external site
  * @returns {JSX.Element}
  */
 const TopbarSimplified = props => {
   const [isMobile, setIsMobile] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const intl = useIntl();
   const config = useConfiguration();
 
   useEffect(() => {
@@ -58,16 +54,14 @@ const TopbarSimplified = props => {
   }, [mounted]);
 
   const { className, rootClassName } = props;
-  const linkToExternalSite = config?.topbar?.logoLink;
 
   const classes = classNames(rootClassName || css.root, className);
 
   return (
     <nav className={classes}>
-      <LinkedLogo
+      <HakoLogo
         layout={isMobile ? 'mobile' : 'desktop'}
-        alt={intl.formatMessage({ id: 'TopbarSimplified.goToLandingPage' })}
-        linkToExternalSite={linkToExternalSite}
+        marketplaceName={config?.marketplaceName}
       />
     </nav>
   );

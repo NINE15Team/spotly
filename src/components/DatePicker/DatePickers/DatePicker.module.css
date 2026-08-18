@@ -13,23 +13,25 @@
 }
 
 .light {
-  --datepickerFgColor: var(--colorGrey700);
-  --datepickerBgColor: transparent;
-  --datepickerBorderColor: transparent;
-  --datepickerDisabledFgColor: var(--colorGrey300);
+  /* Same header-background + white-text theme as the sitewide default, with
+     selected dates inverted to a white background and dark text. */
+  --datepickerFgColor: var(--colorWhite);
+  --datepickerBgColor: var(--hakoDark);
+  --datepickerBorderColor: rgba(255, 255, 255, 0.12);
+  --datepickerDisabledFgColor: rgba(255, 255, 255, 0.35);
   --datepickerDisabledTextDeco: line-through;
   --datepickerHoveredFgColor: inherit;
-  --datepickerHoveredBgColor: var(--colorGrey100);
-  --datepickerHeaderFgColor: var(--colorGrey700);
-  --datepickerHeaderFgColorDisabled: var(--colorGrey300);
-  --datepickerHeaderArrowColor: var(--marketplaceColor);
-  --datepickerDateOutline: auto;
-  --datepickerButtonOutlineColor: var(--colorGrey600);
-  --datepickerSelectedFgColor: var(--colorWhite);
-  --datepickerSelectedBgColor: var(--colorSuccess);
-  --datepickerSelectedBorder: solid 1px var(--colorSuccess);
-  --datepickerSelectedHoveredFgColor: var(--colorWhite);
-  --datepickerSelectedHoveredBgColor: var(--colorSuccess);
+  --datepickerHoveredBgColor: rgba(255, 255, 255, 0.2);
+  --datepickerHeaderFgColor: var(--colorWhite);
+  --datepickerHeaderFgColorDisabled: rgba(255, 255, 255, 0.35);
+  --datepickerHeaderArrowColor: var(--colorWhite);
+  --datepickerDateOutline: white solid 1px;
+  --datepickerButtonOutlineColor: rgba(255, 255, 255, 0.4);
+  --datepickerSelectedFgColor: var(--hakoPrimaryText);
+  --datepickerSelectedBgColor: var(--colorWhite);
+  --datepickerSelectedBorder: solid 1px var(--colorWhite);
+  --datepickerSelectedHoveredFgColor: var(--hakoPrimaryText);
+  --datepickerSelectedHoveredBgColor: rgba(255, 255, 255, 0.85);
 }
 
 .datepicker {
@@ -237,7 +239,7 @@
     align-items: center;
     background-color: var(--datepickerSelectedBgColor);
     border-radius: calc(37px / 2);
-    color: var(--datepickerFgColor);
+    color: var(--datepickerSelectedFgColor);
   }
 }
 
@@ -248,7 +250,7 @@
     border-bottom-left-radius: 0;
     border-top-right-radius: calc(37px / 2);
     border-bottom-right-radius: calc(37px / 2);
-    color: var(--colorWhite);
+    color: var(--datepickerSelectedFgColor);
   }
 
   &:hover .renderedDay {
@@ -264,7 +266,7 @@
     border-bottom-left-radius: calc(37px / 2);
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
-    color: var(--colorWhite);
+    color: var(--datepickerSelectedFgColor);
   }
 
   &:hover .renderedDay {

@@ -232,6 +232,16 @@
   cursor: pointer;
   color-scheme: dark;
 
+  /* Override the global input:focus rule (marketplaceDefaults.css), which sets a
+     white background on focus and would make this field's white text unreadable. */
+  &:focus,
+  &:hover {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    color: var(--hakoWhite);
+  }
+
   &::placeholder {
     color: rgba(241, 247, 237, 0.7);
   }

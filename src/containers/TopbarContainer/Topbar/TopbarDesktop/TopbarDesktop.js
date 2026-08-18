@@ -15,6 +15,7 @@ import {
 
 import TopbarSearchForm from '../TopbarSearchForm/TopbarSearchForm';
 import HakoLogo from '../HakoLogo';
+import { DAY_LISTING_TYPES, MONTHLY_LISTING_TYPES } from '../../../../util/hakoListingTypes';
 
 import css from './TopbarDesktop.module.css';
 
@@ -24,7 +25,7 @@ const HAKO_NAV_LINKS = [
     messageId: 'TopbarDesktop.dayParking',
     defaultMessage: 'Day Parking',
     name: 'SearchPage',
-    to: { search: '?pub_listingType=day-parking' },
+    to: { search: `?pub_listingType=${DAY_LISTING_TYPES.join(',')}` },
     match: ({ currentPage }) =>
       currentPage === 'LandingPage' || currentPage === 'SearchPage' || !currentPage,
   },
@@ -33,7 +34,7 @@ const HAKO_NAV_LINKS = [
     messageId: 'TopbarDesktop.monthlyStorage',
     defaultMessage: 'Monthly Storage',
     name: 'SearchPage',
-    to: { search: '?pub_listingType=monthly-storage' },
+    to: { search: `?pub_listingType=${MONTHLY_LISTING_TYPES.join(',')}` },
     match: () => false,
   },
   {

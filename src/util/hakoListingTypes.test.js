@@ -14,11 +14,11 @@ describe('hakoListingTypes', () => {
     expect(isMonthlyListingType(null)).toBe(false);
   });
 
-  it('normalizes search listing types', () => {
-    expect(listingTypeForSearch('monthly-storage')).toBe(MONTHLY_STORAGE_LISTING_TYPE);
-    expect(listingTypeForSearch('monthly-subscription')).toBe(MONTHLY_STORAGE_LISTING_TYPE);
-    expect(listingTypeForSearch('day-parking')).toBe(DAY_PARKING_LISTING_TYPE);
-    expect(listingTypeForSearch(undefined)).toBe(DAY_PARKING_LISTING_TYPE);
+  it('normalizes search listing types to every alias for that category', () => {
+    expect(listingTypeForSearch('monthly-storage')).toBe('monthly-storage,monthly-subscription');
+    expect(listingTypeForSearch('monthly-subscription')).toBe('monthly-storage,monthly-subscription');
+    expect(listingTypeForSearch('day-parking')).toBe('day-parking,daily-rental');
+    expect(listingTypeForSearch(undefined)).toBe('day-parking,daily-rental');
   });
 
   it('maps URL listing types to parking options', () => {
