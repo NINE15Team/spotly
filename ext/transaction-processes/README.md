@@ -46,3 +46,16 @@ handles availability via booking actions.
 
 Deploy with Sharetribe CLI (Dev first). Do not attach to a listing type until the Web Template
 supports this process (Phase 3).
+
+## Waiver processes (dev push status — 2026-08-11)
+
+On marketplace `alpsalpinerentaspot-dev`:
+
+| Process | Latest version | Live alias | Notes |
+|---------|----------------|------------|--------|
+| `default-booking` | 2 | `default-booking/release-1` → v1 | Alias cut **deferred** (dev testing in progress) |
+| `subscription-rental` | 6 | `subscription-rental/release-5` → v5 | Alias cut **deferred** (dev testing in progress) |
+
+Pushing a process does **not** change active aliases. New checkouts keep using the old versions until
+we create/update aliases (`release-2` / `release-6` or `update-alias`). See
+[docs/WAIVER_IMPLEMENTATION.md §9](../../docs/WAIVER_IMPLEMENTATION.md#9-deployment-checklist).
