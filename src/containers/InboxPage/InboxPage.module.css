@@ -216,7 +216,8 @@
     'dot name    state'
     '... item    state'
     '... details state'
-    '... seats   state';
+    '... seats   state'
+    '... waivers state';
   padding: 2px 0 6px;
   gap: 4px 0;
 
@@ -305,6 +306,22 @@
 
   margin-top: 0;
   margin-bottom: 0;
+}
+
+.itemWaivers {
+  composes: marketplaceTinyFontStyles from global;
+  grid-area: waivers;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.waiversComplete {
+  color: var(--colorSuccess);
+}
+
+.waiversPending {
+  font-weight: var(--fontWeightMedium);
+  color: var(--colorStatusActionNeeded, var(--colorAttention));
 }
 
 .itemState {

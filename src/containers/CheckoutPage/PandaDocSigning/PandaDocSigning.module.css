@@ -1,0 +1,49 @@
+@import '../../../styles/customMediaQueries.css';
+
+.root {
+  margin-bottom: 32px;
+
+  @media (--viewportMedium) {
+    margin-bottom: 40px;
+  }
+}
+
+.heading {
+  composes: p from global;
+  font-weight: var(--fontWeightBold);
+  padding: 0;
+  margin-bottom: 8px;
+}
+
+.info {
+  composes: textSmall from global;
+  margin: 0 0 16px 0;
+  color: var(--colorGrey700);
+}
+
+.startButton {
+  margin-top: 8px;
+}
+
+.iframe {
+  width: 100%;
+  min-height: 600px;
+  border: 1px solid var(--colorGrey100);
+  border-radius: 4px;
+}
+
+.signedMessage {
+  composes: marketplaceSmallFontStyles from global;
+  color: var(--colorSuccess);
+  margin: 0;
+}
+
+.loading {
+  margin-top: 12px;
+}
+
+.error {
+  composes: marketplaceSmallFontStyles from global;
+  color: var(--colorFail);
+  margin-top: 12px;
+}

@@ -90,7 +90,17 @@ See: [Sharetribe booking acceptance](https://www.sharetribe.com/docs/concepts/pa
 
 ## Deploy (Dev)
 
-**Marketplace:** `alpsalpinerentaspot-dev` · **Active alias:** `subscription-rental/release-5` (points to process version 5)
+**Marketplace:** `alpsalpinerentaspot-dev`
+
+| Field | Value |
+|-------|--------|
+| Latest pushed version | **6** (waiver operator self-loops; pushed 2026-08-11) |
+| Active alias | `subscription-rental/release-5` → still points at version **5** |
+| Alias cut | **Deferred** — leave `release-5` until current dev testing is finished |
+
+Same pattern for booking: `default-booking` latest is version **2**; live alias
+`default-booking/release-1` still points at version **1**. Details:
+[docs/WAIVER_IMPLEMENTATION.md §9](../../../docs/WAIVER_IMPLEMENTATION.md#9-deployment-checklist).
 
 First-time create (done):
 
@@ -101,18 +111,31 @@ flex-cli process create-alias -m alpsalpinerentaspot-dev \
   --process subscription-rental --version 1 --alias release-1
 ```
 
-Later updates (push, then create a new alias — `release-1` cannot be reassigned once it exists):
+Push only (done for waiver; aliases intentionally skipped while someone tests on dev):
 
 ```bash
 flex-cli process push --process subscription-rental \
   --path ext/transaction-processes/subscription-rental -m alpsalpinerentaspot-dev
-flex-cli process create-alias -m alpsalpinerentaspot-dev \
-  --process subscription-rental --version <latest> --alias release-5
+# → Version 6 saved. Do NOT create/update alias yet.
 ```
 
-Then attach `subscription-rental/release-5` to the subscription listing type in Sharetribe Console (and re-save listings that still have an older alias in public data).
+**TODO — when dev testing is clear, cut the alias to the waiver version:**
 
-See [docs/subscription-process-alias.md](../../../docs/subscription-process-alias.md) for every code location to update on the next alias bump.
+```bash
+flex-cli process create-alias -m alpsalpinerentaspot-dev \
+  --process subscription-rental --version 6 --alias release-6
+# then bump app constants to subscription-rental/release-6 and re-point listing types in Console
+```
+
+Optionally, for booking:
+
+```bash
+flex-cli process create-alias -m alpsalpinerentaspot-dev \
+  --process default-booking --version 2 --alias release-2
+```
+
+Then attach the new alias(es) to listing types in Sharetribe Console (and re-save listings that still
+have an older alias in public data).
 
 ## Web Template
 

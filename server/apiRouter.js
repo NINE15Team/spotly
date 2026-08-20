@@ -32,8 +32,21 @@ const cancelSubscription = require('./api/cancel-subscription');
 const billingPortal = require('./api/billing-portal');
 const operatorAbortSubscription = require('./api/operator-abort-subscription');
 
+// Multi-participant waiver signing (PandaDoc)
+const pandadocWebhook = require('./api/pandadoc-webhook');
+const waiversConfig = require('./api/waivers-config');
+const waiversPrimarySession = require('./api/waivers-primary-session');
+const waiversSendSecondary = require('./api/waivers-send-secondary');
+const waiversRefreshStatus = require('./api/waivers-refresh-status');
+const participantsSwap = require('./api/participants-swap');
+
+// ================ Raw-body webhooks (must be BEFORE the transit parser) ======= //
+
 // Stripe webhooks require the raw request body for signature verification.
 router.post('/stripe-webhooks', bodyParser.raw({ type: 'application/json' }), stripeWebhooks);
+
+// PandaDoc webhook requires the raw request body for HMAC-SHA256 verification.
+router.post('/webhooks/pandadoc', bodyParser.raw({ type: 'application/json' }), pandadocWebhook);
 
 // ================ API router middleware: ================ //
 
@@ -73,6 +86,13 @@ router.post('/decline-subscription', declineSubscription);
 router.post('/cancel-subscription', cancelSubscription);
 router.post('/billing-portal', billingPortal);
 router.post('/operator-abort-subscription', operatorAbortSubscription);
+
+// Multi-participant waiver signing endpoints
+router.get('/waivers/config', waiversConfig);
+router.post('/waivers/primary-session', waiversPrimarySession);
+router.post('/waivers/send-secondary', waiversSendSecondary);
+router.post('/waivers/refresh-status', waiversRefreshStatus);
+router.post('/participants/swap', participantsSwap);
 
 // Create user with identity provider (e.g. Facebook or Google)
 // This endpoint is called to create a new user after user has confirmed

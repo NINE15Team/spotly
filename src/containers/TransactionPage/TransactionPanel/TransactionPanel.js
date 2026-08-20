@@ -191,6 +191,7 @@ export class TransactionPanelComponent extends Component {
       config,
       hasViewingRights,
       transactionFieldsComponent,
+      waiverStatusPanel,
     } = this.props;
 
     const hasTransitions = transitions.length > 0;
@@ -328,6 +329,7 @@ export class TransactionPanelComponent extends Component {
                   listing={listing}
                   showBookingLocation={showBookingLocation}
                 />
+                {waiverStatusPanel}
               </div>
             ) : null}
             <FeedSection

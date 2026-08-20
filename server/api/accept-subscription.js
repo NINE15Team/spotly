@@ -1,9 +1,11 @@
+const log = require('../log');
 const { handleError, serialize } = require('../api-util/sdk');
 const { isIntegrationSdkConfigured } = require('../api-util/integrationSdk');
 const { isStripeConfigured } = require('../api-util/stripeClient');
 const { assertProviderOnTransaction } = require('../api-util/subscriptionAuth');
 const { activateSubscription } = require('../api-util/subscriptionService');
 const { TRANSITIONS } = require('../api-util/subscriptionConstants');
+const { sendSecondaryWaiversForTransaction } = require('../api-util/waiverDelivery');
 
 /**
  * POST /api/accept-subscription
@@ -41,6 +43,15 @@ module.exports = async (req, res) => {
       transition: TRANSITIONS.ACCEPT_SUBSCRIPTION,
       marketplaceSdk: sdk,
     });
+
+    // Subscription secondary waivers are issued on provider acceptance (the
+    // subscription is now live). Best-effort: a PandaDoc hiccup must not fail the
+    // acceptance response. The reconciliation job re-drives any that are missed.
+    try {
+      await sendSecondaryWaiversForTransaction(transactionId);
+    } catch (waiverErr) {
+      log.error(waiverErr, 'accept-subscription-send-secondary-waivers-failed', { transactionId });
+    }
 
     res
       .status(200)

@@ -89,7 +89,7 @@ export const getStateDataForSubscriptionProcess = (txInfo, processInfo) => {
         }
       : null;
 
-  return new ConditionalResolver([processState, transactionRole])
+  const result = new ConditionalResolver([processState, transactionRole])
     .cond([states.PAYMENT_OVERDUE, CUSTOMER], () => ({
       processName,
       processState,
@@ -147,4 +147,9 @@ export const getStateDataForSubscriptionProcess = (txInfo, processInfo) => {
       showDetailCardHeadings: true,
     }))
     .resolve();
+
+  // Multi-participant waiver signing: show the status panel while a subscription
+  // is awaiting approval (payment-confirmed) or live (active).
+  const waiverPanelStates = [states.PAYMENT_CONFIRMED, states.ACTIVE];
+  return { ...result, showWaiverStatusPanel: waiverPanelStates.includes(processState) };
 };

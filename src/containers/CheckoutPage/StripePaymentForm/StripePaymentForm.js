@@ -26,6 +26,8 @@ import {
 } from '../../../components';
 
 import ShippingDetails from '../ShippingDetails/ShippingDetails';
+import ParticipantDetailsForm from '../ParticipantDetailsForm/ParticipantDetailsForm';
+import PandaDocSigning from '../PandaDocSigning/PandaDocSigning';
 
 import css from './StripePaymentForm.module.css';
 
@@ -484,6 +486,13 @@ class StripePaymentForm extends Component {
       transactionFieldConfigs = [],
       showTransactionFields,
       values,
+      // Multi-participant waiver signing (booking + subscription)
+      showWaiver,
+      maxParticipants,
+      currentUser,
+      primaryWaiverSigned,
+      onPrimaryWaiverSigned,
+      onPrimaryDocumentCreated,
     } = formRenderProps;
 
     this.finalFormAPI = formApi;
@@ -506,7 +515,12 @@ class StripePaymentForm extends Component {
       hasHandledCardPayment
     );
 
-    const submitDisabled = invalid || onetimePaymentNeedsAttention || submitInProgress;
+    // Gate payment on the primary participant having signed their waiver inline.
+    const submitDisabled =
+      invalid ||
+      onetimePaymentNeedsAttention ||
+      submitInProgress ||
+      (showWaiver && !primaryWaiverSigned);
     const hasCardError = this.state.error && !submitInProgress;
     const hasPaymentErrors = confirmCardPaymentError || confirmPaymentError;
     const classes = classNames(rootClassName || css.root, className);
@@ -595,6 +609,24 @@ class StripePaymentForm extends Component {
           locale={locale}
           intl={intl}
         />
+
+        {showWaiver ? (
+          <React.Fragment>
+            <ParticipantDetailsForm
+              maxParticipants={maxParticipants}
+              formValues={values}
+              formId={formId}
+            />
+            <PandaDocSigning
+              maxParticipants={maxParticipants}
+              currentUser={currentUser}
+              formValues={values}
+              primaryWaiverSigned={primaryWaiverSigned}
+              onSigned={onPrimaryWaiverSigned}
+              onSessionCreated={onPrimaryDocumentCreated}
+            />
+          </React.Fragment>
+        ) : null}
 
         {billingDetailsNeeded && !loadingData ? (
           <React.Fragment>

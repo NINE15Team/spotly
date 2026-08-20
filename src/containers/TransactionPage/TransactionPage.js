@@ -75,6 +75,7 @@ import ReviewModal from './ReviewModal/ReviewModal';
 import RequestChangesModal from './RequestChangesModal/RequestChangesModal';
 import MakeCounterOfferModal from './MakeCounterOfferModal/MakeCounterOfferModal';
 import TransactionPanel from './TransactionPanel/TransactionPanel';
+import WaiverStatusPanel from './WaiverStatusPanel/WaiverStatusPanel';
 
 import {
   makeTransition,
@@ -791,6 +792,18 @@ export const TransactionPageComponent = props => {
       showBookingLocation={showBookingLocation}
       hasViewingRights={hasViewingRights}
       showListingImage={showListingImage}
+      waiverStatusPanel={
+        (isBookingProcess(processName) || isSubscriptionProcess(processName)) &&
+        stateData?.showWaiverStatusPanel &&
+        transaction?.attributes?.protectedData?.participants?.length ? (
+          <WaiverStatusPanel
+            participants={transaction.attributes.protectedData.participants}
+            transactionId={transaction.id}
+            isCustomer={isCustomerRole}
+            onParticipantUpdated={() => window.location.reload()}
+          />
+        ) : null
+      }
       actionButtons={containerId => (
         <ActionButtons
           containerId={containerId}

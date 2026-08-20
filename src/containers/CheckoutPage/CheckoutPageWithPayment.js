@@ -1,8 +1,13 @@
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 
 // Import contexts and util modules
 import { FormattedMessage, intlShape } from '../../util/reactIntl';
 import { pathByRouteName } from '../../util/routes';
+import { getWaiversConfig } from '../../util/api';
+import {
+  buildParticipantsForCheckout,
+  getParticipantCount,
+} from '../../util/waiverParticipants';
 import {
   isValidCurrencyForTransactionProcess,
   pickTransactionFieldsData,
@@ -15,6 +20,7 @@ import {
   getProcess,
   getRequestPaymentTransition,
   isBookingProcessAlias,
+  isSubscriptionProcessAlias,
   isPrivilegedRequestPaymentTransition,
   resolveLatestProcessName,
   resolveTransactionProcessAlias,
@@ -117,6 +123,8 @@ const getOrderParams = (
   transactionFieldProtectedData,
   customerDefaultMessage,
   taxAddressMaybe = {}
+  participants,
+  primaryPandadocDocumentId
 ) => {
   const quantity = pageData.orderData?.quantity;
   const quantityMaybe = quantity ? { quantity } : {};
@@ -134,6 +142,11 @@ const getOrderParams = (
 
   const customerDefaultMessageMaybe = customerDefaultMessage ? { customerDefaultMessage } : {};
 
+  // Multi-participant waiver signing: persist the participant records + the
+  // primary's PandaDoc document id as part of the request-payment transition.
+  const participantsMaybe = participants?.length ? { participants } : {};
+  const primaryDocumentMaybe = primaryPandadocDocumentId ? { primaryPandadocDocumentId } : {};
+
   const protectedDataMaybe = {
     protectedData: {
       ...getTransactionTypeData(listingType, unitType, config),
@@ -146,6 +159,8 @@ const getOrderParams = (
       ...priceVariantMaybe,
       ...transactionFieldProtectedData,
       ...customerDefaultMessageMaybe,
+      ...participantsMaybe,
+      ...primaryDocumentMaybe,
     },
   };
 
@@ -275,6 +290,9 @@ const handleSubmit = (values, process, props, stripe, submitting, setSubmitting)
     sessionStorageKey,
     transactionFieldConfigs = [],
     processName,
+    waiversEnabled,
+    primaryWaiverSigned,
+    primaryPandadocDocumentId,
   } = props;
   const { card, message, paymentMethod: selectedPaymentMethod, formValues } = values;
   const { saveAfterOnetimePayment: saveAfterOnetimePaymentRaw } = formValues;
@@ -332,6 +350,27 @@ const handleSubmit = (values, process, props, stripe, submitting, setSubmitting)
 
   // Customer's tax address for Stripe Tax (from shipping details or billing address)
   const taxAddressMaybe = config.stripe?.salesTaxEnabled ? getTaxAddressMaybe(formValues) : {};
+  // Multi-participant waiver signing: build the participant records from the
+  // checkout form. Applies to both booking and subscription. When the primary
+  // has signed inline, carry their PandaDoc document id + signed status through.
+  const listingPublicData = pageData?.listing?.attributes?.publicData || {};
+  const listingProcessAlias = listingPublicData.transactionProcessAlias;
+  const showWaiver =
+    waiversEnabled &&
+    (isBookingProcessAlias(listingProcessAlias) ||
+      isSubscriptionProcessAlias(listingProcessAlias));
+  const maxParticipants = Math.max(
+    1,
+    parseInt(listingPublicData.waiverMaxParticipants, 10) || 1
+  );
+  const participantCount = getParticipantCount(formValues, maxParticipants);
+  const participants = buildParticipantsForCheckout(formValues, currentUser, participantCount);
+  if (primaryPandadocDocumentId && participants[0]) {
+    participants[0].pandadoc_document_id = primaryPandadocDocumentId;
+    if (primaryWaiverSigned) {
+      participants[0].waiver_status = 'signed';
+    }
+  }
 
   // These are the order parameters for the first payment-related transition
   // which is either initiate-transition or initiate-transition-after-enquiry
@@ -343,6 +382,8 @@ const handleSubmit = (values, process, props, stripe, submitting, setSubmitting)
     transactionFieldsProtectedData,
     message,
     taxAddressMaybe
+    showWaiver ? participants : null,
+    primaryPandadocDocumentId
   );
 
   // There are multiple XHR calls that needs to be made against Stripe API and Sharetribe Marketplace API on checkout with payments
@@ -438,6 +479,30 @@ export const CheckoutPageWithPayment = props => {
   // speculative transaction is re-fetched so the breakdown shows the tax line.
   const taxAddressRef = useRef(null);
   const taxAddressDebounceRef = useRef(null);
+
+  // Multi-participant waiver signing (PandaDoc). Client-only feature gate — safe
+  // to load with a mount effect (it renders content client-side only).
+  const [waiversEnabled, setWaiversEnabled] = useState(false);
+  const [primaryWaiverSigned, setPrimaryWaiverSigned] = useState(false);
+  const [primaryPandadocDocumentId, setPrimaryPandadocDocumentId] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getWaiversConfig()
+      .then(waiverConfig => {
+        if (!cancelled) {
+          setWaiversEnabled(!!waiverConfig?.enabled);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setWaiversEnabled(false);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const {
     scrollingDisabled,
@@ -571,6 +636,14 @@ export const CheckoutPageWithPayment = props => {
   const isBooking = processName === BOOKING_PROCESS_NAME;
   const isPurchase = processName === PURCHASE_PROCESS_NAME;
   const isNegotiation = processName === NEGOTIATION_PROCESS_NAME;
+  const isSubscription = processName === SUBSCRIPTION_PROCESS_NAME;
+
+  // Waivers apply to both booking and subscription checkout.
+  const showWaiver = waiversEnabled && (isBooking || isSubscription);
+  const maxParticipants = Math.max(
+    1,
+    parseInt(listing?.attributes?.publicData?.waiverMaxParticipants, 10) || 1
+  );
 
   const txTransitions = existingTransaction?.attributes?.transitions || [];
   const hasInquireTransition = txTransitions.find(tr => tr.transition === transitions.INQUIRE);
@@ -667,7 +740,16 @@ export const CheckoutPageWithPayment = props => {
               <StripePaymentForm
                 className={css.paymentForm}
                 onSubmit={values =>
-                  handleSubmit(values, process, props, stripe, submitting, setSubmitting)
+                  handleSubmit(
+                    values,
+                    process,
+                    // Thread component-local waiver state into props so
+                    // getOrderParams persists participants to protectedData.
+                    { ...props, waiversEnabled, primaryWaiverSigned, primaryPandadocDocumentId },
+                    stripe,
+                    submitting,
+                    setSubmitting
+                  )
                 }
                 inProgress={submitting}
                 formId="CheckoutPagePaymentForm"
@@ -703,6 +785,13 @@ export const CheckoutPageWithPayment = props => {
                 isFuzzyLocation={config.maps.fuzzy.enabled}
                 transactionFieldConfigs={transactionFieldConfigs}
                 showTransactionFields={showTransactionFields}
+                showWaiver={showWaiver}
+                waiversEnabled={waiversEnabled}
+                maxParticipants={maxParticipants}
+                currentUser={currentUser}
+                primaryWaiverSigned={primaryWaiverSigned}
+                onPrimaryWaiverSigned={setPrimaryWaiverSigned}
+                onPrimaryDocumentCreated={setPrimaryPandadocDocumentId}
               />
             ) : null}
           </section>
