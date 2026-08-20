@@ -43,15 +43,14 @@ export const bookingDatesMaybe = bookingDates => {
 };
 
 /**
- * Extract the customer's tax address from the payment form values (Stripe Tax,
- * customer-address sourcing).
+ * Extract a shipping or billing address from payment form values.
+ *
+ * NOTE: Sales tax no longer uses this — Stripe Tax is sourced from the listing
+ * (facility) address. Kept for any non-tax callers that need form address data.
  *
  * Priority:
- * 1. Shipping recipient address (destination) when the form collects one
+ * 1. Shipping recipient address when the form collects one
  * 2. Billing address fields (StripePaymentAddress)
- *
- * Returned shape matches what the server-side tax service expects in
- * protectedData.taxAddress: { line1, line2, city, state, postalCode, country }.
  *
  * @param {Object} formValues payment form values
  * @returns {Object} { taxAddress } or an empty object

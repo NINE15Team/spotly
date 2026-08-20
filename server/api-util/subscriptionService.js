@@ -20,6 +20,7 @@ const {
   cancelStripeSubscriptionAtPeriodEnd,
   rethrowStripeError,
 } = require('./subscriptionStripe');
+const { getTaxAddressFromListing } = require('./taxAddress');
 const { getFirstPeriodEnd, getNextPeriodEnd } = require('./subscriptionDates');
 
 const getUuidFromRef = ref => {
@@ -252,15 +253,18 @@ const activateSubscription = async (transactionId, options = {}) => {
         listingId: getUuidFromRef(listing?.id),
       });
 
+      // Facility tax address for Stripe Tax on renewals (listing-based sourcing).
+      const listingTax = await getTaxAddressFromListing(listing);
+      const listingTaxAddress = listingTax?.address || null;
+
       const stripeSubscription = await createStripeSubscription({
         customerId: stripeCustomerId,
         priceId: stripePrice.id,
         paymentMethodId,
         bookingStart,
         sharetribeTransactionId: transaction.id.uuid,
-        // Renter's tax address collected at checkout — enables Stripe Tax
-        // (automatic_tax) on recurring renewal invoices.
-        taxAddress: protectedData.taxAddress || protectedData.shippingDetails?.address || null,
+        taxAddress: listingTaxAddress,
+        listingTitle,
       });
       stripeSubscriptionId = stripeSubscription.id;
 

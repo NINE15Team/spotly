@@ -7,9 +7,9 @@ To make Stripe connection work, you also need to set Stripe's private key in the
 
 export const publishableKey = process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY;
 
-// Stripe Tax (sales tax) — when enabled, the checkout collects the customer's
-// tax address (billing address) for every checkout and the order breakdown
-// shows a sales-tax line item. Must match the server-side SALES_TAX_ENABLED.
+// Stripe Tax (sales tax) — when enabled, tax is calculated from the listing
+// (facility) address. Listing estimates and checkout breakdowns show a
+// sales-tax line item. Must match the server-side SALES_TAX_ENABLED.
 export const salesTaxEnabled = process.env.REACT_APP_SALES_TAX_ENABLED === 'true';
 
 // A maximum number of days forwards during which a booking can be made.

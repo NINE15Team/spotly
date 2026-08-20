@@ -149,7 +149,7 @@ module.exports = (req, res) => {
 
       metadataMaybe = getUpdatedMetadata(orderData, transitionName, existingMetadata);
 
-      // Line items + sales-tax line item (Stripe Tax, customer-address sourcing).
+      // Line items + sales-tax line item (Stripe Tax, listing-address sourcing).
       return transactionLineItemsWithTax(
         listing,
         {

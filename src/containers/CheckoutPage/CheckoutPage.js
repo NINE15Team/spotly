@@ -71,8 +71,8 @@ const EnhancedCheckoutPage = props => {
   const [pageData, setPageData] = useState({});
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   // Latch: has the initial speculative transaction fetch completed at least once?
-  // Needed so that tax-address driven re-speculations (Stripe Tax) don't unmount
-  // the payment form by falling back to the full-page spinner.
+  // Keeps the payment form mounted while speculationInProgress flips during
+  // the first privileged initiate (and any later re-speculation).
   const [initialSpeculationDone, setInitialSpeculationDone] = useState(false);
   const speculationStartedRef = useRef(false);
   const config = useConfiguration();

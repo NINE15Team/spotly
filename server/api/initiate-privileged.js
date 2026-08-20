@@ -81,7 +81,7 @@ module.exports = (req, res) => {
 
       // Both subscription-rental and default-booking line items are computed here;
       // transactionLineItemsWithTax branches on fullOrderData.processAlias and
-      // appends the sales-tax line item (Stripe Tax, customer-address sourcing).
+      // appends the sales-tax line item (Stripe Tax, listing-address sourcing).
       return transactionLineItemsWithTax(
         listing,
         fullOrderData,

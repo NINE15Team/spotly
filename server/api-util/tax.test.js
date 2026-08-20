@@ -3,16 +3,33 @@ jest.mock('../log', () => ({ error: jest.fn(), info: jest.fn(), warn: jest.fn() 
 const mockTaxCalculationsCreate = jest.fn();
 const mockTaxTransactionsCreateFromCalculation = jest.fn();
 const mockPaymentIntentsUpdate = jest.fn();
+const mockUpdateListingPublicDataLocation = jest.fn();
+const mockReverseGeocodeListingLocation = jest.fn();
 
 jest.mock('./stripeClient', () => ({
   isStripeConfigured: jest.fn(),
   getStripe: jest.fn(),
 }));
 
+jest.mock('./integrationSdk', () => ({
+  isIntegrationSdkConfigured: jest.fn(() => true),
+  updateListingPublicDataLocation: (...args) => mockUpdateListingPublicDataLocation(...args),
+  normalizeUuid: id => (typeof id === 'string' ? id : id?.uuid || null),
+}));
+
+jest.mock('./listingTaxLocation', () => {
+  const actual = jest.requireActual('./listingTaxLocation');
+  return {
+    ...actual,
+    reverseGeocodeListingLocation: (...args) => mockReverseGeocodeListingLocation(...args),
+  };
+});
+
 const { types } = require('sharetribe-flex-sdk');
 const { Money } = types;
 
 const { isStripeConfigured, getStripe } = require('./stripeClient');
+const { isIntegrationSdkConfigured } = require('./integrationSdk');
 
 const stripeMock = {
   tax: {
@@ -31,7 +48,17 @@ const {
   appendSalesTaxToLineItems,
   recordTaxTransactionFromPaymentIntent,
 } = require('./tax');
-const { getTaxAddressFromOrderData, normalizeAddress, isUsableTaxAddress } = require('./taxAddress');
+const {
+  getTaxAddressFromListing,
+  getTaxAddressFromOrderData,
+  normalizeAddress,
+  isUsableTaxAddress,
+} = require('./taxAddress');
+const {
+  taxLocationFromMapboxFeature,
+  taxLocationFromGoogleGeocodeResult,
+  pickUsableTaxLocationFields,
+} = require('./listingTaxLocation');
 
 const lineItems = [
   {
@@ -54,15 +81,94 @@ const lineItems = [
   },
 ];
 
-const orderDataWithAddress = {
-  protectedData: {
-    taxAddress: { line1: '1 Main St', city: 'Lansing', state: 'MI', postalCode: '48933', country: 'US' },
+const listingWithTaxLocation = {
+  id: { uuid: 'listing-1' },
+  attributes: {
+    geolocation: { lat: 42.73, lng: -84.55 },
+    publicData: {
+      location: {
+        address: '1 Main St, Lansing, MI 48933',
+        building: '',
+        country: 'US',
+        postalCode: '48933',
+        state: 'MI',
+        city: 'Lansing',
+        line1: '1 Main St',
+      },
+    },
   },
 };
 
+const listingWithoutTaxFields = {
+  id: { uuid: 'listing-2' },
+  attributes: {
+    geolocation: { lat: 42.73, lng: -84.55 },
+    publicData: {
+      location: {
+        address: '1 Main St, Lansing, MI',
+        building: '',
+      },
+    },
+  },
+};
+
+describe('listingTaxLocation mapping', () => {
+  it('maps a Mapbox address feature to tax fields', () => {
+    const feature = {
+      place_type: ['address'],
+      address: '1',
+      text: 'Main St',
+      context: [
+        { id: 'postcode.1', text: '48933' },
+        { id: 'place.1', text: 'Lansing' },
+        { id: 'region.1', short_code: 'US-MI', text: 'Michigan' },
+        { id: 'country.1', short_code: 'us', text: 'United States' },
+      ],
+    };
+    expect(taxLocationFromMapboxFeature(feature)).toEqual({
+      country: 'US',
+      postalCode: '48933',
+      state: 'MI',
+      city: 'Lansing',
+      line1: '1 Main St',
+    });
+  });
+
+  it('maps Google geocode address_components', () => {
+    const result = {
+      address_components: [
+        { long_name: '1', short_name: '1', types: ['street_number'] },
+        { long_name: 'Main St', short_name: 'Main St', types: ['route'] },
+        { long_name: 'Lansing', short_name: 'Lansing', types: ['locality'] },
+        { long_name: 'Michigan', short_name: 'MI', types: ['administrative_area_level_1'] },
+        { long_name: '48933', short_name: '48933', types: ['postal_code'] },
+        { long_name: 'United States', short_name: 'US', types: ['country'] },
+      ],
+    };
+    expect(taxLocationFromGoogleGeocodeResult(result)).toEqual({
+      country: 'US',
+      postalCode: '48933',
+      state: 'MI',
+      city: 'Lansing',
+      line1: '1 Main St',
+    });
+  });
+
+  it('returns null without country and postal code', () => {
+    expect(pickUsableTaxLocationFields({ city: 'Lansing', state: 'MI' })).toBeNull();
+  });
+});
+
 describe('taxAddress', () => {
-  it('normalizes checkout billing address keys', () => {
-    const address = normalizeAddress({ addressLine1: '1 Main St', postal: '48933', country: 'US' });
+  beforeEach(() => {
+    isIntegrationSdkConfigured.mockReturnValue(true);
+    mockReverseGeocodeListingLocation.mockReset();
+    mockUpdateListingPublicDataLocation.mockReset();
+    mockUpdateListingPublicDataLocation.mockResolvedValue({});
+  });
+
+  it('normalizes address keys and uppercases country', () => {
+    const address = normalizeAddress({ addressLine1: '1 Main St', postal: '48933', country: 'us' });
     expect(address).toEqual({ line1: '1 Main St', postal_code: '48933', country: 'US' });
   });
 
@@ -71,32 +177,70 @@ describe('taxAddress', () => {
     expect(isUsableTaxAddress({ country: 'US', postal_code: '48933' })).toBe(true);
   });
 
-  it('resolves the tax address from protectedData.taxAddress', () => {
-    const result = getTaxAddressFromOrderData(orderDataWithAddress);
-    expect(result).toEqual({
-      address: { line1: '1 Main St', city: 'Lansing', state: 'MI', postal_code: '48933', country: 'US' },
-      source: 'customer_address',
+  it('resolves tax address from listing publicData.location', async () => {
+    const result = await getTaxAddressFromListing(listingWithTaxLocation);
+    expect(result.source).toBe('listing_address');
+    expect(result.address).toEqual({
+      line1: '1 Main St',
+      city: 'Lansing',
+      state: 'MI',
+      postal_code: '48933',
+      country: 'US',
     });
+    expect(mockReverseGeocodeListingLocation).not.toHaveBeenCalled();
   });
 
-  it('falls back to shippingDetails.address', () => {
+  it('reverse-geocodes and writes back when tax fields are missing', async () => {
+    mockReverseGeocodeListingLocation.mockResolvedValue({
+      country: 'US',
+      postalCode: '48933',
+      state: 'MI',
+      city: 'Lansing',
+      line1: '1 Main St',
+    });
+
+    const result = await getTaxAddressFromListing(listingWithoutTaxFields);
+
+    expect(result.source).toBe('listing_geocode');
+    expect(result.address.postal_code).toBe('48933');
+    expect(mockUpdateListingPublicDataLocation).toHaveBeenCalledWith(
+      'listing-2',
+      expect.objectContaining({
+        address: '1 Main St, Lansing, MI',
+        country: 'US',
+        postalCode: '48933',
+      })
+    );
+  });
+
+  it('returns null when listing has no usable address or geocode', async () => {
+    mockReverseGeocodeListingLocation.mockResolvedValue(null);
+    expect(await getTaxAddressFromListing({})).toBeNull();
+    expect(
+      await getTaxAddressFromListing({
+        attributes: { publicData: { location: { address: 'Somewhere' } } },
+      })
+    ).toBeNull();
+  });
+
+  it('keeps getTaxAddressFromOrderData for compat but tax calc ignores it', () => {
     const result = getTaxAddressFromOrderData({
       protectedData: {
-        shippingDetails: { address: { postalCode: '90001', country: 'US', state: 'CA' } },
+        taxAddress: {
+          line1: '1 Main St',
+          city: 'Lansing',
+          state: 'MI',
+          postalCode: '48933',
+          country: 'US',
+        },
       },
     });
-    expect(result.address).toEqual({ state: 'CA', postal_code: '90001', country: 'US' });
-  });
-
-  it('returns null when no usable address exists', () => {
-    expect(getTaxAddressFromOrderData({})).toBeNull();
-    expect(getTaxAddressFromOrderData({ protectedData: { taxAddress: { city: 'Lansing' } } })).toBeNull();
+    expect(result.source).toBe('customer_address');
   });
 });
 
 describe('tax', () => {
   beforeEach(() => {
-    // resetMocks (jest config) clears implementations before every test.
     process.env.SALES_TAX_ENABLED = 'true';
     isStripeConfigured.mockReturnValue(true);
     getStripe.mockReturnValue(stripeMock);
@@ -104,6 +248,9 @@ describe('tax', () => {
       id: 'taxcalc_1',
       tax_amount_exclusive: 600,
     });
+    mockReverseGeocodeListingLocation.mockReset();
+    mockUpdateListingPublicDataLocation.mockReset();
+    mockUpdateListingPublicDataLocation.mockResolvedValue({});
   });
 
   afterEach(() => {
@@ -127,12 +274,11 @@ describe('tax', () => {
     expect(getTaxableSubtotal(lineItems)).toBe(10000);
   });
 
-  it('calculates tax via Stripe with the customer address', async () => {
+  it('calculates tax via Stripe with the listing address', async () => {
     const result = await calculateSalesTax({
       lineItems,
-      orderData: orderDataWithAddress,
+      listing: listingWithTaxLocation,
       currency: 'USD',
-      listingId: 'listing-1',
     });
 
     expect(mockTaxCalculationsCreate).toHaveBeenCalledWith({
@@ -141,23 +287,31 @@ describe('tax', () => {
         address: expect.objectContaining({ state: 'MI', postal_code: '48933', country: 'US' }),
         address_source: 'shipping',
       },
-      line_items: [
-        { amount: 10000, reference: 'listing-1', tax_code: 'txcd_99999999' },
-      ],
+      line_items: [{ amount: 10000, reference: 'listing-1', tax_code: 'txcd_99999999' }],
     });
-    expect(result).toEqual({
-      taxAmountCents: 600,
-      calculationId: 'taxcalc_1',
-      taxAddressSource: 'customer_address',
-    });
+    expect(result.taxAmountCents).toBe(600);
+    expect(result.calculationId).toBe('taxcalc_1');
+    expect(result.taxAddressSource).toBe('listing_address');
   });
 
-  it('returns null when disabled or the address is missing', async () => {
+  it('ignores customer taxAddress on orderData and uses listing instead', async () => {
+    await calculateSalesTax({
+      lineItems,
+      listing: listingWithTaxLocation,
+      currency: 'USD',
+    });
+    expect(mockTaxCalculationsCreate.mock.calls[0][0].customer_details.address.state).toBe('MI');
+  });
+
+  it('returns null when disabled or listing address is missing', async () => {
     process.env.SALES_TAX_ENABLED = 'false';
-    expect(await calculateSalesTax({ lineItems, orderData: orderDataWithAddress, currency: 'USD' })).toBeNull();
+    expect(
+      await calculateSalesTax({ lineItems, listing: listingWithTaxLocation, currency: 'USD' })
+    ).toBeNull();
 
     process.env.SALES_TAX_ENABLED = 'true';
-    expect(await calculateSalesTax({ lineItems, orderData: {}, currency: 'USD' })).toBeNull();
+    mockReverseGeocodeListingLocation.mockResolvedValue(null);
+    expect(await calculateSalesTax({ lineItems, listing: {}, currency: 'USD' })).toBeNull();
     expect(mockTaxCalculationsCreate).not.toHaveBeenCalled();
   });
 
@@ -165,7 +319,7 @@ describe('tax', () => {
     mockTaxCalculationsCreate.mockRejectedValue(new Error('stripe down'));
     const result = await calculateSalesTax({
       lineItems,
-      orderData: orderDataWithAddress,
+      listing: listingWithTaxLocation,
       currency: 'USD',
     });
     expect(result).toBeNull();

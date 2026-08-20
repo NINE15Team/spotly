@@ -84,8 +84,7 @@ const StripePaymentAddress = props => {
   const handleOnChange = event => {
     const value = event.target.value;
     form.change('postal', value);
-    // card is not available when a saved payment method is used and the address
-    // is collected only as the tax address (Stripe Tax).
+    // card may be null when a saved payment method is used (no CardElement).
     if (card) {
       card.update({ value: { postalCode: value } });
     }

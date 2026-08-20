@@ -1,5 +1,6 @@
 import { types as sdkTypes } from '../../util/sdkLoader';
 import { userLocation } from '../../util/maps';
+import { taxLocationFromMapboxFeature } from '../../util/listingTaxLocation';
 
 const { LatLng: SDKLatLng, LatLngBounds: SDKLatLngBounds } = sdkTypes;
 
@@ -156,10 +157,12 @@ class GeocoderMapbox {
       return Promise.resolve(prediction.predictionPlace);
     }
 
+    const taxLocation = taxLocationFromMapboxFeature(prediction);
     return Promise.resolve({
       address: this.getPredictionAddress(prediction),
       origin: placeOrigin(prediction),
       bounds: placeBounds(prediction),
+      ...(taxLocation ? { taxLocation } : {}),
     });
   }
 }

@@ -4,7 +4,7 @@
  * It's also handled separately in handleSubmit function.
  */
 import React, { Component } from 'react';
-import { Form as FinalForm, FormSpy } from 'react-final-form';
+import { Form as FinalForm } from 'react-final-form';
 import arrayMutators from 'final-form-arrays';
 import classNames from 'classnames';
 
@@ -473,8 +473,6 @@ class StripePaymentForm extends Component {
       defaultPaymentMethod,
       listingLocation,
       askShippingDetails,
-      askTaxAddress,
-      onFormValuesChange,
       showLocation,
       showPickUpLocation,
       totalPrice,
@@ -593,12 +591,6 @@ class StripePaymentForm extends Component {
 
     return hasStripeKey ? (
       <Form className={classes} onSubmit={handleSubmit} enforcePagePreloadFor="OrderDetailsPage">
-        {onFormValuesChange ? (
-          <FormSpy
-            subscription={{ values: true }}
-            onChange={({ values: spyValues }) => onFormValuesChange(spyValues)}
-          />
-        ) : null}
         <LocationOrShippingDetails
           askShippingDetails={askShippingDetails}
           showPickUpLocation={showPickUpLocation}
@@ -691,22 +683,6 @@ class StripePaymentForm extends Component {
                   placeholder={billingDetailsNamePlaceholder}
                 />
 
-                {billingAddress}
-              </div>
-            ) : null}
-
-            {/* Stripe Tax: the customer's tax address is derived from the billing
-                address fields. When a saved card is used, those fields are not
-                rendered above — collect the address separately so every checkout
-                has a tax address. */}
-            {askTaxAddress && !showOnetimePaymentFields ? (
-              <div className={css.billingDetails}>
-                <Heading as="h3" rootClassName={css.heading}>
-                  <FormattedMessage id="StripePaymentForm.taxAddressHeading" />
-                </Heading>
-                <p className={css.paymentInfo}>
-                  <FormattedMessage id="StripePaymentForm.taxAddressInfo" />
-                </p>
                 {billingAddress}
               </div>
             ) : null}

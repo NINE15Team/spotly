@@ -259,9 +259,9 @@ exports.transactionLineItems = (listing, orderData, providerCommission, customer
  * - subscription-rental first payment via the subscription branch inside
  *   transactionLineItems (orderData.processAlias)
  *
- * The customer's tax address travels in orderData (taxAddress or
- * protectedData.taxAddress). If tax is disabled, no address is available, or
- * Stripe returns $0, the original line items are returned unchanged.
+ * Tax is sourced from the listing (facility) address. If tax is disabled, no
+ * usable listing address exists, or Stripe returns $0, the original line items
+ * are returned unchanged.
  *
  * @param {Object} listing
  * @param {Object} orderData
@@ -289,9 +289,8 @@ exports.transactionLineItemsWithTax = async (
 
   const taxResult = await calculateSalesTax({
     lineItems,
-    orderData,
+    listing,
     currency,
-    listingId: listing?.id?.uuid,
   });
 
   return {

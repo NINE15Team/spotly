@@ -4,7 +4,7 @@ const { Money } = types;
 const log = require('../log');
 const { getStripe, isStripeConfigured } = require('./stripeClient');
 const { calculateLineTotal } = require('./lineItemHelpers');
-const { getTaxAddressFromOrderData } = require('./taxAddress');
+const { getTaxAddressFromListing } = require('./taxAddress');
 
 const LINE_ITEM_SALES_TAX = 'line-item/sales-tax';
 
@@ -52,30 +52,30 @@ const getTaxableSubtotal = lineItems =>
   );
 
 /**
- * Call Stripe Tax Calculation API for the given line items and customer address.
+ * Call Stripe Tax Calculation API for the given line items and listing address.
  *
- * Returns null when tax is disabled, no usable address exists, or the taxable
- * subtotal is zero. Stripe returning $0 (e.g. no registration in the customer's
- * state) is logged loudly so it is not mistaken for "tax is working".
+ * Returns null when tax is disabled, no usable listing address exists, or the
+ * taxable subtotal is zero. Stripe returning $0 (e.g. no registration in the
+ * listing's state) is logged loudly so it is not mistaken for "tax is working".
  *
  * NOTE: Failure mode is fail-open — a Stripe Tax outage logs an error and the
  * checkout proceeds without a tax line, rather than blocking the payment.
  *
  * @param {Object} params
  * @param {Array} params.lineItems computed transaction line items (pre-tax)
- * @param {Object} params.orderData order data carrying the customer's tax address
+ * @param {Object} params.listing listing entity (facility location for tax)
  * @param {string} params.currency e.g. 'USD'
- * @param {string} [params.listingId] used as the calculation line item reference
  * @returns {Promise<{taxAmountCents: number, calculationId: string, taxAddressSource: string}|null>}
  */
-const calculateSalesTax = async ({ lineItems, orderData, currency, listingId }) => {
+const calculateSalesTax = async ({ lineItems, listing, currency }) => {
   if (!isSalesTaxEnabled()) {
     return null;
   }
 
-  const taxAddress = getTaxAddressFromOrderData(orderData);
+  const listingId = listing?.id?.uuid || listing?.id;
+  const taxAddress = await getTaxAddressFromListing(listing);
   if (!taxAddress) {
-    log.warn('Sales tax skipped: no usable customer tax address in orderData.', {
+    log.warn('Sales tax skipped: no usable listing tax address.', {
       listingId,
     });
     return null;
@@ -88,6 +88,8 @@ const calculateSalesTax = async ({ lineItems, orderData, currency, listingId }) 
 
   try {
     const stripe = getStripe();
+    // Place of supply = facility. address_source shipping matches Stripe Tax's
+    // destination-style field; we pass the listing address as that location.
     const calculation = await stripe.tax.calculations.create({
       currency: currency.toLowerCase(),
       customer_details: {
@@ -97,7 +99,7 @@ const calculateSalesTax = async ({ lineItems, orderData, currency, listingId }) 
       line_items: [
         {
           amount: taxableSubtotal,
-          reference: listingId || 'order',
+          reference: typeof listingId === 'string' ? listingId : listingId?.uuid || 'order',
           tax_code: getTaxCode(),
         },
       ],
@@ -106,7 +108,7 @@ const calculateSalesTax = async ({ lineItems, orderData, currency, listingId }) 
     const taxAmountCents = calculation.tax_amount_exclusive;
 
     if (taxAmountCents === 0) {
-      // Most likely: no active Stripe Tax registration in the customer's state.
+      // Most likely: no active Stripe Tax registration in the listing's state.
       // Stripe returns $0 silently in that case — surface it in the logs.
       log.warn('Stripe Tax returned $0 — check registrations for this state.', {
         listingId,
@@ -114,6 +116,7 @@ const calculateSalesTax = async ({ lineItems, orderData, currency, listingId }) 
         country: taxAddress.address.country,
         postalCode: taxAddress.address.postal_code,
         calculationId: calculation.id,
+        taxAddressSource: taxAddress.source,
       });
     }
 
@@ -121,6 +124,8 @@ const calculateSalesTax = async ({ lineItems, orderData, currency, listingId }) 
       taxAmountCents,
       calculationId: calculation.id,
       taxAddressSource: taxAddress.source,
+      taxAddress: taxAddress.address,
+      taxLocationFields: taxAddress.taxLocationFields || null,
     };
   } catch (e) {
     log.error(e, 'stripe-tax-calculation-failed', { listingId });

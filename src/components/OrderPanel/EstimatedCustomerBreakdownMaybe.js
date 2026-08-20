@@ -30,7 +30,7 @@ import Decimal from 'decimal.js';
 
 import { types as sdkTypes } from '../../util/sdkLoader';
 import { FormattedMessage } from '../../util/reactIntl';
-import { LINE_ITEM_DAY, LINE_ITEM_NIGHT, LISTING_UNIT_TYPES } from '../../util/types';
+import { LINE_ITEM_DAY, LINE_ITEM_NIGHT, LINE_ITEM_SALES_TAX, LISTING_UNIT_TYPES } from '../../util/types';
 import { unitDivisor, convertMoneyToNumber, convertUnitToSubUnit } from '../../util/currency';
 import { getProcess, TX_TRANSITION_ACTOR_CUSTOMER } from '../../transactions/transaction';
 import { salesTaxEnabled } from '../../config/configStripe';
@@ -160,6 +160,13 @@ const EstimatedCustomerBreakdownMaybe = props => {
         )
       : null;
 
+  // Listing-based tax: estimates from /api/transaction-line-items include a real
+  // sales-tax line when the listing has a usable address. Show the placeholder
+  // only when tax is enabled but that line is still missing (e.g. geocode failed).
+  const hasSalesTaxLine = (lineItems || []).some(
+    item => item.code === LINE_ITEM_SALES_TAX && !item.reversal
+  );
+
   return tx ? (
     <OrderBreakdown
       className={css.receipt}
@@ -169,7 +176,7 @@ const EstimatedCustomerBreakdownMaybe = props => {
       timeZone={timeZone}
       currency={currency}
       marketplaceName={marketplaceName}
-      showEstimatedSalesTax={salesTaxEnabled}
+      showEstimatedSalesTax={salesTaxEnabled && !hasSalesTaxLine}
     />
   ) : null;
 };

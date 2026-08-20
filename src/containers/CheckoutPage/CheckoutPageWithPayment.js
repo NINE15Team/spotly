@@ -38,7 +38,6 @@ import {
   getBillingDetails,
   getFormattedTotalPrice,
   getShippingDetailsMaybe,
-  getTaxAddressMaybe,
   getTransactionTypeData,
   hasDefaultPaymentMethod,
   hasPaymentExpired,
@@ -122,7 +121,6 @@ const getOrderParams = (
   config,
   transactionFieldProtectedData,
   customerDefaultMessage,
-  taxAddressMaybe = {}
   participants,
   primaryPandadocDocumentId
 ) => {
@@ -147,15 +145,13 @@ const getOrderParams = (
   const participantsMaybe = participants?.length ? { participants } : {};
   const primaryDocumentMaybe = primaryPandadocDocumentId ? { primaryPandadocDocumentId } : {};
 
+  // Sales tax is sourced from the listing (facility) address server-side —
+  // no customer taxAddress is collected or stored on the transaction.
   const protectedDataMaybe = {
     protectedData: {
       ...getTransactionTypeData(listingType, unitType, config),
       ...deliveryMethodMaybe,
       ...shippingDetails,
-      // Customer's tax address for Stripe Tax (customer-address sourcing).
-      // Carried in protectedData so it reaches the server before line items
-      // are computed, and stays on the transaction for subscription renewals.
-      ...taxAddressMaybe,
       ...priceVariantMaybe,
       ...transactionFieldProtectedData,
       ...customerDefaultMessageMaybe,
@@ -348,8 +344,6 @@ const handleSubmit = (values, process, props, stripe, submitting, setSubmitting)
       ? { setupPaymentMethodForSaving: true }
       : {};
 
-  // Customer's tax address for Stripe Tax (from shipping details or billing address)
-  const taxAddressMaybe = config.stripe?.salesTaxEnabled ? getTaxAddressMaybe(formValues) : {};
   // Multi-participant waiver signing: build the participant records from the
   // checkout form. Applies to both booking and subscription. When the primary
   // has signed inline, carry their PandaDoc document id + signed status through.
@@ -381,7 +375,6 @@ const handleSubmit = (values, process, props, stripe, submitting, setSubmitting)
     config,
     transactionFieldsProtectedData,
     message,
-    taxAddressMaybe
     showWaiver ? participants : null,
     primaryPandadocDocumentId
   );
@@ -474,11 +467,6 @@ export const CheckoutPageWithPayment = props => {
   const [submitting, setSubmitting] = useState(false);
   // Initialized stripe library is saved to state - if it's needed at some point here too.
   const [stripe, setStripe] = useState(null);
-  // Customer tax address tracking (Stripe Tax, customer-address sourcing):
-  // when the address in the payment form becomes complete or changes, the
-  // speculative transaction is re-fetched so the breakdown shows the tax line.
-  const taxAddressRef = useRef(null);
-  const taxAddressDebounceRef = useRef(null);
 
   // Multi-participant waiver signing (PandaDoc). Client-only feature gate — safe
   // to load with a mount effect (it renders content client-side only).
@@ -527,33 +515,6 @@ export const CheckoutPageWithPayment = props => {
     config,
     fetchSpeculatedTransaction,
   } = props;
-
-  const isTaxEnabled = !!config.stripe?.salesTaxEnabled;
-
-  // Called (via FormSpy) whenever the payment form values change. When the
-  // customer's tax address becomes complete or changes, re-fetch the
-  // speculative transaction so the order breakdown includes the sales-tax
-  // line item before the customer submits the payment.
-  const handlePaymentFormValuesChange = formValues => {
-    if (!isTaxEnabled || !fetchSpeculatedTransaction) {
-      return;
-    }
-    const { taxAddress = null } = getTaxAddressMaybe(formValues);
-    const key = JSON.stringify(taxAddress);
-    if (key === JSON.stringify(taxAddressRef.current)) {
-      return;
-    }
-    taxAddressRef.current = taxAddress;
-
-    if (taxAddressDebounceRef.current) {
-      clearTimeout(taxAddressDebounceRef.current);
-    }
-    taxAddressDebounceRef.current = setTimeout(() => {
-      const taxAddressMaybe = taxAddress ? { taxAddress } : {};
-      const orderParams = getOrderParams(pageData, {}, {}, config, {}, null, taxAddressMaybe);
-      fetchSpeculatedTransactionIfNeeded(orderParams, pageData, fetchSpeculatedTransaction);
-    }, 700);
-  };
 
   // Since the listing data is already given from the ListingPage
   // and stored to handle refreshes, it might not have the possible
@@ -772,8 +733,6 @@ export const CheckoutPageWithPayment = props => {
                   return onStripeInitialized(stripe, process, props);
                 }}
                 askShippingDetails={askShippingDetails}
-                askTaxAddress={isTaxEnabled}
-                onFormValuesChange={handlePaymentFormValuesChange}
                 showPickUpLocation={showPickUpLocation}
                 showLocation={showLocation}
                 listingLocation={listingLocation}

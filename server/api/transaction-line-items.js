@@ -26,8 +26,8 @@ module.exports = (req, res) => {
       const processAlias =
         orderData?.processAlias || listing.attributes?.publicData?.transactionProcessAlias;
 
-      // Includes the sales-tax line item when tax is enabled and orderData
-      // carries the customer's tax address (Stripe Tax, customer-address sourcing).
+      // Includes the sales-tax line item when tax is enabled and the listing
+      // has a usable facility address (Stripe Tax, listing-address sourcing).
       return transactionLineItemsWithTax(
         listing,
         { ...orderData, processAlias },

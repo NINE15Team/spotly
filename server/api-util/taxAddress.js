@@ -1,22 +1,27 @@
-const TAX_ADDRESS_SOURCE_CUSTOMER = 'customer_address';
+const log = require('../log');
+const {
+  TAX_ADDRESS_SOURCE_LISTING,
+  TAX_ADDRESS_SOURCE_LISTING_GEOCODE,
+  pickUsableTaxLocationFields,
+  stripeAddressFromListingLocation,
+  reverseGeocodeListingLocation,
+} = require('./listingTaxLocation');
+const {
+  isIntegrationSdkConfigured,
+  updateListingPublicDataLocation,
+} = require('./integrationSdk');
 
 /**
  * Tax address resolution for Stripe Tax.
  *
- * Spotly sources sales tax to the CUSTOMER (renter) address — destination-based
- * sourcing. The address is collected on the checkout page and carried in
- * orderData / protectedData so it is available server-side at line-item time
- * (both for the speculative breakdown and the real transition).
- *
- * NOTE: This deliberately differs from implementations that source tax to the
- * provider/listing location. See docs/stripe-tax-integration.md §3.
+ * Spotly sources sales tax to the LISTING (facility) address — origin / place-of-
+ * supply for parking and storage rentals. Structured fields live on
+ * listing.publicData.location; legacy listings without them are reverse-geocoded
+ * from geolocation and written back via the Integration API.
  */
 
 /**
  * Normalize a loosely-shaped address object into Stripe's address format.
- * Accepts keys from the checkout billing address form (addressLine1, postal, ...),
- * the shipping details object (line1, postalCode, ...), or an already-normalized
- * Stripe address (line1, postal_code, ...).
  *
  * @param {Object} addr
  * @returns {Object|null} Stripe-shaped address or null
@@ -39,7 +44,7 @@ const normalizeAddress = addr => {
     ...(city ? { city } : {}),
     ...(state ? { state } : {}),
     ...(postalCode ? { postal_code: postalCode } : {}),
-    ...(country ? { country } : {}),
+    ...(country ? { country: String(country).toUpperCase() } : {}),
   };
 };
 
@@ -54,20 +59,92 @@ const isUsableTaxAddress = address =>
   Boolean(address && address.country && address.postal_code);
 
 /**
- * Resolve the customer's tax address from orderData.
+ * Best-effort: merge reverse-geocoded tax fields onto the listing so later
+ * checkouts skip the geocode call. Never throws.
+ *
+ * @param {Object} listing
+ * @param {Object} taxLocationFields { country, postalCode, ... }
+ */
+const persistListingTaxLocation = async (listing, taxLocationFields) => {
+  if (!taxLocationFields || !isIntegrationSdkConfigured()) {
+    return;
+  }
+  const listingId = listing?.id?.uuid || listing?.id;
+  if (!listingId) {
+    return;
+  }
+  try {
+    const existing = listing?.attributes?.publicData?.location || {};
+    const { address, building } = existing;
+    const usable = pickUsableTaxLocationFields(taxLocationFields);
+    if (!usable) {
+      return;
+    }
+    const location = {
+      ...(address != null ? { address } : {}),
+      ...(building != null ? { building } : {}),
+      ...usable,
+    };
+    await updateListingPublicDataLocation(listingId, location);
+    log.info('Listing tax location persisted after reverse geocode', {
+      listingId: typeof listingId === 'string' ? listingId : listingId?.uuid,
+      country: usable.country,
+      postalCode: usable.postalCode,
+    });
+  } catch (e) {
+    log.error(e, 'listing-tax-location-write-back-failed', {
+      listingId: listing?.id?.uuid || listing?.id,
+    });
+  }
+};
+
+/**
+ * Resolve the facility tax address from a listing.
  *
  * Priority:
- * 1. Explicit tax address (orderData.taxAddress or protectedData.taxAddress) —
- *    set by the checkout page from the billing address fields.
- * 2. Shipping details recipient address (protectedData.shippingDetails.address) —
- *    used when the delivery method is shipping (default-purchase style checkouts).
+ * 1. Structured fields on listing.publicData.location (country + postalCode)
+ * 2. Reverse-geocode listing.attributes.geolocation, then best-effort write-back
  *
- * @param {Object} orderData full order data available in the privileged line-item flow
- * @returns {Object|null} { address, source } or null when no usable address exists
+ * Customer checkout taxAddress is intentionally ignored (parking/storage place of supply).
+ *
+ * @param {Object} listing
+ * @returns {Promise<{ address: Object, source: string, taxLocationFields?: Object }|null>}
+ */
+const getTaxAddressFromListing = async listing => {
+  const location = listing?.attributes?.publicData?.location;
+  const fromPublicData = stripeAddressFromListingLocation(location);
+  if (isUsableTaxAddress(fromPublicData)) {
+    return {
+      address: fromPublicData,
+      source: TAX_ADDRESS_SOURCE_LISTING,
+      taxLocationFields: pickUsableTaxLocationFields(location),
+    };
+  }
+
+  const geolocation = listing?.attributes?.geolocation;
+  const taxLocationFields = await reverseGeocodeListingLocation(geolocation);
+  const fromGeocode = stripeAddressFromListingLocation(taxLocationFields);
+  if (!isUsableTaxAddress(fromGeocode)) {
+    return null;
+  }
+
+  // Fire-and-forget persist; do not await failures into the tax path beyond this call.
+  await persistListingTaxLocation(listing, taxLocationFields);
+
+  return {
+    address: fromGeocode,
+    source: TAX_ADDRESS_SOURCE_LISTING_GEOCODE,
+    taxLocationFields,
+  };
+};
+
+/**
+ * @deprecated Customer-address sourcing — kept for tests/compat; prefer getTaxAddressFromListing.
+ * @param {Object} orderData
+ * @returns {Object|null}
  */
 const getTaxAddressFromOrderData = orderData => {
   const protectedData = orderData?.protectedData || {};
-
   const candidates = [
     orderData?.taxAddress,
     protectedData.taxAddress,
@@ -77,7 +154,7 @@ const getTaxAddressFromOrderData = orderData => {
   for (const candidate of candidates) {
     const address = normalizeAddress(candidate);
     if (isUsableTaxAddress(address)) {
-      return { address, source: TAX_ADDRESS_SOURCE_CUSTOMER };
+      return { address, source: 'customer_address' };
     }
   }
 
@@ -85,8 +162,11 @@ const getTaxAddressFromOrderData = orderData => {
 };
 
 module.exports = {
-  TAX_ADDRESS_SOURCE_CUSTOMER,
+  TAX_ADDRESS_SOURCE_LISTING,
+  TAX_ADDRESS_SOURCE_LISTING_GEOCODE,
   normalizeAddress,
   isUsableTaxAddress,
+  getTaxAddressFromListing,
   getTaxAddressFromOrderData,
+  persistListingTaxLocation,
 };

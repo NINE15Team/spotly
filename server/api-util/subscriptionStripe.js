@@ -292,6 +292,7 @@ const createStripeSubscription = async ({
   bookingStart,
   sharetribeTransactionId,
   taxAddress,
+  listingTitle,
 }) => {
   const stripe = getStripe();
   const startMoment = moment(bookingStart);
@@ -311,26 +312,44 @@ const createStripeSubscription = async ({
     resolvedCustomerId = customerId;
   }
 
-  // Stripe Tax on renewals (automatic_tax) needs a tax location on the Customer.
-  // The address is the renter's tax address collected at checkout, carried in the
-  // transaction's protectedData (same address used for the first-period tax).
+  // Stripe Tax on renewals (automatic_tax) needs a tax location. Use the listing
+  // (facility) address via Customer.shipping so we do not overwrite Customer.address
+  // (a renter may have units in different states). Store the same fields on
+  // subscription metadata for auditability.
   const normalizedTaxAddress = normalizeAddress(taxAddress);
   const hasTaxLocation = isUsableTaxAddress(normalizedTaxAddress);
   const useAutomaticTax = isSalesTaxEnabled() && hasTaxLocation;
 
   await stripe.customers.update(resolvedCustomerId, {
     invoice_settings: { default_payment_method: paymentMethodId },
-    ...(useAutomaticTax ? { address: normalizedTaxAddress } : {}),
+    ...(useAutomaticTax
+      ? {
+          shipping: {
+            name: listingTitle || 'Listing',
+            address: normalizedTaxAddress,
+          },
+        }
+      : {}),
   });
 
   if (isSalesTaxEnabled() && !hasTaxLocation) {
     // Renewals would fail or bill without tax if automatic_tax is on without a
     // customer location — fall back to no automatic tax, but log loudly.
     log.warn(
-      'Stripe subscription created WITHOUT automatic tax: no usable tax address on transaction.',
+      'Stripe subscription created WITHOUT automatic tax: no usable listing tax address.',
       { sharetribeTransactionId }
     );
   }
+
+  const taxMetadataMaybe = useAutomaticTax
+    ? {
+        taxCountry: normalizedTaxAddress.country || '',
+        taxPostalCode: normalizedTaxAddress.postal_code || '',
+        taxState: normalizedTaxAddress.state || '',
+        taxCity: normalizedTaxAddress.city || '',
+        taxLine1: normalizedTaxAddress.line1 || '',
+      }
+    : {};
 
   return stripe.subscriptions.create({
     customer: resolvedCustomerId,
@@ -344,6 +363,7 @@ const createStripeSubscription = async ({
     ...(useAutomaticTax ? { automatic_tax: { enabled: true } } : {}),
     metadata: {
       sharetribeTransactionId,
+      ...taxMetadataMaybe,
     },
   });
 };

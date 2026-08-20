@@ -2,7 +2,15 @@ jest.mock('./stripeClient', () => ({
   getStripe: jest.fn(),
 }));
 
+jest.mock('./tax', () => ({
+  isSalesTaxEnabled: jest.fn(() => false),
+  getTaxCode: jest.fn(() => 'txcd_99999999'),
+}));
+
+jest.mock('../log', () => ({ error: jest.fn(), info: jest.fn(), warn: jest.fn() }));
+
 const { getStripe } = require('./stripeClient');
+const { isSalesTaxEnabled } = require('./tax');
 const {
   getPaymentIntentIdFromClientSecret,
   getPaymentIntentIdFromProtectedData,
@@ -140,6 +148,7 @@ describe('createMonthlyStripePrice', () => {
 describe('createStripeSubscription', () => {
   let stripe;
   beforeEach(() => {
+    isSalesTaxEnabled.mockReturnValue(false);
     stripe = {
       paymentMethods: {
         retrieve: jest.fn(),
@@ -207,6 +216,48 @@ describe('createStripeSubscription', () => {
       })
     );
     expect(result.id).toBe('sub_123');
+  });
+
+  it('sets listing tax address on customer shipping and enables automatic_tax', async () => {
+    isSalesTaxEnabled.mockReturnValue(true);
+    stripe.paymentMethods.retrieve.mockResolvedValue({ id: 'pm_1', customer: null });
+    const bookingStart = new Date(2026, 1, 15);
+    const taxAddress = {
+      line1: '1 Main St',
+      city: 'Lansing',
+      state: 'MI',
+      postal_code: '48933',
+      country: 'US',
+    };
+
+    await createStripeSubscription({
+      customerId: 'cus_1',
+      priceId: 'price_1',
+      paymentMethodId: 'pm_1',
+      bookingStart,
+      sharetribeTransactionId: 'tx-1',
+      taxAddress,
+      listingTitle: 'Downtown Spot',
+    });
+
+    expect(stripe.customers.update).toHaveBeenCalledWith('cus_1', {
+      invoice_settings: { default_payment_method: 'pm_1' },
+      shipping: {
+        name: 'Downtown Spot',
+        address: taxAddress,
+      },
+    });
+    expect(stripe.subscriptions.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        automatic_tax: { enabled: true },
+        metadata: expect.objectContaining({
+          sharetribeTransactionId: 'tx-1',
+          taxCountry: 'US',
+          taxPostalCode: '48933',
+          taxState: 'MI',
+        }),
+      })
+    );
   });
 });
 

@@ -4,6 +4,7 @@ import classNames from 'classnames';
 // Import configs and util modules
 import { FormattedMessage } from '../../../../util/reactIntl';
 import { LISTING_STATE_DRAFT } from '../../../../util/types';
+import { mergeLocationWithTaxFields } from '../../../../util/listingTaxLocation';
 
 // Import shared components
 import { H3, ListingLink } from '../../../../components';
@@ -101,14 +102,23 @@ const EditListingLocationPanel = props => {
         onSubmit={values => {
           const { building = '', location } = values;
           const {
-            selectedPlace: { address, origin },
+            selectedPlace: { address, origin, taxLocation = null },
           } = location;
+
+          // Persist structured tax fields (country, postalCode, ...) from the
+          // map picker when available. Missing fields are omitted so the server
+          // can reverse-geocode legacy / coarse picks on first tax calc.
+          // Always overwrite previous tax fields when the pin changes.
+          const locationForPublicData = mergeLocationWithTaxFields(
+            { address, building },
+            taxLocation
+          );
 
           // New values for listing attributes
           const updateValues = {
             geolocation: origin,
             publicData: {
-              location: { address, building },
+              location: locationForPublicData,
             },
           };
           // Save the initialValues to state
@@ -117,7 +127,10 @@ const EditListingLocationPanel = props => {
           setState({
             initialValues: {
               building,
-              location: { search: address, selectedPlace: { address, origin } },
+              location: {
+                search: address,
+                selectedPlace: { address, origin, ...(taxLocation ? { taxLocation } : {}) },
+              },
             },
           });
           onSubmit(updateValues);

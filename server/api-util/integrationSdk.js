@@ -135,6 +135,31 @@ const showListing = listingId => {
 };
 
 /**
+ * Update listing publicData.location (operator). Used to persist reverse-geocoded
+ * tax fields onto legacy listings after the first Stripe Tax calculation.
+ *
+ * @param {UUID|string|Object} listingId
+ * @param {Object} location publicData.location object (address, building, country, ...)
+ */
+const updateListingPublicDataLocation = (listingId, location) => {
+  const integrationSdk = getIntegrationSdk();
+  const id = normalizeUuid(listingId);
+  if (!id) {
+    const error = new Error('Invalid listing id for Integration API listing update.');
+    error.status = 400;
+    throw error;
+  }
+  return integrationSdk.listings.update({
+    id,
+    data: {
+      publicData: {
+        location,
+      },
+    },
+  });
+};
+
+/**
  * Find transaction by Stripe subscription id stored in metadata.
  */
 const findTransactionByStripeSubscriptionId = async stripeSubscriptionId => {
@@ -202,6 +227,7 @@ module.exports = {
   transitionTransaction,
   showTransaction,
   showListing,
+  updateListingPublicDataLocation,
   updateTransactionMetadata,
   findTransactionByStripeSubscriptionId,
   findActiveSubscriptionForListing,

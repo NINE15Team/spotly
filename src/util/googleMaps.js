@@ -1,4 +1,5 @@
 import { types as sdkTypes } from '../util/sdkLoader';
+import { taxLocationFromGoogleAddressComponents } from './listingTaxLocation';
 
 const { LatLng: SDKLatLng, LatLngBounds: SDKLatLngBounds } = sdkTypes;
 
@@ -58,10 +59,12 @@ export const getPlaceDetails = async placeId => {
 
     await place.fetchFields({ fields: fields });
 
+    const taxLocation = taxLocationFromGoogleAddressComponents(place.addressComponents);
     return {
       address: place.formattedAddress,
       origin: placeOrigin(place),
       bounds: placeBounds(place),
+      ...(taxLocation ? { taxLocation } : {}),
     };
   } catch (error) {
     if (isDev) {
