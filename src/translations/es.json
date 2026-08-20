@@ -774,6 +774,8 @@
   "OrderBreakdown.refund": "Reembolso",
   "OrderBreakdown.refundCustomerFee": "Tarifa de reembolso de {marketplaceName}",
   "OrderBreakdown.refundProviderFee": "Tarifa de reembolso de {marketplaceName}",
+  "OrderBreakdown.salesTax": "Impuesto sobre las ventas",
+  "OrderBreakdown.salesTaxCalculatedAtCheckout": "Se calcula al finalizar la compra",
   "OrderBreakdown.shippingFee": "Envío",
   "OrderBreakdown.subTotal": "Subtotal",
   "OrderBreakdown.total": "Costo total",

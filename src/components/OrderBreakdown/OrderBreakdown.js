@@ -28,6 +28,7 @@ import LineItemCustomerCommissionRefundMaybe from './LineItemCustomerCommissionR
 import LineItemProviderCommissionMaybe from './LineItemProviderCommissionMaybe';
 import LineItemProviderCommissionRefundMaybe from './LineItemProviderCommissionRefundMaybe';
 import LineItemRefundMaybe from './LineItemRefundMaybe';
+import LineItemSalesTaxMaybe from './LineItemSalesTaxMaybe';
 import LineItemTotalPrice from './LineItemTotalPrice';
 import LineItemUnknownItemsMaybe from './LineItemUnknownItemsMaybe';
 
@@ -43,6 +44,7 @@ export const OrderBreakdownComponent = props => {
     timeZone,
     currency,
     marketplaceName,
+    showEstimatedSalesTax = false,
     intl,
   } = props;
 
@@ -158,6 +160,13 @@ export const OrderBreakdownComponent = props => {
         intl={intl}
       />
 
+      <LineItemSalesTaxMaybe
+        lineItems={lineItems}
+        isCustomer={isCustomer}
+        showEstimate={showEstimatedSalesTax}
+        intl={intl}
+      />
+
       <LineItemTotalPrice transaction={transaction} isProvider={isProvider} intl={intl} />
 
       {hasCommissionLineItem ? (
@@ -183,6 +192,7 @@ export const OrderBreakdownComponent = props => {
  * @param {propTypes.transaction} props.transaction
  * @param {propTypes.booking?} props.booking
  * @param {DATE_TYPE_DATE | DATE_TYPE_TIME | DATE_TYPE_DATETIME} props.dateType
+ * @param {boolean} [props.showEstimatedSalesTax] show a "calculated at checkout" tax row when tax isn't computed yet
  * @returns {JSX.Element} the order breakdown component
  */
 const OrderBreakdown = props => {

@@ -774,6 +774,8 @@
   "OrderBreakdown.refund": "Erstattung",
   "OrderBreakdown.refundCustomerFee": "{marketplaceName}-Gebühr zurückerstatten",
   "OrderBreakdown.refundProviderFee": "{marketplaceName}-Gebühr zurückerstatten",
+  "OrderBreakdown.salesTax": "Umsatzsteuer",
+  "OrderBreakdown.salesTaxCalculatedAtCheckout": "Wird an der Kasse berechnet",
   "OrderBreakdown.shippingFee": "Versand",
   "OrderBreakdown.subTotal": "Zwischensumme",
   "OrderBreakdown.total": "Gesamtpreis",

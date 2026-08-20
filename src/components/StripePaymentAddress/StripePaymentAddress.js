@@ -84,7 +84,11 @@ const StripePaymentAddress = props => {
   const handleOnChange = event => {
     const value = event.target.value;
     form.change('postal', value);
-    card.update({ value: { postalCode: value } });
+    // card is not available when a saved payment method is used and the address
+    // is collected only as the tax address (Stripe Tax).
+    if (card) {
+      card.update({ value: { postalCode: value } });
+    }
   };
 
   // Use the language set in config.localization.locale to get the correct translations of the country names

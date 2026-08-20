@@ -8,6 +8,7 @@ import {
   propTypes,
   LINE_ITEM_CUSTOMER_COMMISSION,
   LINE_ITEM_PROVIDER_COMMISSION,
+  LINE_ITEM_SALES_TAX,
 } from '../../util/types';
 
 import css from './OrderBreakdown.module.css';
@@ -36,10 +37,13 @@ const isCommission = lineItem => {
 };
 
 /**
- * Returns non-commission, non-reversal line items
+ * Returns non-commission, non-reversal line items.
+ * Sales tax is also excluded — the subtotal is the pre-tax amount.
  */
 const nonCommissionNonReversalLineItems = lineItems => {
-  return lineItems.filter(item => !isCommission(item) && !item.reversal);
+  return lineItems.filter(
+    item => !isCommission(item) && item.code !== LINE_ITEM_SALES_TAX && !item.reversal
+  );
 };
 
 /**

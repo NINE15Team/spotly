@@ -85,7 +85,11 @@ describe('POST /api/stripe-webhooks', () => {
 
     await stripeWebhooks(makeReq(), res);
 
-    expect(handleInvoicePaid).toHaveBeenCalledWith('sub_1');
+    // The invoice is passed along so its tax breakdown can be persisted.
+    expect(handleInvoicePaid).toHaveBeenCalledWith(
+      'sub_1',
+      expect.objectContaining({ subscription: 'sub_1' })
+    );
     expect(res.json).toHaveBeenCalledWith({ received: true });
   });
 
@@ -98,7 +102,10 @@ describe('POST /api/stripe-webhooks', () => {
 
     await stripeWebhooks(makeReq(), res);
 
-    expect(handleInvoicePaid).toHaveBeenCalledWith('sub_2');
+    expect(handleInvoicePaid).toHaveBeenCalledWith(
+      'sub_2',
+      expect.objectContaining({ subscription: { id: 'sub_2' } })
+    );
   });
 
   it('marks payment overdue on invoice.payment_failed', async () => {

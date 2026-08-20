@@ -1,5 +1,6 @@
 const sharetribeSdk = require('sharetribe-flex-sdk');
-const { transactionLineItems } = require('../api-util/lineItems');
+const { transactionLineItemsWithTax } = require('../api-util/lineItems');
+const { updatePaymentIntentTaxMetadata } = require('../api-util/tax');
 const {
   addOfferToMetadata,
   getAmountFromPreviousOffer,
@@ -119,6 +120,7 @@ module.exports = (req, res) => {
   const sdk = getSdk(req, res);
   const transitionName = bodyParams.transition;
   let lineItems = null;
+  let taxCalculationId = null;
   let metadataMaybe = {};
 
   Promise.all([transactionPromise(sdk, bodyParams?.id), fetchCommission(sdk)])
@@ -145,7 +147,10 @@ module.exports = (req, res) => {
       const processAlias =
         listing?.attributes?.publicData?.transactionProcessAlias || orderData?.processAlias;
 
-      lineItems = transactionLineItems(
+      metadataMaybe = getUpdatedMetadata(orderData, transitionName, existingMetadata);
+
+      // Line items + sales-tax line item (Stripe Tax, customer-address sourcing).
+      return transactionLineItemsWithTax(
         listing,
         {
           ...getFullOrderData(orderData, bodyParams, currency, existingOffers),
@@ -154,8 +159,10 @@ module.exports = (req, res) => {
         providerCommission,
         customerCommission
       );
-
-      metadataMaybe = getUpdatedMetadata(orderData, transitionName, existingMetadata);
+    })
+    .then(lineItemsResult => {
+      lineItems = lineItemsResult.lineItems;
+      taxCalculationId = lineItemsResult.taxCalculationId;
 
       return getTrustedSdk(req);
     })
@@ -185,8 +192,16 @@ module.exports = (req, res) => {
       }
       return trustedSdk.transactions.transition(body, queryParams);
     })
-    .then(apiResponse => {
+    .then(async apiResponse => {
       const { status, statusText, data } = apiResponse;
+
+      // Write the Stripe Tax calculation id onto the PaymentIntent metadata so
+      // the payment_intent.succeeded webhook can record a filable tax transaction.
+      // Best-effort: never fails the transition.
+      if (!isSpeculative && taxCalculationId) {
+        await updatePaymentIntentTaxMetadata({ transaction: data?.data, taxCalculationId });
+      }
+
       res
         .status(status)
         .set('Content-Type', 'application/transit+json')

@@ -1,4 +1,4 @@
-const { transactionLineItems } = require('../api-util/lineItems');
+const { transactionLineItemsWithTax } = require('../api-util/lineItems');
 const { getSdk, handleError, serialize, fetchCommission } = require('../api-util/sdk');
 const { constructValidLineItems } = require('../api-util/lineItemHelpers');
 
@@ -26,13 +26,16 @@ module.exports = (req, res) => {
       const processAlias =
         orderData?.processAlias || listing.attributes?.publicData?.transactionProcessAlias;
 
-      const lineItems = transactionLineItems(
+      // Includes the sales-tax line item when tax is enabled and orderData
+      // carries the customer's tax address (Stripe Tax, customer-address sourcing).
+      return transactionLineItemsWithTax(
         listing,
         { ...orderData, processAlias },
         providerCommission,
         customerCommission
       );
-
+    })
+    .then(({ lineItems }) => {
       // Because we are using returned lineItems directly in this template we need to use the helper function
       // to add some attributes like lineTotal and reversal that Marketplace API also adds to the response.
       const validLineItems = constructValidLineItems(lineItems);

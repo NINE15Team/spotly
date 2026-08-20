@@ -6,6 +6,7 @@ const {
   handleInvoicePaymentFailed,
   handleSubscriptionDeleted,
 } = require('../api-util/subscriptionService');
+const { recordTaxTransactionFromPaymentIntent } = require('../api-util/tax');
 
 const getSubscriptionIdFromInvoice = invoice => {
   const subscription = invoice.subscription;
@@ -47,8 +48,19 @@ module.exports = async (req, res) => {
         }
         const subscriptionId = getSubscriptionIdFromInvoice(invoice);
         if (subscriptionId) {
-          await handleInvoicePaid(subscriptionId);
+          await handleInvoicePaid(subscriptionId, invoice);
         }
+        break;
+      }
+      case 'payment_intent.succeeded': {
+        // First-period / one-off payments: record a filable Stripe Tax
+        // transaction from the calculation id written on the PaymentIntent
+        // metadata by initiate-privileged / transition-privileged.
+        // No-op for PaymentIntents without taxCalculationId metadata
+        // (e.g. renewal invoice payments — Stripe Tax records those itself
+        // via automatic_tax).
+        const paymentIntent = event.data.object;
+        await recordTaxTransactionFromPaymentIntent(paymentIntent);
         break;
       }
       case 'invoice.payment_failed': {

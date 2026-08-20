@@ -5,18 +5,18 @@ jest.mock('../api-util/sdk', () => ({
   serialize: jest.fn(x => x),
   fetchCommission: jest.fn(),
 }));
-jest.mock('../api-util/lineItems', () => ({ transactionLineItems: jest.fn(() => ['li-booking']) }));
-jest.mock('../api-util/subscriptionLineItems', () => ({
-  subscriptionTransactionLineItems: jest.fn(() => ['li-subscription']),
+jest.mock('../api-util/lineItems', () => ({
+  transactionLineItemsWithTax: jest.fn(),
 }));
+jest.mock('../api-util/tax', () => ({ updatePaymentIntentTaxMetadata: jest.fn() }));
 jest.mock('../api-util/negotiation', () => ({ isIntentionToMakeOffer: jest.fn(() => false) }));
 jest.mock('../api-util/subscriptionService', () => ({ checkForExistingSubscription: jest.fn() }));
 jest.mock('../log', () => ({ error: jest.fn(), info: jest.fn(), warn: jest.fn() }));
 
 const { getSdk, getTrustedSdk, fetchCommission } = require('../api-util/sdk');
 const sdkModule = require('../api-util/sdk');
-const { transactionLineItems } = require('../api-util/lineItems');
-const { subscriptionTransactionLineItems } = require('../api-util/subscriptionLineItems');
+const { transactionLineItemsWithTax } = require('../api-util/lineItems');
+const { updatePaymentIntentTaxMetadata } = require('../api-util/tax');
 const { isIntentionToMakeOffer } = require('../api-util/negotiation');
 const { checkForExistingSubscription } = require('../api-util/subscriptionService');
 
@@ -80,8 +80,11 @@ describe('POST /api/initiate-privileged — subscription double-booking guard', 
     // resetMocks (jest config) clears implementations before every test.
     sdkModule.serialize.mockImplementation(x => x);
     isIntentionToMakeOffer.mockReturnValue(false);
-    transactionLineItems.mockReturnValue(['li-booking']);
-    subscriptionTransactionLineItems.mockReturnValue(['li-subscription']);
+    transactionLineItemsWithTax.mockResolvedValue({
+      lineItems: ['li-booking'],
+      taxCalculationId: null,
+    });
+    updatePaymentIntentTaxMetadata.mockResolvedValue(undefined);
     fetchCommission.mockResolvedValue(COMMISSION_RESPONSE);
     trustedSdk = {
       transactions: {
@@ -130,9 +133,13 @@ describe('POST /api/initiate-privileged — subscription double-booking guard', 
     );
   });
 
-  it('initiates a subscription with subscription line items when no active one exists', async () => {
+  it('initiates a subscription with computed line items when no active one exists', async () => {
     setupSdk();
     checkForExistingSubscription.mockResolvedValue(undefined);
+    transactionLineItemsWithTax.mockResolvedValue({
+      lineItems: ['li-subscription'],
+      taxCalculationId: null,
+    });
     const res = makeRes();
 
     initiatePrivileged(
@@ -142,8 +149,12 @@ describe('POST /api/initiate-privileged — subscription double-booking guard', 
     await drain();
 
     expect(checkForExistingSubscription).toHaveBeenCalledWith('cust-1', 'listing-1', 'subscription-rental');
-    expect(subscriptionTransactionLineItems).toHaveBeenCalled();
-    expect(transactionLineItems).not.toHaveBeenCalled();
+    expect(transactionLineItemsWithTax).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ processAlias: 'subscription-rental/release-5' }),
+      expect.anything(),
+      expect.anything()
+    );
     expect(trustedSdk.transactions.initiate).toHaveBeenCalledWith(
       expect.objectContaining({
         params: expect.objectContaining({ lineItems: ['li-subscription'] }),
@@ -177,8 +188,49 @@ describe('POST /api/initiate-privileged — subscription double-booking guard', 
     await drain();
 
     expect(checkForExistingSubscription).not.toHaveBeenCalled();
-    expect(transactionLineItems).toHaveBeenCalled();
-    expect(subscriptionTransactionLineItems).not.toHaveBeenCalled();
+    expect(transactionLineItemsWithTax).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ processAlias: 'default-booking/release-1' }),
+      expect.anything(),
+      expect.anything()
+    );
     expect(trustedSdk.transactions.initiate).toHaveBeenCalled();
+  });
+
+  it('updates PaymentIntent tax metadata after a non-speculative initiate with a tax calculation', async () => {
+    setupSdk();
+    checkForExistingSubscription.mockResolvedValue(undefined);
+    transactionLineItemsWithTax.mockResolvedValue({
+      lineItems: ['li-booking', 'li-tax'],
+      taxCalculationId: 'taxcalc_123',
+    });
+    const res = makeRes();
+
+    initiatePrivileged(
+      { body: makeBody({ isSpeculative: false, processAlias: 'default-booking/release-1' }) },
+      res
+    );
+    await drain();
+
+    expect(updatePaymentIntentTaxMetadata).toHaveBeenCalledWith(
+      expect.objectContaining({ taxCalculationId: 'taxcalc_123' })
+    );
+  });
+
+  it('does not touch PaymentIntent tax metadata for speculative requests', async () => {
+    setupSdk();
+    transactionLineItemsWithTax.mockResolvedValue({
+      lineItems: ['li-booking', 'li-tax'],
+      taxCalculationId: 'taxcalc_123',
+    });
+    const res = makeRes();
+
+    initiatePrivileged(
+      { body: makeBody({ isSpeculative: true, processAlias: 'default-booking/release-1' }) },
+      res
+    );
+    await drain();
+
+    expect(updatePaymentIntentTaxMetadata).not.toHaveBeenCalled();
   });
 });
