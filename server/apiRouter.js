@@ -30,6 +30,7 @@ const acceptSubscription = require('./api/accept-subscription');
 const declineSubscription = require('./api/decline-subscription');
 const cancelSubscription = require('./api/cancel-subscription');
 const billingPortal = require('./api/billing-portal');
+const subscriptionAvailability = require('./api/subscription-availability');
 const operatorAbortSubscription = require('./api/operator-abort-subscription');
 
 // Multi-participant waiver signing (PandaDoc)
@@ -85,6 +86,7 @@ router.post('/accept-subscription', acceptSubscription);
 router.post('/decline-subscription', declineSubscription);
 router.post('/cancel-subscription', cancelSubscription);
 router.post('/billing-portal', billingPortal);
+router.post('/subscription-availability', subscriptionAvailability);
 router.post('/operator-abort-subscription', operatorAbortSubscription);
 
 // Multi-participant waiver signing endpoints

@@ -646,31 +646,29 @@ describe('handleInvoicePaymentFailed — active-entry states', () => {
   });
 });
 
-// --- checkForExistingSubscription (double-booking guard) --------------------
+// --- checkForExistingSubscription (global exclusivity guard) --------------------
 describe('checkForExistingSubscription', () => {
   it('resolves without error when no active subscription exists', async () => {
     integrationSdk.findActiveSubscriptionForListing.mockResolvedValue(null);
 
     await expect(
-      checkForExistingSubscription('user-1', 'listing-1', 'subscription-rental')
+      checkForExistingSubscription('listing-1', 'subscription-rental')
     ).resolves.toBeUndefined();
   });
 
-  it('throws a 409 when an active subscription already exists for this listing', async () => {
+  it('throws a 409 when any active subscription already exists for this listing', async () => {
     integrationSdk.findActiveSubscriptionForListing.mockResolvedValue({
       id: { uuid: 'tx-existing' },
       attributes: { lastTransition: TRANSITIONS.CONFIRM_SUBSCRIPTION },
     });
 
-    const error = await checkForExistingSubscription(
-      'user-1',
-      'listing-1',
-      'subscription-rental'
-    ).catch(e => e);
+    const error = await checkForExistingSubscription('listing-1', 'subscription-rental').catch(
+      e => e
+    );
 
     expect(error).toBeInstanceOf(Error);
     expect(error.status).toBe(409);
-    expect(error.message).toMatch(/already have an active subscription/);
+    expect(error.message).toMatch(/already has an active subscription/);
     expect(error.existingTransactionId).toBe('tx-existing');
   });
 
@@ -681,7 +679,7 @@ describe('checkForExistingSubscription', () => {
     });
 
     await expect(
-      checkForExistingSubscription('user-1', 'listing-1', 'subscription-rental')
+      checkForExistingSubscription('listing-1', 'subscription-rental')
     ).rejects.toMatchObject({ status: 409 });
   });
 
@@ -692,17 +690,16 @@ describe('checkForExistingSubscription', () => {
     });
 
     await expect(
-      checkForExistingSubscription('user-1', 'listing-1', 'subscription-rental')
+      checkForExistingSubscription('listing-1', 'subscription-rental')
     ).rejects.toMatchObject({ status: 409 });
   });
 
   it('passes the correct arguments to findActiveSubscriptionForListing', async () => {
     integrationSdk.findActiveSubscriptionForListing.mockResolvedValue(null);
 
-    await checkForExistingSubscription('cust-abc', 'list-xyz', 'subscription-rental');
+    await checkForExistingSubscription('list-xyz', 'subscription-rental');
 
     expect(integrationSdk.findActiveSubscriptionForListing).toHaveBeenCalledWith(
-      'cust-abc',
       'list-xyz',
       'subscription-rental'
     );

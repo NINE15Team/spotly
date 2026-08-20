@@ -3,7 +3,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { types as sdkTypes, createImageVariantConfig } from '../../util/sdkLoader';
 import { storableError } from '../../util/errors';
 import { addMarketplaceEntities } from '../../ducks/marketplaceData.duck';
-import { transactionLineItems } from '../../util/api';
+import { transactionLineItems, subscriptionAvailability } from '../../util/api';
 import * as log from '../../util/log';
 import { denormalisedResponseEntities } from '../../util/data';
 import {
@@ -27,7 +27,6 @@ import {
   isBookingProcessAlias,
   isNegotiationProcessAlias,
   isSubscriptionProcessAlias,
-  SUBSCRIPTION_PROCESS_NAME,
   OFFER,
 } from '../../transactions/transaction';
 import { fetchCurrentUser, setCurrentUserHasOrders } from '../../ducks/user.duck';
@@ -364,35 +363,19 @@ export const fetchTransactionLineItemsThunk = createAsyncThunk(
   fetchTransactionLineItemsPayloadCreator
 );
 
-const SUBSCRIPTION_FINAL_TRANSITIONS = [
-  'transition/cancel-subscription',
-  'transition/cancel-subscription-from-overdue',
-  'transition/expire',
-  'transition/expire-payment',
-  'transition/decline-subscription',
-  'transition/expire-acceptance',
-  'transition/abort-subscription',
-];
-
-const checkActiveSubscriptionPayloadCreator = async (
-  { listingId },
-  { rejectWithValue, extra: sdk }
-) => {
+const checkActiveSubscriptionPayloadCreator = async ({ listingId }, { rejectWithValue }) => {
   try {
-    const response = await sdk.transactions.query({
-      listingId,
-      processNames: [SUBSCRIPTION_PROCESS_NAME],
-      only: 'order',
-      perPage: 10,
-    });
-
-    const active = (response?.data?.data || []).find(
-      tx => !SUBSCRIPTION_FINAL_TRANSITIONS.includes(tx.attributes?.lastTransition)
-    );
-
+    const response = await subscriptionAvailability({ listingId });
+    // Unavailable when any non-final subscription exists on the listing.
+    const hasActiveSubscription = response?.isAvailable === false;
+    const isCurrentUserSubscription = !!response?.isCurrentUserSubscription;
     return {
-      hasActiveSubscription: !!active,
-      activeSubscriptionId: active?.id?.uuid || null,
+      hasActiveSubscription,
+      isCurrentUserSubscription,
+      // Server only returns the id when the active subscription belongs to the caller.
+      activeSubscriptionId: isCurrentUserSubscription
+        ? response?.activeSubscriptionId || null
+        : null,
     };
   } catch (e) {
     return rejectWithValue(storableError(e));
@@ -439,6 +422,7 @@ const initialState = {
   sendInquiryError: null,
   inquiryModalOpenForListingId: null,
   hasActiveSubscription: false,
+  isCurrentUserSubscription: false,
   activeSubscriptionId: null,
   checkSubscriptionInProgress: false,
 };
@@ -567,11 +551,14 @@ const listingPageSlice = createSlice({
       .addCase(checkActiveSubscriptionThunk.fulfilled, (state, action) => {
         state.checkSubscriptionInProgress = false;
         state.hasActiveSubscription = action.payload.hasActiveSubscription;
+        state.isCurrentUserSubscription = action.payload.isCurrentUserSubscription;
         state.activeSubscriptionId = action.payload.activeSubscriptionId;
       })
       .addCase(checkActiveSubscriptionThunk.rejected, state => {
+        // Fail closed: do not enable Subscribe without a verified availability check.
         state.checkSubscriptionInProgress = false;
-        state.hasActiveSubscription = false;
+        state.hasActiveSubscription = true;
+        state.isCurrentUserSubscription = false;
         state.activeSubscriptionId = null;
       });
   },
@@ -626,7 +613,8 @@ export const loadData = (params, search, config) => (dispatch, getState, sdk) =>
       fetchMonthlyTimeSlots(dispatch, listing);
     }
 
-    if (isSubscriptionProcessAlias(transactionProcessAlias) && isAuthorized) {
+    // Global exclusivity: check for any active subscription (anonymous or logged-in).
+    if (isSubscriptionProcessAlias(transactionProcessAlias)) {
       dispatch(checkActiveSubscriptionThunk({ listingId: listing.id.uuid }));
     }
 

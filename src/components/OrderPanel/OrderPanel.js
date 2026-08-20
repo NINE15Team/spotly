@@ -311,7 +311,9 @@ const OrderPanel = props => {
     payoutDetailsWarning,
     showListingImage,
     hasActiveSubscription,
+    isCurrentUserSubscription,
     activeSubscriptionId,
+    checkSubscriptionInProgress,
     isHakoLayout = false,
     hakoRating,
     hakoReviewCount,
@@ -523,7 +525,9 @@ const OrderPanel = props => {
             dayCountAvailableForBooking={dayCountAvailableForBooking}
             processName={processName}
             hasActiveSubscription={hasActiveSubscription}
+            isCurrentUserSubscription={isCurrentUserSubscription}
             activeSubscriptionId={activeSubscriptionId}
+            checkSubscriptionInProgress={checkSubscriptionInProgress}
             {...sharedProps}
           />
         ) : showBookingFixedDurationForm ? (

@@ -353,9 +353,76 @@ describe('Duck', () => {
         sendInquiryError: null,
         inquiryModalOpenForListingId: null,
         hasActiveSubscription: false,
+        isCurrentUserSubscription: false,
         activeSubscriptionId: null,
         checkSubscriptionInProgress: false,
       });
+    });
+
+    it('should disable Subscribe while subscription availability is loading', () => {
+      const state = reducer(undefined, { type: 'ListingPage/checkActiveSubscription/pending' });
+      expect(state.checkSubscriptionInProgress).toBe(true);
+    });
+
+    it('should mark listing unavailable for another customer subscription', () => {
+      const state = reducer(undefined, {
+        type: 'ListingPage/checkActiveSubscription/fulfilled',
+        payload: {
+          hasActiveSubscription: true,
+          isCurrentUserSubscription: false,
+          activeSubscriptionId: null,
+        },
+      });
+      expect(state.hasActiveSubscription).toBe(true);
+      expect(state.isCurrentUserSubscription).toBe(false);
+      expect(state.activeSubscriptionId).toBeNull();
+      expect(state.checkSubscriptionInProgress).toBe(false);
+    });
+
+    it('should keep own subscription id when the current user owns the active subscription', () => {
+      const state = reducer(undefined, {
+        type: 'ListingPage/checkActiveSubscription/fulfilled',
+        payload: {
+          hasActiveSubscription: true,
+          isCurrentUserSubscription: true,
+          activeSubscriptionId: 'tx-own',
+        },
+      });
+      expect(state.hasActiveSubscription).toBe(true);
+      expect(state.isCurrentUserSubscription).toBe(true);
+      expect(state.activeSubscriptionId).toBe('tx-own');
+    });
+
+    it('should fail closed when subscription availability check errors', () => {
+      const state = reducer(undefined, {
+        type: 'ListingPage/checkActiveSubscription/rejected',
+        payload: { message: 'boom' },
+      });
+      expect(state.checkSubscriptionInProgress).toBe(false);
+      expect(state.hasActiveSubscription).toBe(true);
+      expect(state.isCurrentUserSubscription).toBe(false);
+      expect(state.activeSubscriptionId).toBeNull();
+    });
+
+    it('should re-enable Subscribe when availability reports no active subscription', () => {
+      let state = reducer(undefined, {
+        type: 'ListingPage/checkActiveSubscription/fulfilled',
+        payload: {
+          hasActiveSubscription: true,
+          isCurrentUserSubscription: false,
+          activeSubscriptionId: null,
+        },
+      });
+      state = reducer(state, {
+        type: 'ListingPage/checkActiveSubscription/fulfilled',
+        payload: {
+          hasActiveSubscription: false,
+          isCurrentUserSubscription: false,
+          activeSubscriptionId: null,
+        },
+      });
+      expect(state.hasActiveSubscription).toBe(false);
+      expect(state.activeSubscriptionId).toBeNull();
     });
 
     it('should handle setInitialValues action', () => {

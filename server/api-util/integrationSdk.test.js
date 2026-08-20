@@ -109,18 +109,18 @@ describe('integrationSdk.findActiveSubscriptionForListing', () => {
     mockQuery.mockReset();
   });
 
-  it('queries by customer + listing + process name', async () => {
+  it('queries by listing + process name (global exclusivity)', async () => {
     mockQuery.mockResolvedValue({ data: { data: [] } });
 
-    await findActiveSubscriptionForListing('cust-1', 'listing-1', 'subscription-rental');
+    await findActiveSubscriptionForListing('listing-1', 'subscription-rental');
 
     expect(mockQuery).toHaveBeenCalledWith(
       expect.objectContaining({
-        customerId: 'cust-1',
         listingId: 'listing-1',
         processNames: ['subscription-rental'],
       })
     );
+    expect(mockQuery.mock.calls[0][0]).not.toHaveProperty('customerId');
   });
 
   it('returns the first non-final subscription transaction', async () => {
@@ -133,7 +133,7 @@ describe('integrationSdk.findActiveSubscriptionForListing', () => {
       },
     });
 
-    const result = await findActiveSubscriptionForListing('c', 'l', 'subscription-rental');
+    const result = await findActiveSubscriptionForListing('l', 'subscription-rental');
 
     expect(result.id.uuid).toBe('active');
   });
@@ -149,11 +149,16 @@ describe('integrationSdk.findActiveSubscriptionForListing', () => {
       },
     });
 
-    expect(await findActiveSubscriptionForListing('c', 'l', 'subscription-rental')).toBeNull();
+    expect(await findActiveSubscriptionForListing('l', 'subscription-rental')).toBeNull();
   });
 
   it('returns null when there are no transactions', async () => {
     mockQuery.mockResolvedValue({ data: { data: [] } });
-    expect(await findActiveSubscriptionForListing('c', 'l', 'subscription-rental')).toBeNull();
+    expect(await findActiveSubscriptionForListing('l', 'subscription-rental')).toBeNull();
+  });
+
+  it('returns null when listingId cannot be normalized', async () => {
+    expect(await findActiveSubscriptionForListing(null, 'subscription-rental')).toBeNull();
+    expect(mockQuery).not.toHaveBeenCalled();
   });
 });

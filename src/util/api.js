@@ -157,6 +157,12 @@ export const billingPortal = body => {
   return post('/api/billing-portal', body);
 };
 
+// Privacy-safe subscription exclusivity for a listing (global: any active sub).
+// See server/api/subscription-availability.js for response shape.
+export const subscriptionAvailability = body => {
+  return post('/api/subscription-availability', body);
+};
+
 // ================ Multi-participant waiver signing (PandaDoc) ================ //
 
 // Is the waiver feature enabled on the server (PandaDoc configured)?

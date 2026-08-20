@@ -95,17 +95,15 @@ module.exports = (req, res) => {
 
       metadataMaybe = getMetadata(orderData, transitionName);
 
-      // Double-booking guard: reject if customer already has a live subscription for this listing.
+      // Global exclusivity: reject if ANY live subscription already exists for this listing.
       if (isSubscription && !isSpeculative) {
         const listingId = bodyParams?.params?.listingId;
-        return sdk.currentUser.show().then(userResponse => {
-          const customerId = userResponse?.data?.data?.id?.uuid;
-          if (customerId && listingId) {
-            return checkForExistingSubscription(customerId, listingId?.uuid || listingId, SUBSCRIPTION_PROCESS_NAME)
-              .then(() => getTrustedSdk(req));
-          }
-          return getTrustedSdk(req);
-        });
+        if (listingId) {
+          return checkForExistingSubscription(
+            listingId?.uuid || listingId,
+            SUBSCRIPTION_PROCESS_NAME
+          ).then(() => getTrustedSdk(req));
+        }
       }
 
       return getTrustedSdk(req);

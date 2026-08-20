@@ -1268,6 +1268,7 @@
   "StripePaymentForm.submitConfirmPaymentInfo": "Continue",
   "StripePaymentForm.submitPaymentInfo": "{isBooking, select, yes {Confirm booking request} other {Confirm and pay {totalPrice}}}",
   "SubscriptionOrderForm.activeSubscriptionWarning": "You already have an active subscription for this listing. {link}",
+  "SubscriptionOrderForm.listingAlreadySubscribed": "This listing is already subscribed.",
   "SubscriptionOrderForm.billingAnchorInfo": "Recurring charges are billed monthly on the same day you subscribed.",
   "SubscriptionOrderForm.ctaButton": "Subscribe",
   "SubscriptionOrderForm.viewSubscription": "View your subscription",

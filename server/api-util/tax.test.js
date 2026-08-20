@@ -325,7 +325,7 @@ describe('tax', () => {
     expect(result).toBeNull();
   });
 
-  it('appends a customer-only tax line item, omitting $0 tax', () => {
+  it('appends a customer-only tax line item, including $0 tax', () => {
     const taxLine = buildSalesTaxLineItem(600, 'USD');
     expect(taxLine.code).toBe(LINE_ITEM_SALES_TAX);
     expect(taxLine.includeFor).toEqual(['customer']);
@@ -335,7 +335,11 @@ describe('tax', () => {
     expect(withTax).toHaveLength(4);
     expect(withTax[3].code).toBe(LINE_ITEM_SALES_TAX);
 
-    expect(appendSalesTaxToLineItems(lineItems, { taxAmountCents: 0 }, 'USD')).toHaveLength(3);
+    const withZeroTax = appendSalesTaxToLineItems(lineItems, { taxAmountCents: 0 }, 'USD');
+    expect(withZeroTax).toHaveLength(4);
+    expect(withZeroTax[3].code).toBe(LINE_ITEM_SALES_TAX);
+    expect(withZeroTax[3].unitPrice.amount).toBe(0);
+
     expect(appendSalesTaxToLineItems(lineItems, null, 'USD')).toHaveLength(3);
   });
 

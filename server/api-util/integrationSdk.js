@@ -173,22 +173,26 @@ const findTransactionByStripeSubscriptionId = async stripeSubscriptionId => {
 };
 
 /**
- * Find active subscription transactions for a given customer + listing combination.
+ * Find an active (non-final) subscription for a listing, regardless of customer.
  * Returns the first match, or null if none found.
  *
- * "Active" means any non-final state: pending-payment, payment-confirmed, active, payment-overdue.
- * Cancelled / expired transactions are excluded by checking lastTransition.
+ * Used for global exclusivity: one live subscription reserves the listing for
+ * everyone. "Active" means any non-final state: pending-payment,
+ * payment-confirmed, active, payment-overdue. Cancelled / expired / declined
+ * transactions are excluded by checking lastTransition.
  *
- * @param {string} customerId  - plain uuid string
  * @param {string} listingId   - plain uuid string
  * @param {string} processName - e.g. 'subscription-rental'
  * @returns {Promise<Object|null>}
  */
-const findActiveSubscriptionForListing = async (customerId, listingId, processName) => {
+const findActiveSubscriptionForListing = async (listingId, processName) => {
   const integrationSdk = getIntegrationSdk();
+  const id = normalizeUuid(listingId);
+  if (!id) {
+    return null;
+  }
   const response = await integrationSdk.transactions.query({
-    customerId,
-    listingId,
+    listingId: id,
     processNames: [processName],
     perPage: 10,
   });

@@ -35,6 +35,7 @@ import {
   setInitialValues,
   fetchTimeSlots,
   fetchTransactionLineItems,
+  checkActiveSubscriptionThunk,
 } from './ListingPage.duck';
 
 import {
@@ -56,7 +57,12 @@ import CustomListingFields from './CustomListingFields';
 import Notifications from './Notifications/Notifications';
 import ListingPageAccessWrapper from './ListingPageAccessWrapper';
 
+import { isSubscriptionProcessAlias } from '../../transactions/transaction';
+import { types as sdkTypes } from '../../util/sdkLoader';
+
 import css from './ListingPage.module.css';
+
+const { UUID } = sdkTypes;
 
 const MIN_LENGTH_FOR_LONG_WORDS_IN_TITLE = 16;
 
@@ -420,7 +426,9 @@ const ListingPage = props => {
     fetchLineItemsError,
     inquiryModalOpenForListingId,
     hasActiveSubscription,
+    isCurrentUserSubscription,
     activeSubscriptionId,
+    checkSubscriptionInProgress,
   } = useSelector(state => state.ListingPage);
   const currentUser = useSelector(state => state.user?.currentUser);
   const scrollingDisabled = useSelector(state => isScrollingDisabled(state));
@@ -443,6 +451,20 @@ const ListingPage = props => {
     },
     [store]
   );
+
+  // Re-check exclusivity after auth/listing changes (ownership link needs current user).
+  useEffect(() => {
+    const listingIdParam = props.params?.id;
+    if (!listingIdParam) {
+      return;
+    }
+    const listingId = new UUID(listingIdParam);
+    const listing = getListing(listingId) || getOwnListing(listingId);
+    const processAlias = listing?.attributes?.publicData?.transactionProcessAlias || '';
+    if (listing?.id?.uuid && isSubscriptionProcessAlias(processAlias)) {
+      dispatch(checkActiveSubscriptionThunk({ listingId: listing.id.uuid }));
+    }
+  }, [dispatch, getListing, getOwnListing, isAuthenticated, props.params?.id]);
 
   const onManageDisableScrolling = useCallback(
     (componentId, disableScrolling) =>
@@ -491,7 +513,9 @@ const ListingPage = props => {
       sendInquiryInProgress={sendInquiryInProgress}
       sendInquiryError={sendInquiryError}
       hasActiveSubscription={hasActiveSubscription}
+      isCurrentUserSubscription={isCurrentUserSubscription}
       activeSubscriptionId={activeSubscriptionId}
+      checkSubscriptionInProgress={checkSubscriptionInProgress}
       onManageDisableScrolling={onManageDisableScrolling}
       callSetInitialValues={callSetInitialValues}
       onFetchTransactionLineItems={onFetchTransactionLineItems}

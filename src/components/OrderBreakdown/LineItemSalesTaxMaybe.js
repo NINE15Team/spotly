@@ -7,12 +7,12 @@ import css from './OrderBreakdown.module.css';
 
 /**
  * A component that renders the sales tax (Stripe Tax) as a line item.
- * The line item is charged to the customer only (includeFor: ['customer'])
- * and is omitted entirely when the calculated tax is zero.
+ * The line item is charged to the customer only (includeFor: ['customer']).
+ * A calculated $0 amount is still shown (e.g. no Stripe Tax registration in
+ * the listing's state).
  *
- * When `showEstimate` is true (e.g. the booking-page price estimate, where no
- * address has been provided yet so tax cannot be calculated), a placeholder
- * row is shown telling the customer the tax is calculated at checkout.
+ * When `showEstimate` is true and no tax line exists yet (e.g. listing estimate
+ * before tax could be resolved), a placeholder row is shown.
  *
  * @component
  * @param {Object} props

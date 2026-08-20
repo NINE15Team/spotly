@@ -489,20 +489,19 @@ const requestCancelAtPeriodEnd = async transactionId => {
 };
 
 /**
- * Guard against double-booking: throws a 409 if the customer already has a
- * non-final subscription transaction for the same listing.
+ * Guard against double-booking: throws a 409 if ANY non-final subscription
+ * transaction already exists for the listing (global exclusivity).
  *
  * Call this before initiating a new subscription checkout (initiate-privileged).
  *
- * @param {string} customerId  - plain uuid string (from the logged-in user's SDK)
  * @param {string} listingId   - plain uuid string
  * @param {string} processName - e.g. 'subscription-rental'
  */
-const checkForExistingSubscription = async (customerId, listingId, processName) => {
-  const existing = await findActiveSubscriptionForListing(customerId, listingId, processName);
+const checkForExistingSubscription = async (listingId, processName) => {
+  const existing = await findActiveSubscriptionForListing(listingId, processName);
   if (existing) {
     const error = new Error(
-      'You already have an active subscription for this listing. Only one subscription per listing is allowed.'
+      'This listing already has an active subscription. Only one subscription per listing is allowed.'
     );
     error.status = 409;
     error.statusText = error.message;

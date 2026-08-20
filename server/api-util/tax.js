@@ -152,7 +152,9 @@ const buildSalesTaxLineItem = (taxAmountCents, currency) => ({
 
 /**
  * Append the sales tax line item to computed line items.
- * A zero/absent tax result appends nothing.
+ * Includes $0 when Stripe Tax successfully calculated no tax due (e.g. no
+ * registration in that state) so checkout still shows a Sales tax row.
+ * Absent/failed tax results still append nothing (fail-open).
  *
  * @param {Array} lineItems
  * @param {Object|null} taxResult result of calculateSalesTax
@@ -160,7 +162,7 @@ const buildSalesTaxLineItem = (taxAmountCents, currency) => ({
  * @returns {Array}
  */
 const appendSalesTaxToLineItems = (lineItems, taxResult, currency) => {
-  if (!taxResult || !(taxResult.taxAmountCents > 0)) {
+  if (!taxResult || !Number.isInteger(taxResult.taxAmountCents) || taxResult.taxAmountCents < 0) {
     return lineItems;
   }
   return [...lineItems, buildSalesTaxLineItem(taxResult.taxAmountCents, currency)];

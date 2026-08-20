@@ -39,7 +39,9 @@ const SubscriptionOrderForm = props => {
     payoutDetailsWarning,
     processName = SUBSCRIPTION_PROCESS_NAME,
     hasActiveSubscription,
+    isCurrentUserSubscription,
     activeSubscriptionId,
+    checkSubscriptionInProgress,
   } = props;
 
   const classes = classNames(rootClassName || css.root, className);
@@ -82,7 +84,14 @@ const SubscriptionOrderForm = props => {
   const showEstimatedBreakdown =
     lineItems && !fetchLineItemsInProgress && !fetchLineItemsError;
   const submitDisabled =
-    fetchLineItemsInProgress || !lineItems || isOwnListing || hasActiveSubscription;
+    fetchLineItemsInProgress ||
+    checkSubscriptionInProgress ||
+    !lineItems ||
+    isOwnListing ||
+    hasActiveSubscription;
+
+  const showOwnSubscriptionBanner = hasActiveSubscription && isCurrentUserSubscription;
+  const showListingTakenBanner = hasActiveSubscription && !isCurrentUserSubscription;
 
   return (
     <FinalForm
@@ -92,7 +101,7 @@ const SubscriptionOrderForm = props => {
 
         return (
           <Form className={classes} onSubmit={handleSubmit}>
-            {hasActiveSubscription ? (
+            {showOwnSubscriptionBanner ? (
               <div className={css.activeSubscriptionBanner}>
                 <FormattedMessage
                   id="SubscriptionOrderForm.activeSubscriptionWarning"
@@ -104,6 +113,12 @@ const SubscriptionOrderForm = props => {
                     ),
                   }}
                 />
+              </div>
+            ) : null}
+
+            {showListingTakenBanner ? (
+              <div className={css.activeSubscriptionBanner}>
+                <FormattedMessage id="SubscriptionOrderForm.listingAlreadySubscribed" />
               </div>
             ) : null}
 
@@ -129,7 +144,7 @@ const SubscriptionOrderForm = props => {
             <div className={css.submitButton}>
               <PrimaryButton
                 type="submit"
-                inProgress={fetchLineItemsInProgress}
+                inProgress={fetchLineItemsInProgress || checkSubscriptionInProgress}
                 disabled={submitDisabled}
               >
                 <FormattedMessage id="SubscriptionOrderForm.ctaButton" />
@@ -152,7 +167,9 @@ SubscriptionOrderForm.defaultProps = {
   className: null,
   price: null,
   hasActiveSubscription: false,
+  isCurrentUserSubscription: false,
   activeSubscriptionId: null,
+  checkSubscriptionInProgress: false,
 };
 
 SubscriptionOrderForm.propTypes = {
@@ -171,7 +188,9 @@ SubscriptionOrderForm.propTypes = {
   processName: string,
   price: propTypes.money,
   hasActiveSubscription: bool,
+  isCurrentUserSubscription: bool,
   activeSubscriptionId: string,
+  checkSubscriptionInProgress: bool,
 };
 
 export default SubscriptionOrderForm;

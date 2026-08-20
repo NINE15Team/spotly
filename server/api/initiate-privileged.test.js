@@ -99,7 +99,9 @@ describe('POST /api/initiate-privileged — subscription double-booking guard', 
 
   it('rejects a non-speculative subscription when an active one already exists', async () => {
     setupSdk();
-    const error = new Error('You already have an active subscription for this listing.');
+    const error = new Error(
+      'This listing already has an active subscription. Only one subscription per listing is allowed.'
+    );
     error.status = 409;
     checkForExistingSubscription.mockRejectedValue(error);
     const res = makeRes();
@@ -110,7 +112,7 @@ describe('POST /api/initiate-privileged — subscription double-booking guard', 
     );
     await drain();
 
-    expect(checkForExistingSubscription).toHaveBeenCalledWith('cust-1', 'listing-1', 'subscription-rental');
+    expect(checkForExistingSubscription).toHaveBeenCalledWith('listing-1', 'subscription-rental');
     expect(getTrustedSdk).not.toHaveBeenCalled();
     expect(trustedSdk.transactions.initiate).not.toHaveBeenCalled();
     expect(handleError).toHaveBeenCalledWith(res, error);
@@ -148,7 +150,7 @@ describe('POST /api/initiate-privileged — subscription double-booking guard', 
     );
     await drain();
 
-    expect(checkForExistingSubscription).toHaveBeenCalledWith('cust-1', 'listing-1', 'subscription-rental');
+    expect(checkForExistingSubscription).toHaveBeenCalledWith('listing-1', 'subscription-rental');
     expect(transactionLineItemsWithTax).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({ processAlias: 'subscription-rental/release-5' }),
