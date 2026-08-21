@@ -2,6 +2,7 @@ import { subUnitDivisors } from '../config/settingsCurrency';
 import { getSupportedProcessesInfo, isBookingProcessAlias } from '../transactions/transaction';
 import { sanitizeText } from './sanitize';
 import { EXTENDED_DATA_SCHEMA_TYPES } from './types';
+import { SELECTABLE_LISTING_TYPES } from './hakoListingTypes';
 
 const isTestEnvironment = process.env.NODE_ENV === 'test';
 // Generic helpers for validating config values
@@ -1363,7 +1364,22 @@ const mergeListingConfig = (hostedConfig, defaultConfigs, categoriesInUse) => {
   // Merge hosted Console listing types with local configListing.js entries (e.g. subscription-rental).
   // https://www.sharetribe.com/docs/template/configuration/hosted-and-local-configurations/
   const shouldMerge = mergeDefaultTypesAndFieldsForDebugging(false);
-  const listingTypes = union(hostedListingTypes, defaultListingTypes, 'listingType');
+  const mergedListingTypes = union(hostedListingTypes, defaultListingTypes, 'listingType');
+  // Hako offers exactly two listing types, but the hosted asset may still contain
+  // retired ones (e.g. 'daily-rental') that cannot be deleted from here. Restrict to
+  // the supported set so the create-listing flow only ever offers those two.
+  // Add to SELECTABLE_LISTING_TYPES in util/hakoListingTypes.js to offer a new type.
+  //
+  // Only applied when the merged set actually contains a Hako type. A config with
+  // none of them is not a Hako marketplace config (the template's own tests and
+  // example configs use unrelated ids), and must be passed through untouched
+  // rather than filtered down to nothing.
+  const hasHakoListingType = mergedListingTypes.some(lt =>
+    SELECTABLE_LISTING_TYPES.includes(lt.listingType)
+  );
+  const listingTypes = hasHakoListingType
+    ? mergedListingTypes.filter(lt => SELECTABLE_LISTING_TYPES.includes(lt.listingType))
+    : mergedListingTypes;
   const listingFields = shouldMerge
     ? union(hostedListingFields, defaultListingFields, 'key')
     : hostedListingFields;

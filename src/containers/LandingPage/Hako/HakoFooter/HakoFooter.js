@@ -57,6 +57,9 @@ export const HakoFooter = () => {
         <NamedLink name="NewListingPage" className={css.link}>
           <FormattedMessage id="HakoLanding.footer.postListing" defaultMessage="Post a Listing" />
         </NamedLink>
+        <NamedLink name="BecomeAHostPage" className={css.link}>
+          <FormattedMessage id="HakoLanding.footer.becomeAHost" defaultMessage="Become a Host" />
+        </NamedLink>
         <NamedLink name="FAQPage" className={css.link}>
           <FormattedMessage id="HakoLanding.footer.faq" defaultMessage="FAQ" />
         </NamedLink>

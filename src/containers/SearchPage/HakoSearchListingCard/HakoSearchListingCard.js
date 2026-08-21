@@ -2,12 +2,11 @@ import React from 'react';
 import classNames from 'classnames';
 
 import { useConfiguration } from '../../../context/configurationContext';
-import { useIntl, FormattedMessage } from '../../../util/reactIntl';
+import { useIntl } from '../../../util/reactIntl';
 import { formatMoney } from '../../../util/currency';
 import { createSlug } from '../../../util/urlHelpers';
 import { requireListingImage } from '../../../util/configHelpers';
 import { NamedLink, ResponsiveImage } from '../../../components';
-import { HAKO_ASSETS } from '../../LandingPage/Hako/assets';
 
 import css from './HakoSearchListingCard.module.css';
 
@@ -56,14 +55,6 @@ export const HakoSearchListingCard = props => {
   if (tags.length === 0) {
     tags.push('Covered', 'EV');
   }
-
-  const rating =
-    listing?.attributes?.metadata?.rating ||
-    publicData?.rating ||
-    listing?.attributes?.publicData?.reviewsAverage ||
-    '4.9';
-  const reviewCount =
-    listing?.attributes?.metadata?.reviewsTotal || publicData?.reviewsTotal || '42';
 
   let priceLabel = null;
   if (price && price.currency === config.currency) {
@@ -118,28 +109,6 @@ export const HakoSearchListingCard = props => {
                 {tag}
               </span>
             ))}
-          </div>
-          <div className={css.rating}>
-            <div className={css.stars} aria-hidden="true">
-              {[0, 1, 2, 3, 4].map(i => (
-                <img
-                  key={i}
-                  className={css.star}
-                  src={HAKO_ASSETS.star}
-                  alt=""
-                  width={15}
-                  height={15}
-                />
-              ))}
-            </div>
-            <span className={css.ratingText}>
-              {rating}{' '}
-              <FormattedMessage
-                id="HakoSearchListingCard.reviews"
-                defaultMessage="({count} reviews)"
-                values={{ count: reviewCount }}
-              />
-            </span>
           </div>
         </div>
       </div>

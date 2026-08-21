@@ -29,7 +29,6 @@ import {
   ResponsiveImage,
   AspectRatioWrapper,
 } from '../../../components';
-import { HAKO_ASSETS } from '../../LandingPage/Hako/assets';
 
 import Overlay from './Overlay';
 import css from './ManageListingCard.module.css';
@@ -143,8 +142,6 @@ export const ManageListingCard = props => {
     ? Object.keys(firstImage?.attributes?.variants || {}).filter(k => k.startsWith(variantPrefix))
     : [];
 
-  const rating =
-    currentListing?.attributes?.metadata?.rating || publicData?.rating || (isPublished ? '4.9' : null);
   const views =
     currentListing?.attributes?.metadata?.views || publicData?.views || (isPublished ? 150 : null);
   const bookings =
@@ -214,16 +211,6 @@ export const ManageListingCard = props => {
 
         {isPublished ? (
           <div className={css.metaRow}>
-            {rating ? (
-              <div className={css.rating}>
-                <div className={css.stars} aria-hidden="true">
-                  {[0, 1, 2, 3, 4].map(i => (
-                    <img key={i} src={HAKO_ASSETS.star} alt="" width={14} height={14} />
-                  ))}
-                </div>
-                <span className={css.ratingValue}>{rating}</span>
-              </div>
-            ) : null}
             <div className={css.stats}>
               <div className={css.stat}>
                 <span className={css.statLabel}>

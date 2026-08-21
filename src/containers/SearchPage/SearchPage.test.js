@@ -475,15 +475,13 @@ describe('SearchPage', () => {
         expect(priceTitle).not.toBeVisible();
       }
 
-      // Figma sidebar filters (label + screen-reader legend)
-      expect(getAllByText('Space Type').length).toBeGreaterThan(0);
-      expect(getByText('Outdoor lot')).toBeInTheDocument();
-      expect(getAllByText('Vehicle Size').length).toBeGreaterThan(0);
-      expect(getByText('Sedan / compact')).toBeInTheDocument();
-      expect(getAllByText('Vehicle Height').length).toBeGreaterThan(0);
-      expect(getByText('20 ft+')).toBeInTheDocument();
-      expect(getAllByText('Vehicle Length').length).toBeGreaterThan(0);
-      expect(getByText('6 ft+')).toBeInTheDocument();
+      // Sidebar filters come exclusively from the listing-fields config. Filters are
+      // never hardcoded in the app, so anything not configured must not appear.
+      expect(getAllByText('Amenities').length).toBeGreaterThan(0);
+      expect(getByText('Dog 1')).toBeInTheDocument();
+      ['Space Type', 'Vehicle Size', 'Vehicle Height', 'Vehicle Length'].forEach(label => {
+        expect(queryByText(label)).not.toBeInTheDocument();
+      });
 
       // No "more filters" popup pattern — all filters are in the sidebar
       expect(queryByText('SearchFiltersPrimary.moreFiltersButton')).not.toBeInTheDocument();

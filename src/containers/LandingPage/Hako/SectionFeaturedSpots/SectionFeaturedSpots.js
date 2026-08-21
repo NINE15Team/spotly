@@ -1,27 +1,97 @@
 import React from 'react';
-import { arrayOf, shape, string } from 'prop-types';
-import { FormattedMessage } from '../../../../util/reactIntl';
-import { NamedLink } from '../../../../components';
-import { DEFAULT_FEATURED_SPOTS, HAKO_ASSETS } from '../assets';
+import { arrayOf, bool, object } from 'prop-types';
+
+import { FormattedMessage, useIntl } from '../../../../util/reactIntl';
+import { formatMoney } from '../../../../util/currency';
+import { createSlug } from '../../../../util/urlHelpers';
+import { useConfiguration } from '../../../../context/configurationContext';
+import { NamedLink, ResponsiveImage } from '../../../../components';
+import { HAKO_ASSETS } from '../assets';
+import { FEATURED_LOCATION } from '../featuredLocation';
 
 import css from './SectionFeaturedSpots.module.css';
 
-const StarRow = ({ rating }) => (
-  <div className={css.rating}>
-    <div className={css.stars} aria-hidden="true">
-      {[0, 1, 2, 3, 4].map(i => (
-        <img key={i} className={css.star} src={HAKO_ASSETS.star} alt="" width={15} height={15} />
-      ))}
-    </div>
-    <span className={css.ratingValue}>{rating}</span>
-  </div>
-);
+const FeaturedSpotCard = ({ listing }) => {
+  const intl = useIntl();
+  const config = useConfiguration();
+
+  const id = listing.id?.uuid;
+  const { title = '', price, publicData } = listing.attributes || {};
+  const slug = createSlug(title);
+  const locationLabel = publicData?.location?.address || null;
+
+  let priceLabel = null;
+  if (price && price.currency === config.currency) {
+    try {
+      priceLabel = formatMoney(intl, price);
+    } catch (e) {
+      priceLabel = null;
+    }
+  }
+  const priceUnit = publicData?.unitType ? `/${publicData.unitType}` : '';
+
+  const firstImage = listing.images?.[0] || null;
+  const { variantPrefix = 'listing-card' } = config.layout?.listingImage || {};
+  const variants = firstImage
+    ? Object.keys(firstImage.attributes?.variants || {}).filter(k => k.startsWith(variantPrefix))
+    : [];
+
+  return (
+    <NamedLink className={css.card} name="ListingPage" params={{ id, slug }}>
+      {firstImage ? (
+        <ResponsiveImage
+          rootClassName={css.cardImage}
+          alt={title}
+          image={firstImage}
+          variants={variants}
+          sizes="(min-width: 1024px) 33vw, 100vw"
+        />
+      ) : (
+        <div className={css.imagePlaceholder} aria-hidden="true" />
+      )}
+      <div className={css.cardBody}>
+        <div className={css.cardTop}>
+          <div className={css.cardMeta}>
+            <h3 className={css.cardTitle}>{title}</h3>
+            {locationLabel ? <p className={css.cardLocation}>{locationLabel}</p> : null}
+          </div>
+          {priceLabel ? (
+            <p className={css.price}>
+              <span className={css.priceAmount}>{priceLabel}</span>
+              <span>{priceUnit}</span>
+            </p>
+          ) : null}
+        </div>
+      </div>
+    </NamedLink>
+  );
+};
 
 /**
- * Featured spots section — Figma node 7:297
+ * Featured spots section — Figma node 7:297.
+ *
+ * Renders real published listings. `isFeaturedLocation` tells us whether they
+ * actually came from FEATURED_LOCATION, so the heading only names the location
+ * when the listings are genuinely there.
  */
 export const SectionFeaturedSpots = props => {
-  const { listings = DEFAULT_FEATURED_SPOTS } = props;
+  const { listings = [], isFeaturedLocation = false } = props;
+
+  // Nothing to show (e.g. the query failed) — omit the section rather than
+  // rendering an empty shell.
+  if (listings.length === 0) {
+    return null;
+  }
+
+  const heading = isFeaturedLocation ? (
+    <FormattedMessage
+      id="HakoLanding.featured.titleInLocation"
+      defaultMessage="Featured spots in {location}"
+      values={{ location: FEATURED_LOCATION.name }}
+    />
+  ) : (
+    <FormattedMessage id="HakoLanding.featured.title" defaultMessage="Featured spots" />
+  );
 
   return (
     <section className={css.root} aria-labelledby="hako-featured-heading">
@@ -29,10 +99,7 @@ export const SectionFeaturedSpots = props => {
         <div className={css.titleRow}>
           <img className={css.icon} src={HAKO_ASSETS.distance} alt="" width={35} height={35} />
           <h2 id="hako-featured-heading" className={css.heading}>
-            <FormattedMessage
-              id="HakoLanding.featured.title"
-              defaultMessage="Featured spots in San Franciso"
-            />
+            {heading}
           </h2>
         </div>
         <NamedLink name="SearchPage" className={css.viewAll}>
@@ -51,31 +118,7 @@ export const SectionFeaturedSpots = props => {
 
       <div className={css.cards}>
         {listings.map(listing => (
-          <article key={listing.id} className={css.card}>
-            <div className={css.imagePlaceholder} aria-hidden="true" />
-            <div className={css.cardBody}>
-              <div className={css.cardTop}>
-                <div className={css.cardMeta}>
-                  <h3 className={css.cardTitle}>{listing.title}</h3>
-                  <p className={css.cardLocation}>{listing.locationLabel}</p>
-                </div>
-                <p className={css.price}>
-                  <span className={css.priceAmount}>{listing.price}</span>
-                  <span>{listing.priceUnit}</span>
-                </p>
-              </div>
-              <div className={css.cardFooter}>
-                <div className={css.tags}>
-                  {listing.tags.map(tag => (
-                    <span key={tag} className={css.tag}>
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-                <StarRow rating={listing.rating} />
-              </div>
-            </div>
-          </article>
+          <FeaturedSpotCard key={listing.id?.uuid} listing={listing} />
         ))}
       </div>
     </section>
@@ -83,17 +126,8 @@ export const SectionFeaturedSpots = props => {
 };
 
 SectionFeaturedSpots.propTypes = {
-  listings: arrayOf(
-    shape({
-      id: string.isRequired,
-      title: string.isRequired,
-      locationLabel: string,
-      price: string,
-      priceUnit: string,
-      tags: arrayOf(string),
-      rating: string,
-    })
-  ),
+  listings: arrayOf(object),
+  isFeaturedLocation: bool,
 };
 
 export default SectionFeaturedSpots;

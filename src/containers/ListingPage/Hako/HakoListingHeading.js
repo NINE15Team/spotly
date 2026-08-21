@@ -1,7 +1,6 @@
 import React from 'react';
 import classNames from 'classnames';
 import { FormattedMessage } from '../../../util/reactIntl';
-import { HAKO_ASSETS } from '../../LandingPage/Hako/assets';
 
 import css from './HakoListingSections.module.css';
 
@@ -15,8 +14,6 @@ export const HakoListingHeading = props => {
     subtitle,
     locationLabel,
     priceLabel,
-    rating = '4.9',
-    reviewCount = 42,
     className,
     onShare,
   } = props;
@@ -66,21 +63,6 @@ export const HakoListingHeading = props => {
           {subtitle ? <p className={css.subtitle}>{subtitle}</p> : null}
           {priceLabel ? <p className={css.priceLabel}>{priceLabel}</p> : null}
           {locationLabel ? <p className={css.location}>{locationLabel}</p> : null}
-          <div className={css.ratingRow}>
-            <div className={css.stars} aria-hidden="true">
-              {[0, 1, 2, 3, 4].map(i => (
-                <img key={i} src={HAKO_ASSETS.star} alt="" width={16} height={16} />
-              ))}
-            </div>
-            <span className={css.ratingText}>
-              {rating}{' '}
-              <FormattedMessage
-                id="HakoListing.reviewsCount"
-                defaultMessage="({count} reviews)"
-                values={{ count: reviewCount }}
-              />
-            </span>
-          </div>
         </div>
         <div className={css.headingActionsDesktop}>
           <button type="button" className={css.iconButton} aria-label="Save listing">

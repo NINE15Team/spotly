@@ -96,13 +96,32 @@
   border-radius: var(--hakoBorderRadius);
   box-shadow: var(--hakoDropShadow);
   overflow: hidden;
+
+  /* The card is a link to the listing */
+  text-decoration: none;
+  color: inherit;
+
+  &:hover,
+  &:focus {
+    text-decoration: none;
+    color: inherit;
+  }
 }
 
+.cardImage,
 .imagePlaceholder {
   width: 100%;
   height: 200px;
-  background-color: var(--hakoMuted);
   border-radius: var(--hakoBorderRadius) var(--hakoBorderRadius) 0 0;
+}
+
+.cardImage {
+  display: block;
+  object-fit: cover;
+}
+
+.imagePlaceholder {
+  background-color: var(--hakoMuted);
 }
 
 .cardBody {
@@ -157,71 +176,4 @@
 
 .priceAmount {
   font-weight: 700;
-}
-
-.cardFooter {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  min-height: 15px;
-
-  @media (--viewportMedium) {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  @media (--viewportLarge) {
-    flex-direction: row;
-    align-items: center;
-  }
-}
-
-.tags {
-  display: flex;
-  flex-direction: row;
-  gap: 10px;
-  align-items: center;
-  flex-wrap: nowrap;
-}
-
-.tag {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  padding: 5px 10px;
-  border: 1px solid var(--hakoSecondaryText);
-  border-radius: var(--hakoBorderRadiusSmall);
-  font-family: var(--fontFamily);
-  font-size: 12px;
-  line-height: normal;
-  color: var(--hakoSecondaryText);
-}
-
-.rating {
-  display: flex;
-  gap: 5px;
-  align-items: flex-end;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.stars {
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: flex-end;
-}
-
-.star {
-  width: 15px;
-  height: 15px;
-  display: block;
-}
-
-.ratingValue {
-  font-family: var(--fontFamily);
-  font-size: 12px;
-  line-height: normal;
-  color: var(--hakoSecondaryText);
 }
