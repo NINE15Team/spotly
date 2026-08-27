@@ -47,15 +47,35 @@ handles availability via booking actions.
 Deploy with Sharetribe CLI (Dev first). Do not attach to a listing type until the Web Template
 supports this process (Phase 3).
 
-## Waiver processes (alias cut — 2026-08-27)
+## Deploying process updates (CLI)
 
-| Marketplace | Process | Version | Alias |
-|-------------|---------|---------|-------|
+**Rule:** push a new version, then **update** the existing alias so it points at that version.
+Do **not** create a new alias (`release-N+1`) for routine process changes.
+
+```bash
+MKT=alpsalpinerentaspot-dev   # or alpsalpinerentaspot
+
+flex-cli process push --process <process-name> \
+  --path ext/transaction-processes/<process-name> -m "$MKT"
+
+flex-cli process update-alias -m "$MKT" \
+  --process <process-name> --version <latest-from-push> --alias <existing-alias>
+# e.g. --alias release-5  (subscription) or --alias release-1 (booking)
+```
+
+Use `create-alias` only when introducing an alias name that does not exist yet.
+
+Details: [docs/WAIVER_IMPLEMENTATION.md §9](../../docs/WAIVER_IMPLEMENTATION.md#9-deployment-checklist)
+and [subscription-rental/README.md](./subscription-rental/README.md#cli-preferred).
+
+## Waiver processes (status — 2026-08-27)
+
+| Marketplace | Process | Version | Alias in use |
+|-------------|---------|---------|--------------|
 | `alpsalpinerentaspot-dev` | `default-booking` | 2 | `default-booking/release-2` |
 | `alpsalpinerentaspot-dev` | `subscription-rental` | 6 | `subscription-rental/release-6` |
 | `alpsalpinerentaspot` (live) | `default-booking` | 2 | `default-booking/release-2` |
 | `alpsalpinerentaspot` (live) | `subscription-rental` | 2 | `subscription-rental/release-6` |
 
-App code matches these aliases. Also update hosted listing types in Console to
-`default-booking/release-2` / `subscription-rental/release-6`. See
-[docs/WAIVER_IMPLEMENTATION.md §9](../../docs/WAIVER_IMPLEMENTATION.md#9-deployment-checklist).
+This cutover used `create-alias` + app renames; future updates should use `update-alias` on the
+aliases above (or on `release-1` / `release-5` if you revert to those names).

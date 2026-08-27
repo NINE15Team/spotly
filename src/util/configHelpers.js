@@ -1021,11 +1021,14 @@ const validListingTypes = listingTypes => {
     } = listingType;
     const { process: processName, alias, unitType, ...restOfTransactionType } = transactionType;
 
-    const isSupportedProcessName = supportedProcessesInfo.find(p => p.name === processName);
-    const isSupportedProcessAlias = supportedProcessesInfo.find(p => p.alias === alias);
-    const isSupportedUnitType = supportedProcessesInfo.find(p => p.unitTypes.includes(unitType));
+    // Match by process name + unit type. Hosted Console assets may still point at an
+    // older alias (e.g. default-booking/release-1) after the app cuts over to a new
+    // release (release-2). Exact alias match would drop those types and hide the
+    // listing-type picker. Remap to the app's current supported alias instead.
+    const supportedProcess = supportedProcessesInfo.find(p => p.name === processName);
+    const isSupportedUnitType = supportedProcess?.unitTypes?.includes(unitType);
 
-    const priceVariationTypeMaybe = isBookingProcessAlias(alias)
+    const priceVariationTypeMaybe = isBookingProcessAlias(supportedProcess?.alias || alias)
       ? { priceVariations: { enabled: priceVariations?.enabled } }
       : {};
 
@@ -1036,7 +1039,7 @@ const validListingTypes = listingTypes => {
       ? { transactionFields: validTransactionFields(restructuredTransactionFields) }
       : {};
 
-    if (isSupportedProcessName && isSupportedProcessAlias && isSupportedUnitType) {
+    if (supportedProcess && isSupportedUnitType) {
       return [
         ...validConfigs,
         {
@@ -1044,7 +1047,7 @@ const validListingTypes = listingTypes => {
           label,
           transactionType: {
             process: processName,
-            alias,
+            alias: supportedProcess.alias,
             unitType,
             ...restOfTransactionType,
           },

@@ -92,19 +92,50 @@ See: [Sharetribe booking acceptance](https://www.sharetribe.com/docs/concepts/pa
 
 **Marketplaces:** `alpsalpinerentaspot-dev` · `alpsalpinerentaspot`
 
+### CLI (preferred)
+
+After editing `process.edn` / templates, **push**, then **repoint the existing alias** — do not
+mint a new `release-N` name:
+
+```bash
+# Marketplace id: alpsalpinerentaspot-dev | alpsalpinerentaspot
+MKT=alpsalpinerentaspot-dev
+
+flex-cli process push --process subscription-rental \
+  --path ext/transaction-processes/subscription-rental -m "$MKT"
+
+# Point the EXISTING alias at the new version printed by push (example: --version 6)
+flex-cli process update-alias -m "$MKT" \
+  --process subscription-rental --version <latest> --alias release-5
+```
+
+Same pattern for booking (keep `release-1`, move it to the new version):
+
+```bash
+flex-cli process push --process default-booking \
+  --path ext/transaction-processes/default-booking -m "$MKT"
+flex-cli process update-alias -m "$MKT" \
+  --process default-booking --version <latest> --alias release-1
+```
+
+| Do | Don't |
+|----|--------|
+| `process push` then `process update-alias` on the alias already used by the app/Console | `process create-alias … --alias release-6` (forces app + listing-type renames) |
+
+`create-alias` is only for the **first** time an alias name is introduced. Full notes:
+[docs/WAIVER_IMPLEMENTATION.md §9](../../../docs/WAIVER_IMPLEMENTATION.md#9-deployment-checklist).
+
+### Status snapshot (2026-08-27 cutover)
+
+This waiver cutover used `create-alias` (`release-6` / `release-2`) and the app was updated to
+those names. Prefer `update-alias` on future pushes.
+
 | Field | Dev | Live |
 |-------|-----|------|
 | Process version (waiver) | **6** | **2** |
-| Active alias | `subscription-rental/release-6` → v6 | `subscription-rental/release-6` → v2 |
+| Alias in use | `subscription-rental/release-6` → v6 | `subscription-rental/release-6` → v2 |
 
-App constants use `subscription-rental/release-6` (see `subscriptionConstants.js`,
-`transactionProcessSubscription.js`, `transaction.js`, `configListing.js`).
-
-Booking follows the same cutover: `default-booking/release-2` on both envs.
-
-Also re-point listing types in Sharetribe Console to the new aliases (and re-save listings that still
-have an older alias in public data). Checkout / edit-listing upgrade stale aliases via
-`resolveTransactionProcessAlias` / `resolveSubscriptionProcessAlias`.
+Booking: `default-booking/release-2` on both envs.
 
 ## Web Template
 

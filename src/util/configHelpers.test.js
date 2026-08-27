@@ -83,4 +83,26 @@ describe('mergeConfig listing types', () => {
     expect(byId['monthly-subscription']).toBeDefined();
     expect(byId['monthly-subscription'].transactionType.process).toBe('subscription-rental');
   });
+
+  it('remaps stale Console aliases to the app current release without dropping booking types', () => {
+    // Console often still has release-1 until listing types are re-saved after an alias cut.
+    const staleHosted = {
+      ...hostedListingTypesAsset,
+      listingTypes: {
+        listingTypes: hostedListingTypesAsset.listingTypes.listingTypes.map(lt => ({
+          ...lt,
+          transactionProcess: {
+            ...lt.transactionProcess,
+            alias: 'default-booking/release-1',
+          },
+        })),
+      },
+    };
+    const config = mergeConfig(staleHosted, defaultConfig);
+    const byId = Object.fromEntries(config.listing.listingTypes.map(lt => [lt.listingType, lt]));
+
+    expect(getListingTypeIds(config).sort()).toEqual([...SELECTABLE_LISTING_TYPES].sort());
+    expect(byId['daily-rental'].transactionType.alias).toBe('default-booking/release-2');
+    expect(byId['hourly-rental'].transactionType.alias).toBe('default-booking/release-2');
+  });
 });
