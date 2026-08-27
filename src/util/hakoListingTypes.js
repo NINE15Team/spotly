@@ -1,22 +1,43 @@
 /**
  * Hako listing-type helpers for day parking vs monthly storage (subscriptions).
  *
- * UI / nav / search display `day-parking` and `monthly-storage`, but existing
- * listings in the marketplace were created under the older `daily-rental` and
- * `monthly-subscription` listing types. Search queries must match both the
- * canonical and legacy values (the Flex API supports comma-separated OR
- * matching on pub_ filters), or real listings never show up in results.
+ * Hako sells exactly two things: hourly day parking and monthly storage. Over time
+ * each has been created under more than one listing-type id, so there are two
+ * separate concerns here:
+ *
+ * 1. SELECTABLE_LISTING_TYPES — the only types a provider may pick when creating a
+ *    listing. Everything else (including extra types still present in the hosted
+ *    Console asset) is filtered out of config.listing.listingTypes.
+ * 2. DAY_LISTING_TYPES / MONTHLY_LISTING_TYPES — every id that has *ever* been used
+ *    for that category. Search must match all of them (the Flex API supports
+ *    comma-separated OR matching on pub_ filters), or older listings created under
+ *    a legacy id silently disappear from results.
  */
 
 export const DAY_PARKING_LISTING_TYPE = 'day-parking';
 export const DAILY_RENTAL_LISTING_TYPE = 'daily-rental';
+export const HOURLY_RENTAL_LISTING_TYPE = 'hourly-rental';
 export const MONTHLY_STORAGE_LISTING_TYPE = 'monthly-storage';
 export const MONTHLY_SUBSCRIPTION_LISTING_TYPE = 'monthly-subscription';
 
-export const DAY_LISTING_TYPES = [DAY_PARKING_LISTING_TYPE, DAILY_RENTAL_LISTING_TYPE];
-export const MONTHLY_LISTING_TYPES = [
-  MONTHLY_STORAGE_LISTING_TYPE,
+/**
+ * The two listing types offered on the create-listing flow.
+ * Change this (and nothing else) to add or retire a listing type.
+ */
+export const SELECTABLE_LISTING_TYPES = [
+  HOURLY_RENTAL_LISTING_TYPE,
   MONTHLY_SUBSCRIPTION_LISTING_TYPE,
+];
+
+/** Includes retired ids so existing listings stay searchable. */
+export const DAY_LISTING_TYPES = [
+  HOURLY_RENTAL_LISTING_TYPE,
+  DAY_PARKING_LISTING_TYPE,
+  DAILY_RENTAL_LISTING_TYPE,
+];
+export const MONTHLY_LISTING_TYPES = [
+  MONTHLY_SUBSCRIPTION_LISTING_TYPE,
+  MONTHLY_STORAGE_LISTING_TYPE,
 ];
 
 /**

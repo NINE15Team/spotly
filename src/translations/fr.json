@@ -462,7 +462,7 @@
   "HakoLanding.explore.subtitle": "Find the perfect parking spot in cities across the US",
   "HakoLanding.explore.title": "Explore by Location",
   "HakoLanding.explore.viewListings": "View Listings",
-  "HakoLanding.featured.title": "Featured spots in San Franciso",
+  "HakoLanding.featured.title": "Featured spots",
   "HakoLanding.featured.viewAll": "VIEW ALL",
   "HakoLanding.footer.about": "About Us",
   "HakoLanding.footer.browseDay": "Browse day parking",
@@ -473,6 +473,7 @@
   "HakoLanding.footer.explore": "Explore",
   "HakoLanding.footer.faq": "FAQ",
   "HakoLanding.footer.postListing": "Post a Listing",
+  "HakoLanding.footer.becomeAHost": "Become a Host",
   "HakoLanding.footer.privacy": "Privacy Policy",
   "HakoLanding.footer.terms": "Terms of Service",
   "HakoLanding.hero.accent": "near you",
@@ -1502,5 +1503,6 @@
   "UserNav.accountSettings": "Réglages",
   "UserNav.profileSettings": "Profil",
   "UserNav.screenreader.userNav": "Aller au profile d'utilisateur",
-  "UserNav.yourListings": "Mes annonces"
+  "UserNav.yourListings": "Mes annonces",
+  "HakoLanding.featured.titleInLocation": "Featured spots in {location}"
 }

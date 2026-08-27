@@ -1,6 +1,8 @@
 import React from 'react';
 import { useHistory } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 
+import { getListingsById } from '../../../ducks/marketplaceData.duck';
 import { useRouteConfiguration } from '../../../context/routeConfigurationContext';
 import { createResourceLocatorString } from '../../../util/routes';
 import { isOriginInUse } from '../../../util/search';
@@ -36,6 +38,9 @@ export const HakoLandingPage = () => {
   const routeConfiguration = useRouteConfiguration();
   const config = useConfiguration();
 
+  const { featuredListingIds, isFeaturedLocation } = useSelector(state => state.LandingPage);
+  const featuredListings = useSelector(state => getListingsById(state, featuredListingIds));
+
   const handleSearch = ({ mode, locationLabel, origin, bounds }) => {
     const listingType = listingTypeForSearch(mode);
     const originMaybe = origin && isOriginInUse(config) ? { origin } : {};
@@ -68,7 +73,10 @@ export const HakoLandingPage = () => {
               <Main as="main" className={css.main}>
                 <SectionHero onSearch={handleSearch} />
                 <SectionHowItWorks />
-                <SectionFeaturedSpots />
+                <SectionFeaturedSpots
+                  listings={featuredListings}
+                  isFeaturedLocation={isFeaturedLocation}
+                />
                 <SectionExploreLocations />
                 <SectionReviews />
                 <SectionListYourSpace />

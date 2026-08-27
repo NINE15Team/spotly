@@ -80,32 +80,3 @@ export const DEFAULT_REVIEWS = [
   },
 ];
 
-export const DEFAULT_FEATURED_SPOTS = [
-  {
-    id: '1',
-    title: 'Bayview Parkade Stall',
-    locationLabel: 'Bayview · 0.2 mi',
-    price: '$4',
-    priceUnit: '/hr',
-    tags: ['Covered', 'EV'],
-    rating: '4.9',
-  },
-  {
-    id: '2',
-    title: 'Bayview Parkade Stall',
-    locationLabel: 'Bayview · 0.2 mi',
-    price: '$4',
-    priceUnit: '/hr',
-    tags: ['Covered', 'EV'],
-    rating: '4.9',
-  },
-  {
-    id: '3',
-    title: 'Bayview Parkade Stall',
-    locationLabel: 'Bayview · 0.2 mi',
-    price: '$4',
-    priceUnit: '/hr',
-    tags: ['Covered', 'EV'],
-    rating: '4.9',
-  },
-];

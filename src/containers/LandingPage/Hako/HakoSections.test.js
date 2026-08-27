@@ -11,12 +11,49 @@ import { HakoFooter } from './HakoFooter';
 
 const { screen } = testingLibrary;
 
+const createFeaturedListing = (id, title, address, amount) => ({
+  id: { uuid: id },
+  type: 'listing',
+  attributes: {
+    title,
+    price: { amount, currency: 'USD' },
+    publicData: { location: { address }, unitType: 'day' },
+  },
+  images: [],
+});
+
 describe('Homepage remaining sections', () => {
-  it('SectionFeaturedSpots renders title and listing cards', () => {
-    render(<SectionFeaturedSpots />);
-    expect(screen.getByRole('heading', { name: 'HakoLanding.featured.title' })).toBeInTheDocument();
-    expect(screen.getAllByText('Bayview Parkade Stall').length).toBe(3);
+  it('SectionFeaturedSpots renders real listings passed to it', () => {
+    render(
+      <SectionFeaturedSpots
+        listings={[
+          createFeaturedListing('l1', 'Detroit Garage Stall', 'Detroit, Michigan', 1200),
+          createFeaturedListing('l2', 'Ann Arbor Driveway', 'Ann Arbor, Michigan', 1800),
+        ]}
+        isFeaturedLocation
+      />
+    );
+    expect(
+      screen.getByRole('heading', { name: 'HakoLanding.featured.titleInLocation' })
+    ).toBeInTheDocument();
+    expect(screen.getByText('Detroit Garage Stall')).toBeInTheDocument();
+    expect(screen.getByText('Ann Arbor Driveway')).toBeInTheDocument();
     expect(screen.getByText('HakoLanding.featured.viewAll')).toBeInTheDocument();
+  });
+
+  it('SectionFeaturedSpots uses the location-less heading when listings are from elsewhere', () => {
+    render(
+      <SectionFeaturedSpots
+        listings={[createFeaturedListing('l1', 'Bayview Stall', 'San Francisco, CA', 1500)]}
+        isFeaturedLocation={false}
+      />
+    );
+    expect(screen.getByRole('heading', { name: 'HakoLanding.featured.title' })).toBeInTheDocument();
+  });
+
+  it('SectionFeaturedSpots renders nothing when there are no listings', () => {
+    const { container } = render(<SectionFeaturedSpots listings={[]} />);
+    expect(container).toBeEmptyDOMElement();
   });
 
   it('SectionExploreLocations renders all location cards', () => {

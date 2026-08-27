@@ -14,6 +14,7 @@ import { constructQueryParamName, isOriginInUse } from '../../util/search';
 import { hasPermissionToViewData, isUserAuthorized } from '../../util/userHelpers';
 import { parse } from '../../util/urlHelpers';
 import { getReferralParams } from '../../util/webStorageHelpers';
+import { priceUnitToDayFactor } from '../../util/hakoPricing';
 
 import { addMarketplaceEntities } from '../../ducks/marketplaceData.duck';
 
@@ -154,14 +155,19 @@ const searchListingsPayloadCreator = ({ searchParams, config }, thunkAPI) => {
     return pickedKeys;
   };
 
-  const priceSearchParams = priceParam => {
+  // The price range is entered in the unit chosen by the "Price by" toggle, while
+  // listings store a per-day price. Scale the range into the stored unit before
+  // querying. See util/hakoPricing.js.
+  const priceSearchParams = (priceParam, priceBy) => {
     const inSubunits = value => convertUnitToSubUnit(value, unitDivisor(config.currency));
     const values = priceParam ? priceParam.split(',') : [];
-    return priceParam && values.length === 2
-      ? {
-          price: [inSubunits(values[0]), inSubunits(values[1]) + 1].join(','),
-        }
-      : {};
+    if (!(priceParam && values.length === 2)) {
+      return {};
+    }
+    const factor = priceUnitToDayFactor(priceBy);
+    const minPrice = inSubunits(values[0]) * factor;
+    const maxPrice = inSubunits(values[1]) * factor + 1;
+    return { price: [minPrice, maxPrice].join(',') };
   };
 
   const datesSearchParams = datesParam => {
@@ -267,6 +273,9 @@ const searchListingsPayloadCreator = ({ searchParams, config }, thunkAPI) => {
   const {
     perPage,
     price,
+    // UI-only param: selects the unit the price range is expressed in.
+    // Destructured out so it is never forwarded to the listings API.
+    priceBy,
     dates,
     seats,
     sort,
@@ -277,7 +286,7 @@ const searchListingsPayloadCreator = ({ searchParams, config }, thunkAPI) => {
   } = searchParams;
   // The params related to default filters are prepared one-by-one
   // We could consider moving them to the prepareAPIParams function too.
-  const priceMaybe = priceSearchParams(price);
+  const priceMaybe = priceSearchParams(price, priceBy);
   const datesMaybe = datesSearchParams(dates);
   const stockMaybe = stockFilters(datesMaybe);
   const seatsMaybe = seatsSearchParams(seats, datesMaybe);

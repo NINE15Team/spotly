@@ -315,8 +315,6 @@ const OrderPanel = props => {
     activeSubscriptionId,
     checkSubscriptionInProgress,
     isHakoLayout = false,
-    hakoRating,
-    hakoReviewCount,
   } = props;
 
   const publicData = listing?.attributes?.publicData || {};
@@ -489,14 +487,6 @@ const OrderPanel = props => {
             intl={intl}
             marketplaceCurrency={marketplaceCurrency}
           />
-          {isHakoLayout ? (
-            <div className={css.hakoPanelRating}>
-              <span aria-hidden="true">★</span>
-              <span>
-                {hakoRating || '4.9'} ({hakoReviewCount || 12})
-              </span>
-            </div>
-          ) : null}
         </div>
 
         {!isHakoLayout ? (

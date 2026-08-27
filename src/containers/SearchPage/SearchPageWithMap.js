@@ -41,6 +41,7 @@ import SearchPageAccessWrapper from './SearchPageAccessWrapper';
 import SearchErrors from './SearchErrors';
 import HakoSearchBar from './HakoSearchBar';
 import HakoPriceByToggle from './HakoPriceByToggle';
+import { sanitizePriceBy } from '../../util/hakoPricing';
 
 import css from './SearchPage.module.css';
 
@@ -53,7 +54,6 @@ export class SearchPageComponent extends Component {
     this.state = {
       isMobileModalOpen: false,
       currentQueryParams: validUrlQueryParamsFromProps(props),
-      priceBy: 'hour',
     };
 
     this.onMapMoveEnd = debounce(this.onMapMoveEnd.bind(this), SEARCH_WITH_MAP_DEBOUNCE);
@@ -64,6 +64,7 @@ export class SearchPageComponent extends Component {
     this.resetAll = this.resetAll.bind(this);
     this.getHandleChangedValueFn = this.getHandleChangedValueFn.bind(this);
     this.handleSearchBarSubmit = this.handleSearchBarSubmit.bind(this);
+    this.handlePriceByChange = this.handlePriceByChange.bind(this);
 
     // SortBy
     this.handleSortBy = this.handleSortBy.bind(this);
@@ -195,6 +196,21 @@ export class SearchPageComponent extends Component {
     });
   }
 
+  // "Price by" lives in the URL so the chosen unit survives reload/sharing and so
+  // the price range is re-queried in that unit. onSortBy is a generic
+  // "set one url param and push" helper, despite its name.
+  handlePriceByChange(priceBy) {
+    const { history, routeConfiguration, location } = this.props;
+    onSortBy({
+      history,
+      routeConfiguration,
+      location,
+      urlQueryParams: validUrlQueryParamsFromProps(this.props),
+      urlParam: 'priceBy',
+      values: sanitizePriceBy(priceBy),
+    });
+  }
+
   handleSearchBarSubmit(values = {}) {
     const { history, routeConfiguration, location, config } = this.props;
     const routes = routeConfiguration;
@@ -323,6 +339,7 @@ export class SearchPageComponent extends Component {
     const datesFromUrl = searchParamsInURL?.dates || '';
     const dateFromUrl = datesFromUrl.split(',')[0] || '';
     const durationFromUrl = searchParamsInURL?.duration || '';
+    const priceBy = sanitizePriceBy(searchParamsInURL?.priceBy);
     const locationInitialValue = addressFromUrl
       ? {
           search: addressFromUrl,
@@ -340,8 +357,8 @@ export class SearchPageComponent extends Component {
           {!isMonthlySearch ? (
             <HakoPriceByToggle
               className={css.priceByInGroup}
-              value={this.state.priceBy}
-              onChange={priceBy => this.setState({ priceBy })}
+              value={priceBy}
+              onChange={this.handlePriceByChange}
             />
           ) : null}
           {availableFilters

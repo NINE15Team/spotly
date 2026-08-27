@@ -20,7 +20,7 @@ import {
   stringifyDateToISO8601,
 } from '../../util/dates';
 import { isFieldForCategory, isFieldForListingType } from '../../util/fieldHelpers';
-import { HAKO_SIDEBAR_FILTERS, isHakoHiddenSidebarFilter } from './hakoSearchFilters';
+import { isHakoHiddenSidebarFilter } from './hakoSearchFilters';
 
 const validURLParamForCategoryData = (prefix, categories, level, params) => {
   const levelKey = constructQueryParamName(`${prefix}${level}`, 'public');
@@ -606,14 +606,8 @@ export const getDerivedRenderData = ({
     activeListingTypes,
     currentPathParams,
   });
-  const hakoSidebarFilters = isHakoSearchLayout
-    ? HAKO_SIDEBAR_FILTERS.filter(
-        hakoFilter => !listingFieldsConfig.some(existing => existing.key === hakoFilter.key)
-      )
-    : [];
-  const listingFieldsWithHakoFilters = [...listingFieldsConfig, ...hakoSidebarFilters];
   const filterConfigs = {
-    listingFieldsConfig: listingFieldsWithHakoFilters,
+    listingFieldsConfig,
     defaultFiltersConfig,
     listingCategories,
     activeListingTypes,
@@ -647,7 +641,7 @@ export const getDerivedRenderData = ({
         f => !['categoryLevel', 'listingType'].includes(f.key) && !hideHakoRedundantFilter(f)
       );
   const [customPrimaryFilters, customSecondaryFilters] = groupListingFieldConfigs(
-    listingFieldsWithHakoFilters,
+    listingFieldsConfig,
     activeListingTypes
   );
   const unorderedFilters = [
@@ -656,15 +650,13 @@ export const getDerivedRenderData = ({
     ...builtInFilters,
     ...customSecondaryFilters,
   ];
-  const hakoFilterKeys = new Set(HAKO_SIDEBAR_FILTERS.map(f => f.key));
+  // Hako sidebar keeps price at the top; the rest are whatever the hosted
+  // listing-fields asset marks as searchable filters, in its own order.
   const priceFilters = unorderedFilters.filter(f => f.schemaType === 'price');
-  const hakoFilters = unorderedFilters.filter(f => hakoFilterKeys.has(f.key));
-  const restFilters = unorderedFilters.filter(
-    f => f.schemaType !== 'price' && !hakoFilterKeys.has(f.key)
-  );
+  const restFilters = unorderedFilters.filter(f => f.schemaType !== 'price');
   const availablePrimaryFilters = unorderedFilters;
   const availableFilters = isHakoSearchLayout
-    ? [...priceFilters, ...hakoFilters, ...restFilters]
+    ? [...priceFilters, ...restFilters]
     : unorderedFilters;
 
   const hasSecondaryFilters = !!(customSecondaryFilters && customSecondaryFilters.length > 0);

@@ -181,12 +181,6 @@ export const ListingPageComponent = props => {
     (typeof locationLabel === 'string' ? locationLabel.split(',')[0] : '') ||
     '';
   const subtitle = publicData?.subtitle || publicData?.tagline || publicData?.spaceType || null;
-  const ratingDisplay = currentListing?.attributes?.metadata?.rating || publicData?.rating || '4.9';
-  const reviewCount =
-    currentListing?.attributes?.metadata?.reviewsTotal ||
-    publicData?.reviewsTotal ||
-    (reviews?.length > 0 ? reviews.length : 42);
-
   let priceLabel = null;
   if (price && price.currency === config.currency) {
     try {
@@ -299,14 +293,11 @@ export const ListingPageComponent = props => {
               subtitle={subtitle}
               locationLabel={locationLabel}
               priceLabel={priceLabel}
-              rating={ratingDisplay}
-              reviewCount={reviewCount}
             />
 
             <HakoHostBar
               author={currentListing.author}
               authorDisplayName={authorDisplayName}
-              reviewCount={reviewCount}
               onContactUser={onContactUser}
               showContact={showContactHost}
             />
@@ -336,8 +327,6 @@ export const ListingPageComponent = props => {
             <OrderPanel
               className={css.hakoOrderPanel}
               isHakoLayout
-              hakoRating={ratingDisplay}
-              hakoReviewCount={reviewCount}
               listing={currentListing}
               isOwnListing={isOwnListing}
               onSubmit={handleOrderSubmit}

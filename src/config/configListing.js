@@ -320,43 +320,22 @@ export const listingFields = [
  *                          - enumOptions (array, for schemaType: 'enum', 'multi-enum'): [{ label: string, option: string }]
  */
 
+// Hako offers exactly two listing types:
+//   - 'hourly-rental'        hourly day parking. Defined in the hosted listing-types asset
+//                            (Sharetribe Console), so it is NOT repeated here.
+//   - 'monthly-subscription' monthly storage. Defined here because the subscription-rental
+//                            transaction process is not selectable in Console.
+// Anything else coming from Console is filtered out by SELECTABLE_LISTING_TYPES
+// (see src/util/hakoListingTypes.js), which is the single place to change if a
+// third type is ever introduced.
 export const listingTypes = [
   {
-    listingType: 'monthly-storage',
+    listingType: 'monthly-subscription',
     label: 'Monthly storage',
     transactionType: {
       process: 'subscription-rental',
       alias: 'subscription-rental/release-5',
       unitType: 'day',
-    },
-    availabilityType: 'oneSeat',
-    defaultListingFields: {
-      location: true,
-      payoutDetails: true,
-    },
-  },
-  {
-    // Alias kept for listings created before the monthly-storage rename
-    listingType: 'monthly-subscription',
-    label: 'Monthly subscription',
-    transactionType: {
-      process: 'subscription-rental',
-      alias: 'subscription-rental/release-5',
-      unitType: 'day',
-    },
-    availabilityType: 'oneSeat',
-    defaultListingFields: {
-      location: true,
-      payoutDetails: true,
-    },
-  },
-  {
-    listingType: 'day-parking',
-    label: 'Day parking',
-    transactionType: {
-      process: 'default-booking',
-      alias: 'default-booking/release-1',
-      unitType: 'hour',
     },
     availabilityType: 'oneSeat',
     defaultListingFields: {

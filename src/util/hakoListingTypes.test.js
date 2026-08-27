@@ -1,6 +1,7 @@
 import {
   DAY_PARKING_LISTING_TYPE,
   MONTHLY_STORAGE_LISTING_TYPE,
+  SELECTABLE_LISTING_TYPES,
   isMonthlyListingType,
   listingTypeForSearch,
   parkingOptionFromListingType,
@@ -14,15 +15,29 @@ describe('hakoListingTypes', () => {
     expect(isMonthlyListingType(null)).toBe(false);
   });
 
+  it('offers exactly two selectable listing types', () => {
+    expect(SELECTABLE_LISTING_TYPES).toEqual(['hourly-rental', 'monthly-subscription']);
+  });
+
   it('normalizes search listing types to every alias for that category', () => {
-    expect(listingTypeForSearch('monthly-storage')).toBe('monthly-storage,monthly-subscription');
-    expect(listingTypeForSearch('monthly-subscription')).toBe('monthly-storage,monthly-subscription');
-    expect(listingTypeForSearch('day-parking')).toBe('day-parking,daily-rental');
-    expect(listingTypeForSearch(undefined)).toBe('day-parking,daily-rental');
+    const monthly = 'monthly-subscription,monthly-storage';
+    const day = 'hourly-rental,day-parking,daily-rental';
+    expect(listingTypeForSearch('monthly-storage')).toBe(monthly);
+    expect(listingTypeForSearch('monthly-subscription')).toBe(monthly);
+    expect(listingTypeForSearch('day-parking')).toBe(day);
+    expect(listingTypeForSearch(undefined)).toBe(day);
+  });
+
+  it('keeps retired ids searchable so existing listings still match', () => {
+    // hourly-rental is the type new listings use; daily-rental is what older
+    // parking listings were created under. Both must resolve to day parking.
+    expect(listingTypeForSearch('day-parking')).toContain('hourly-rental');
+    expect(listingTypeForSearch('day-parking')).toContain('daily-rental');
   });
 
   it('maps URL listing types to parking options', () => {
     expect(parkingOptionFromListingType('monthly-subscription')).toBe(MONTHLY_STORAGE_LISTING_TYPE);
     expect(parkingOptionFromListingType('day-parking')).toBe(DAY_PARKING_LISTING_TYPE);
+    expect(parkingOptionFromListingType('hourly-rental')).toBe(DAY_PARKING_LISTING_TYPE);
   });
 });

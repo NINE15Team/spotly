@@ -46,9 +46,8 @@ export const HakoHostBar = props => {
           <p className={css.hostStats}>
             <FormattedMessage
               id="HakoListing.hostStats"
-              defaultMessage="Hako Host{memberMaybe} · {count} reviews"
+              defaultMessage="Hako Host{memberMaybe}"
               values={{
-                count: reviewCount || 24,
                 memberMaybe: memberLabel ? ` · Joined in ${memberLabel}` : '',
               }}
             />
