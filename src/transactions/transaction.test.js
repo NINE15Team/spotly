@@ -232,7 +232,7 @@ describe('transaction utils for default-booking', () => {
 });
 
 describe('transaction utils for subscription-rental', () => {
-  const SUBSCRIPTION_ALIAS = `${SUBSCRIPTION_PROCESS_NAME}/release-5`;
+  const SUBSCRIPTION_ALIAS = `${SUBSCRIPTION_PROCESS_NAME}/release-6`;
   const process = getProcess(SUBSCRIPTION_PROCESS_NAME);
   const transitions = process?.transitions;
 
@@ -251,8 +251,11 @@ describe('transaction utils for subscription-rental', () => {
   });
 
   describe('resolveTransactionProcessAlias', () => {
-    it('upgrades stale subscription-rental/release-1 to release-5', () => {
+    it('upgrades stale subscription-rental/release-1 to release-6', () => {
       expect(resolveTransactionProcessAlias('subscription-rental/release-1')).toBe(SUBSCRIPTION_ALIAS);
+    });
+    it('upgrades stale subscription-rental/release-5 to release-6', () => {
+      expect(resolveTransactionProcessAlias('subscription-rental/release-5')).toBe(SUBSCRIPTION_ALIAS);
     });
     it('keeps the current subscription alias unchanged', () => {
       expect(resolveTransactionProcessAlias(SUBSCRIPTION_ALIAS)).toBe(SUBSCRIPTION_ALIAS);
@@ -260,8 +263,15 @@ describe('transaction utils for subscription-rental', () => {
     it('resolves subscription process name when alias is missing', () => {
       expect(resolveTransactionProcessAlias(null, SUBSCRIPTION_PROCESS_NAME)).toBe(SUBSCRIPTION_ALIAS);
     });
-    it('keeps non-subscription aliases unchanged', () => {
-      expect(resolveTransactionProcessAlias('default-booking/release-1')).toBe('default-booking/release-1');
+    it('upgrades stale default-booking/release-1 to release-2', () => {
+      expect(resolveTransactionProcessAlias('default-booking/release-1')).toBe(
+        'default-booking/release-2'
+      );
+    });
+    it('keeps the current booking alias unchanged', () => {
+      expect(resolveTransactionProcessAlias('default-booking/release-2')).toBe(
+        'default-booking/release-2'
+      );
     });
   });
 
@@ -270,7 +280,7 @@ describe('transaction utils for subscription-rental', () => {
       expect(isSubscriptionProcessAlias(SUBSCRIPTION_ALIAS)).toBe(true);
     });
     it('returns false for other aliases', () => {
-      expect(isSubscriptionProcessAlias('default-booking/release-1')).toBe(false);
+      expect(isSubscriptionProcessAlias('default-booking/release-2')).toBe(false);
     });
     it('returns false for nullish input', () => {
       expect(isSubscriptionProcessAlias(null)).toBe(false);

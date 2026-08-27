@@ -56,7 +56,7 @@ const listingTypes = [
     id: 'rent-bicycles-nightly',
     transactionProcess: {
       name: 'default-booking',
-      alias: 'default-booking/release-1',
+      alias: 'default-booking/release-2',
     },
     unitType: 'night',
   },

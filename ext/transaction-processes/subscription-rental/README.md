@@ -88,54 +88,23 @@ Full matrix: [docs/subscription-email-notifications.md](../../../docs/subscripti
 
 See: [Sharetribe booking acceptance](https://www.sharetribe.com/docs/concepts/payments/payments-with-stripe/#provider-acceptance)
 
-## Deploy (Dev)
+## Deploy
 
-**Marketplace:** `alpsalpinerentaspot-dev`
+**Marketplaces:** `alpsalpinerentaspot-dev` · `alpsalpinerentaspot`
 
-| Field | Value |
-|-------|--------|
-| Latest pushed version | **6** (waiver operator self-loops; pushed 2026-08-11) |
-| Active alias | `subscription-rental/release-5` → still points at version **5** |
-| Alias cut | **Deferred** — leave `release-5` until current dev testing is finished |
+| Field | Dev | Live |
+|-------|-----|------|
+| Process version (waiver) | **6** | **2** |
+| Active alias | `subscription-rental/release-6` → v6 | `subscription-rental/release-6` → v2 |
 
-Same pattern for booking: `default-booking` latest is version **2**; live alias
-`default-booking/release-1` still points at version **1**. Details:
-[docs/WAIVER_IMPLEMENTATION.md §9](../../../docs/WAIVER_IMPLEMENTATION.md#9-deployment-checklist).
+App constants use `subscription-rental/release-6` (see `subscriptionConstants.js`,
+`transactionProcessSubscription.js`, `transaction.js`, `configListing.js`).
 
-First-time create (done):
+Booking follows the same cutover: `default-booking/release-2` on both envs.
 
-```bash
-flex-cli process create --process subscription-rental \
-  --path ext/transaction-processes/subscription-rental -m alpsalpinerentaspot-dev
-flex-cli process create-alias -m alpsalpinerentaspot-dev \
-  --process subscription-rental --version 1 --alias release-1
-```
-
-Push only (done for waiver; aliases intentionally skipped while someone tests on dev):
-
-```bash
-flex-cli process push --process subscription-rental \
-  --path ext/transaction-processes/subscription-rental -m alpsalpinerentaspot-dev
-# → Version 6 saved. Do NOT create/update alias yet.
-```
-
-**TODO — when dev testing is clear, cut the alias to the waiver version:**
-
-```bash
-flex-cli process create-alias -m alpsalpinerentaspot-dev \
-  --process subscription-rental --version 6 --alias release-6
-# then bump app constants to subscription-rental/release-6 and re-point listing types in Console
-```
-
-Optionally, for booking:
-
-```bash
-flex-cli process create-alias -m alpsalpinerentaspot-dev \
-  --process default-booking --version 2 --alias release-2
-```
-
-Then attach the new alias(es) to listing types in Sharetribe Console (and re-save listings that still
-have an older alias in public data).
+Also re-point listing types in Sharetribe Console to the new aliases (and re-save listings that still
+have an older alias in public data). Checkout / edit-listing upgrade stale aliases via
+`resolveTransactionProcessAlias` / `resolveSubscriptionProcessAlias`.
 
 ## Web Template
 

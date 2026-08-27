@@ -320,21 +320,21 @@ export const listingFields = [
  *                          - enumOptions (array, for schemaType: 'enum', 'multi-enum'): [{ label: string, option: string }]
  */
 
-// Hako offers exactly two listing types:
-//   - 'hourly-rental'        hourly day parking. Defined in the hosted listing-types asset
-//                            (Sharetribe Console), so it is NOT repeated here.
-//   - 'monthly-subscription' monthly storage. Defined here because the subscription-rental
+// Hako create-listing offers three listing types (see SELECTABLE_LISTING_TYPES):
+//   - 'daily-rental'         "pr day" — hosted listing-types asset (Console)
+//   - 'hourly-rental'        "pr hour" — hosted listing-types asset (Console)
+//   - 'monthly-subscription' — defined here because the subscription-rental
 //                            transaction process is not selectable in Console.
+// Parking / Storage are listing *categories* in Console, not listing types.
 // Anything else coming from Console is filtered out by SELECTABLE_LISTING_TYPES
-// (see src/util/hakoListingTypes.js), which is the single place to change if a
-// third type is ever introduced.
+// (see src/util/hakoListingTypes.js).
 export const listingTypes = [
   {
     listingType: 'monthly-subscription',
-    label: 'Monthly storage',
+    label: 'Monthly subscription',
     transactionType: {
       process: 'subscription-rental',
-      alias: 'subscription-rental/release-5',
+      alias: 'subscription-rental/release-6',
       unitType: 'day',
     },
     availabilityType: 'oneSeat',
@@ -351,7 +351,7 @@ export const listingTypes = [
   //   label: 'Daily booking',
   //   transactionType: {
   //     process: 'default-booking',
-  //     alias: 'default-booking/release-1',
+  //     alias: 'default-booking/release-2',
   //     unitType: 'day',
   //   },
   //   availabilityType: 'oneSeat',
@@ -440,7 +440,7 @@ export const listingTypes = [
   //   label: 'Nightly booking',
   //   transactionType: {
   //     process: 'default-booking',
-  //     alias: 'default-booking/release-1',
+  //     alias: 'default-booking/release-2',
   //     unitType: 'night',
   //   },
   // },
@@ -449,7 +449,7 @@ export const listingTypes = [
   //   label: 'Hourly booking',
   //   transactionType: {
   //     process: 'default-booking',
-  //     alias: 'default-booking/release-1',
+  //     alias: 'default-booking/release-2',
   //     unitType: 'hour',
   //   },
   // },

@@ -107,7 +107,7 @@ describe('POST /api/initiate-privileged — subscription double-booking guard', 
     const res = makeRes();
 
     initiatePrivileged(
-      { body: makeBody({ isSpeculative: false, processAlias: 'subscription-rental/release-5' }) },
+      { body: makeBody({ isSpeculative: false, processAlias: 'subscription-rental/release-6' }) },
       res
     );
     await drain();
@@ -118,7 +118,7 @@ describe('POST /api/initiate-privileged — subscription double-booking guard', 
     expect(handleError).toHaveBeenCalledWith(res, error);
   });
 
-  it('upgrades stale subscription-rental/release-1 to release-5 on initiate', async () => {
+  it('upgrades stale subscription-rental/release-1 to release-6 on initiate', async () => {
     setupSdk();
     checkForExistingSubscription.mockResolvedValue(undefined);
     const res = makeRes();
@@ -130,7 +130,7 @@ describe('POST /api/initiate-privileged — subscription double-booking guard', 
     await drain();
 
     expect(trustedSdk.transactions.initiate).toHaveBeenCalledWith(
-      expect.objectContaining({ processAlias: 'subscription-rental/release-5' }),
+      expect.objectContaining({ processAlias: 'subscription-rental/release-6' }),
       {}
     );
   });
@@ -145,7 +145,7 @@ describe('POST /api/initiate-privileged — subscription double-booking guard', 
     const res = makeRes();
 
     initiatePrivileged(
-      { body: makeBody({ isSpeculative: false, processAlias: 'subscription-rental/release-5' }) },
+      { body: makeBody({ isSpeculative: false, processAlias: 'subscription-rental/release-6' }) },
       res
     );
     await drain();
@@ -153,7 +153,7 @@ describe('POST /api/initiate-privileged — subscription double-booking guard', 
     expect(checkForExistingSubscription).toHaveBeenCalledWith('listing-1', 'subscription-rental');
     expect(transactionLineItemsWithTax).toHaveBeenCalledWith(
       expect.anything(),
-      expect.objectContaining({ processAlias: 'subscription-rental/release-5' }),
+      expect.objectContaining({ processAlias: 'subscription-rental/release-6' }),
       expect.anything(),
       expect.anything()
     );
@@ -170,7 +170,7 @@ describe('POST /api/initiate-privileged — subscription double-booking guard', 
     const res = makeRes();
 
     initiatePrivileged(
-      { body: makeBody({ isSpeculative: true, processAlias: 'subscription-rental/release-5' }) },
+      { body: makeBody({ isSpeculative: true, processAlias: 'subscription-rental/release-6' }) },
       res
     );
     await drain();
@@ -184,7 +184,7 @@ describe('POST /api/initiate-privileged — subscription double-booking guard', 
     const res = makeRes();
 
     initiatePrivileged(
-      { body: makeBody({ isSpeculative: false, processAlias: 'default-booking/release-1' }) },
+      { body: makeBody({ isSpeculative: false, processAlias: 'default-booking/release-2' }) },
       res
     );
     await drain();
@@ -192,7 +192,7 @@ describe('POST /api/initiate-privileged — subscription double-booking guard', 
     expect(checkForExistingSubscription).not.toHaveBeenCalled();
     expect(transactionLineItemsWithTax).toHaveBeenCalledWith(
       expect.anything(),
-      expect.objectContaining({ processAlias: 'default-booking/release-1' }),
+      expect.objectContaining({ processAlias: 'default-booking/release-2' }),
       expect.anything(),
       expect.anything()
     );
@@ -209,7 +209,7 @@ describe('POST /api/initiate-privileged — subscription double-booking guard', 
     const res = makeRes();
 
     initiatePrivileged(
-      { body: makeBody({ isSpeculative: false, processAlias: 'default-booking/release-1' }) },
+      { body: makeBody({ isSpeculative: false, processAlias: 'default-booking/release-2' }) },
       res
     );
     await drain();
@@ -228,7 +228,7 @@ describe('POST /api/initiate-privileged — subscription double-booking guard', 
     const res = makeRes();
 
     initiatePrivileged(
-      { body: makeBody({ isSpeculative: true, processAlias: 'default-booking/release-1' }) },
+      { body: makeBody({ isSpeculative: true, processAlias: 'default-booking/release-2' }) },
       res
     );
     await drain();

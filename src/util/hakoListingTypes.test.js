@@ -15,8 +15,12 @@ describe('hakoListingTypes', () => {
     expect(isMonthlyListingType(null)).toBe(false);
   });
 
-  it('offers exactly two selectable listing types', () => {
-    expect(SELECTABLE_LISTING_TYPES).toEqual(['hourly-rental', 'monthly-subscription']);
+  it('offers the three selectable listing types (pr day, pr hour, monthly)', () => {
+    expect(SELECTABLE_LISTING_TYPES).toEqual([
+      'daily-rental',
+      'hourly-rental',
+      'monthly-subscription',
+    ]);
   });
 
   it('normalizes search listing types to every alias for that category', () => {

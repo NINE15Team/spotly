@@ -1365,10 +1365,11 @@ const mergeListingConfig = (hostedConfig, defaultConfigs, categoriesInUse) => {
   // https://www.sharetribe.com/docs/template/configuration/hosted-and-local-configurations/
   const shouldMerge = mergeDefaultTypesAndFieldsForDebugging(false);
   const mergedListingTypes = union(hostedListingTypes, defaultListingTypes, 'listingType');
-  // Hako offers exactly two listing types, but the hosted asset may still contain
-  // retired ones (e.g. 'daily-rental') that cannot be deleted from here. Restrict to
-  // the supported set so the create-listing flow only ever offers those two.
+  // Restrict hosted+local listing types to SELECTABLE_LISTING_TYPES so create-listing
+  // only offers the supported set (pr day, pr hour, monthly subscription). The hosted asset
+  // may still contain retired ids (e.g. 'day-parking') that cannot be deleted from here.
   // Add to SELECTABLE_LISTING_TYPES in util/hakoListingTypes.js to offer a new type.
+  // Parking / Storage are listing categories, not listing types.
   //
   // Only applied when the merged set actually contains a Hako type. A config with
   // none of them is not a Hako marketplace config (the template's own tests and

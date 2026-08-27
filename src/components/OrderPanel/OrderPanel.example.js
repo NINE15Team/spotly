@@ -16,7 +16,7 @@ const validListingTypes = [
     listingType: 'rent-bicycles-daily',
     transactionType: {
       process: 'default-booking',
-      alias: 'default-booking/release-1',
+      alias: 'default-booking/release-2',
       unitType: 'day',
     },
   },
@@ -107,7 +107,7 @@ export const Default = {
       availabilityPlan: { timezone: 'Etc/UTC' },
       publicData: {
         listingType: 'rent-bicycles-daily',
-        transactionProcessAlias: 'default-booking/release-1',
+        transactionProcessAlias: 'default-booking/release-2',
         unitType: 'day',
       },
     }),
@@ -137,7 +137,7 @@ export const WithClosedListing = {
       availabilityPlan: { timezone: 'Etc/UTC' },
       publicData: {
         listingType: 'rent-bicycles-daily',
-        transactionProcessAlias: 'default-booking/release-1',
+        transactionProcessAlias: 'default-booking/release-2',
         unitType: 'day',
       },
       state: LISTING_STATE_CLOSED,

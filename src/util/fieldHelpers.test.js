@@ -1,7 +1,7 @@
 import { isValidCurrencyForTransactionProcess } from './fieldHelpers';
 
-const SUBSCRIPTION_ALIAS = 'subscription-rental/release-5';
-const BOOKING_ALIAS = 'default-booking/release-1';
+const SUBSCRIPTION_ALIAS = 'subscription-rental/release-6';
+const BOOKING_ALIAS = 'default-booking/release-2';
 
 describe('isValidCurrencyForTransactionProcess', () => {
   describe('subscription-rental is treated as a Stripe-related process', () => {

@@ -29,7 +29,7 @@ const bookingType = {
   id: 'daily-booking',
   transactionProcess: {
     name: 'default-booking',
-    alias: 'default-booking/release-1',
+    alias: 'default-booking/release-2',
   },
   unitType: 'day',
 };
@@ -51,7 +51,7 @@ describe('ManageListingCard (Hako)', () => {
       price: new Money(20000, 'USD'),
       publicData: {
         listingType: 'daily-booking',
-        transactionProcessAlias: 'default-booking/release-1',
+        transactionProcessAlias: 'default-booking/release-2',
         unitType: 'day',
       },
     });
@@ -84,7 +84,7 @@ describe('ManageListingCard (Hako)', () => {
       price: new Money(18000, 'USD'),
       publicData: {
         listingType: 'daily-booking',
-        transactionProcessAlias: 'default-booking/release-1',
+        transactionProcessAlias: 'default-booking/release-2',
         unitType: 'day',
       },
     });
@@ -116,7 +116,7 @@ describe('ManageListingCard (Hako)', () => {
       price: new Money(10000, 'USD'),
       publicData: {
         listingType: 'daily-booking',
-        transactionProcessAlias: 'default-booking/release-1',
+        transactionProcessAlias: 'default-booking/release-2',
         unitType: 'day',
       },
     });
@@ -179,7 +179,7 @@ describe('ManageListingCard (Hako)', () => {
       price: new Money(10000, 'USD'),
       publicData: {
         listingType: 'daily-booking',
-        transactionProcessAlias: 'default-booking/release-1',
+        transactionProcessAlias: 'default-booking/release-2',
         unitType: 'day',
       },
     });

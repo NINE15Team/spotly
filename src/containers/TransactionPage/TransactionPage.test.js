@@ -443,7 +443,7 @@ describe('TransactionPage', () => {
           listing: createListing('listing-item', {
             publicData: {
               listingType: 'rent-bikes',
-              transactionProcessAlias: 'default-booking/release-1',
+              transactionProcessAlias: 'default-booking/release-2',
               unitType: 'day',
             },
           }),
@@ -613,7 +613,7 @@ describe('TransactionPage', () => {
           listing: createListing('listing-item', {
             publicData: {
               listingType: 'rent-bikes',
-              transactionProcessAlias: 'default-booking/release-1',
+              transactionProcessAlias: 'default-booking/release-2',
               unitType: 'day',
             },
           }),
@@ -779,7 +779,7 @@ describe('TransactionPage', () => {
           listing: createListing('listing-item', {
             publicData: {
               listingType: 'rent-bikes',
-              transactionProcessAlias: 'default-booking/release-1',
+              transactionProcessAlias: 'default-booking/release-2',
               unitType: 'hour',
             },
           }),
@@ -948,7 +948,7 @@ describe('TransactionPage', () => {
           listing: createListing('listing-item', {
             publicData: {
               listingType: 'rent-bikes',
-              transactionProcessAlias: 'default-booking/release-1',
+              transactionProcessAlias: 'default-booking/release-2',
               unitType: 'hour',
             },
           }),

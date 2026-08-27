@@ -46,7 +46,7 @@ const PROCESSES = [
   },
   {
     name: BOOKING_PROCESS_NAME,
-    alias: `${BOOKING_PROCESS_NAME}/release-1`,
+    alias: `${BOOKING_PROCESS_NAME}/release-2`,
     process: bookingProcess,
     unitTypes: [DAY, NIGHT, HOUR, FIXED],
   },
@@ -64,7 +64,7 @@ const PROCESSES = [
   },
   {
     name: SUBSCRIPTION_PROCESS_NAME,
-    alias: `${SUBSCRIPTION_PROCESS_NAME}/release-5`,
+    alias: `${SUBSCRIPTION_PROCESS_NAME}/release-6`,
     process: subscriptionProcess,
     unitTypes: [DAY],
   },
@@ -277,7 +277,7 @@ export const getSupportedProcessesInfo = () =>
 
 /**
  * Resolve a process alias to the app's current supported alias for that process.
- * Upgrades stale listing publicData (e.g. subscription-rental/release-1 → release-5).
+ * Upgrades stale listing publicData (e.g. subscription-rental/release-5 → release-6).
  *
  * @param {String} [processAlias] - alias from listing publicData or transaction
  * @param {String} [processName] - fallback when alias is missing

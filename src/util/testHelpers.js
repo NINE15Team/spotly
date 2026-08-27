@@ -171,7 +171,7 @@ export const getDefaultConfiguration = () => {
           label: 'Rent bicycles',
           transactionType: {
             process: 'default-booking',
-            alias: 'default-booking/release-1',
+            alias: 'default-booking/release-2',
             unitType: 'day',
           },
         },
@@ -315,7 +315,7 @@ export const getHostedConfiguration = () => {
       listingTypes: [
         {
           transactionProcess: {
-            alias: 'default-booking/release-1',
+            alias: 'default-booking/release-2',
             name: 'default-booking',
           },
           id: 'daily-booking',

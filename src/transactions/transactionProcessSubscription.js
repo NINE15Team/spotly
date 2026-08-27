@@ -38,7 +38,7 @@ export const states = {
 };
 
 export const graph = {
-  id: 'subscription-rental/release-5',
+  id: 'subscription-rental/release-6',
   initial: states.INITIAL,
   states: {
     [states.INITIAL]: {

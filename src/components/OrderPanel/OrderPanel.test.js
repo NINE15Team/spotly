@@ -29,7 +29,7 @@ const listingTypes = [
     id: 'rent-bicycles-daily',
     transactionProcess: {
       name: 'default-booking',
-      alias: 'default-booking/release-1',
+      alias: 'default-booking/release-2',
     },
     unitType: 'day',
   },
@@ -37,7 +37,7 @@ const listingTypes = [
     id: 'rent-bicycles-nightly',
     transactionProcess: {
       name: 'default-booking',
-      alias: 'default-booking/release-1',
+      alias: 'default-booking/release-2',
     },
     unitType: 'night',
   },
@@ -45,7 +45,7 @@ const listingTypes = [
     id: 'rent-bicycles-hourly',
     transactionProcess: {
       name: 'default-booking',
-      alias: 'default-booking/release-1',
+      alias: 'default-booking/release-2',
     },
     unitType: 'hour',
   },
@@ -251,7 +251,7 @@ describe('OrderPanel', () => {
 
       publicData: {
         listingType: 'rent-bicycles-daily',
-        transactionProcessAlias: 'default-booking/release-1',
+        transactionProcessAlias: 'default-booking/release-2',
         unitType: 'day',
         amenities: ['dog_1'],
         location: {
@@ -301,7 +301,7 @@ describe('OrderPanel', () => {
 
       publicData: {
         listingType: 'rent-bicycles-nighlty',
-        transactionProcessAlias: 'default-booking/release-1',
+        transactionProcessAlias: 'default-booking/release-2',
         unitType: 'night',
         amenities: ['dog_1'],
         location: {
@@ -351,7 +351,7 @@ describe('OrderPanel', () => {
 
       publicData: {
         listingType: 'rent-bicycles-hourly',
-        transactionProcessAlias: 'default-booking/release-1',
+        transactionProcessAlias: 'default-booking/release-2',
         unitType: 'hour',
         amenities: ['dog_1'],
         location: {
@@ -409,7 +409,7 @@ describe('OrderPanel', () => {
 
       publicData: {
         listingType: 'rent-bicycles-fixed',
-        transactionProcessAlias: 'default-booking/release-1',
+        transactionProcessAlias: 'default-booking/release-2',
         unitType: 'fixed',
         amenities: ['dog_1'],
         location: {

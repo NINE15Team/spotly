@@ -181,7 +181,7 @@ describe('CheckoutPage', () => {
   it('Check that booking has relevant info', () => {
     const listing = createListing(
       'listing1',
-      { publicData: { transactionProcessAlias: 'default-booking/release-1', unitType: 'day' } },
+      { publicData: { transactionProcessAlias: 'default-booking/release-2', unitType: 'day' } },
       { author: createUser('author'), images: [createImage('first-image')] }
     );
 
@@ -237,7 +237,7 @@ describe('CheckoutPage', () => {
       'listing1',
       {
         publicData: {
-          transactionProcessAlias: 'subscription-rental/release-5',
+          transactionProcessAlias: 'subscription-rental/release-6',
           unitType: 'day',
         },
       },

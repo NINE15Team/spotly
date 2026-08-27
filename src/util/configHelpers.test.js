@@ -2,8 +2,8 @@ import { mergeConfig } from './configHelpers';
 import defaultConfig from '../config/configDefault';
 import { SELECTABLE_LISTING_TYPES } from './hakoListingTypes';
 
-// Mirrors the real /listings/listing-types.json asset from Console, which still
-// contains the retired 'daily-rental' type alongside 'hourly-rental'.
+// Mirrors the real /listings/listing-types.json asset from Console (pr day + pr hour).
+// Local configListing.js also supplies monthly-subscription.
 const hostedListingTypesAsset = {
   listingTypes: {
     listingTypes: [
@@ -12,7 +12,7 @@ const hostedListingTypesAsset = {
         label: 'pr day',
         unitType: 'day',
         availabilityType: 'oneSeat',
-        transactionProcess: { name: 'default-booking', alias: 'default-booking/release-1' },
+        transactionProcess: { name: 'default-booking', alias: 'default-booking/release-2' },
         defaultListingFields: { location: true, payoutDetails: true, price: true },
       },
       {
@@ -20,7 +20,7 @@ const hostedListingTypesAsset = {
         label: 'pr hour',
         unitType: 'hour',
         availabilityType: 'oneSeat',
-        transactionProcess: { name: 'default-booking', alias: 'default-booking/release-1' },
+        transactionProcess: { name: 'default-booking', alias: 'default-booking/release-2' },
         defaultListingFields: { location: true, payoutDetails: true, price: true },
       },
     ],
@@ -58,7 +58,7 @@ const hostedListingTypesAsset = {
 const getListingTypeIds = config => config.listing.listingTypes.map(lt => lt.listingType);
 
 describe('mergeConfig listing types', () => {
-  it('offers exactly the two supported Hako listing types', () => {
+  it('offers the three supported Hako listing types', () => {
     const config = mergeConfig(hostedListingTypesAsset, defaultConfig);
     expect(getListingTypeIds(config).sort()).toEqual([...SELECTABLE_LISTING_TYPES].sort());
   });
@@ -66,14 +66,16 @@ describe('mergeConfig listing types', () => {
   it('drops retired listing types that still exist in the hosted asset', () => {
     const config = mergeConfig(hostedListingTypesAsset, defaultConfig);
     const ids = getListingTypeIds(config);
-    expect(ids).not.toContain('daily-rental');
     expect(ids).not.toContain('day-parking');
     expect(ids).not.toContain('monthly-storage');
   });
 
-  it('keeps hourly-rental from the hosted asset and monthly-subscription from local config', () => {
+  it('keeps daily-rental and hourly-rental from Console and monthly-subscription from local config', () => {
     const config = mergeConfig(hostedListingTypesAsset, defaultConfig);
     const byId = Object.fromEntries(config.listing.listingTypes.map(lt => [lt.listingType, lt]));
+
+    expect(byId['daily-rental']).toBeDefined();
+    expect(byId['daily-rental'].transactionType.unitType).toBe('day');
 
     expect(byId['hourly-rental']).toBeDefined();
     expect(byId['hourly-rental'].transactionType.unitType).toBe('hour');

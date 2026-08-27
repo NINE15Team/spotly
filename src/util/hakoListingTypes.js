@@ -1,13 +1,18 @@
 /**
- * Hako listing-type helpers for day parking vs monthly storage (subscriptions).
+ * Hako listing-type helpers for day/hour booking vs monthly subscription.
  *
- * Hako sells exactly two things: hourly day parking and monthly storage. Over time
- * each has been created under more than one listing-type id, so there are two
- * separate concerns here:
+ * Providers can create three listing types (Console labels → ids):
+ *   - "pr day"  → daily-rental   (hosted)
+ *   - "pr hour" → hourly-rental  (hosted)
+ *   - "Monthly subscription" → monthly-subscription (local; subscription-rental process)
  *
- * 1. SELECTABLE_LISTING_TYPES — the only types a provider may pick when creating a
- *    listing. Everything else (including extra types still present in the hosted
- *    Console asset) is filtered out of config.listing.listingTypes.
+ * Parking and Storage are listing *categories* (Console), not listing types.
+ *
+ * Over time day/hour parking has also used other ids, so there are two concerns:
+ *
+ * 1. SELECTABLE_LISTING_TYPES — types a provider may pick when creating a listing.
+ *    Extra / retired types still present in the hosted Console asset are filtered out
+ *    of config.listing.listingTypes.
  * 2. DAY_LISTING_TYPES / MONTHLY_LISTING_TYPES — every id that has *ever* been used
  *    for that category. Search must match all of them (the Flex API supports
  *    comma-separated OR matching on pub_ filters), or older listings created under
@@ -21,10 +26,11 @@ export const MONTHLY_STORAGE_LISTING_TYPE = 'monthly-storage';
 export const MONTHLY_SUBSCRIPTION_LISTING_TYPE = 'monthly-subscription';
 
 /**
- * The two listing types offered on the create-listing flow.
+ * Listing types offered on the create-listing flow.
  * Change this (and nothing else) to add or retire a listing type.
  */
 export const SELECTABLE_LISTING_TYPES = [
+  DAILY_RENTAL_LISTING_TYPE,
   HOURLY_RENTAL_LISTING_TYPE,
   MONTHLY_SUBSCRIPTION_LISTING_TYPE,
 ];

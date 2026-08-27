@@ -44,7 +44,7 @@ const listingTypesBookingDay = [
     id: 'rent-bicycles-daily',
     transactionProcess: {
       name: 'default-booking',
-      alias: 'default-booking/release-1',
+      alias: 'default-booking/release-2',
     },
     unitType: 'day',
     availabilityType: 'oneSeat',
@@ -58,7 +58,7 @@ const listingTypesBookingDayWithSeats = [
     id: 'rent-bicycles-daily',
     transactionProcess: {
       name: 'default-booking',
-      alias: 'default-booking/release-1',
+      alias: 'default-booking/release-2',
     },
     unitType: 'day',
     availabilityType: 'multipleSeats',
@@ -72,7 +72,7 @@ const listingTypesBookingNightly = [
     id: 'rent-bicycles-nightly',
     transactionProcess: {
       name: 'default-booking',
-      alias: 'default-booking/release-1',
+      alias: 'default-booking/release-2',
     },
     unitType: 'night',
     availabilityType: 'oneSeat',
@@ -86,7 +86,7 @@ const listingTypesBookingHourly = [
     id: 'rent-bicycles-hourly',
     transactionProcess: {
       name: 'default-booking',
-      alias: 'default-booking/release-1',
+      alias: 'default-booking/release-2',
     },
     unitType: 'hour',
     availabilityType: 'oneSeat',
@@ -1227,7 +1227,7 @@ describe('EditListingPage', () => {
       description: 'Lorem ipsum',
       publicData: {
         listingType: 'rent-bicycles-daily',
-        transactionProcessAlias: 'default-booking/release-1',
+        transactionProcessAlias: 'default-booking/release-2',
         unitType: 'day',
       },
     });
@@ -1292,7 +1292,7 @@ describe('EditListingPage', () => {
       description: 'Lorem ipsum',
       publicData: {
         listingType: 'rent-bicycles-daily',
-        transactionProcessAlias: 'default-booking/release-1',
+        transactionProcessAlias: 'default-booking/release-2',
         unitType: 'day',
         amenities: ['dog_1'],
         location: {
@@ -1360,7 +1360,7 @@ describe('EditListingPage', () => {
       price: new Money(1000, 'USD'),
       publicData: {
         listingType: 'rent-bicycles-daily',
-        transactionProcessAlias: 'default-booking/release-1',
+        transactionProcessAlias: 'default-booking/release-2',
         unitType: 'day',
         amenities: ['dog_1'],
         location: {
@@ -1439,7 +1439,7 @@ describe('EditListingPage', () => {
 
       publicData: {
         listingType: 'rent-bicycles-daily',
-        transactionProcessAlias: 'default-booking/release-1',
+        transactionProcessAlias: 'default-booking/release-2',
         unitType: 'day',
         amenities: ['dog_1'],
         location: {
@@ -1525,7 +1525,7 @@ describe('EditListingPage', () => {
 
       publicData: {
         listingType: 'rent-bicycles-daily',
-        transactionProcessAlias: 'default-booking/release-1',
+        transactionProcessAlias: 'default-booking/release-2',
         unitType: 'day',
         amenities: ['dog_1'],
         location: {
@@ -1611,7 +1611,7 @@ describe('EditListingPage', () => {
 
       publicData: {
         listingType: 'rent-bicycles-daily',
-        transactionProcessAlias: 'default-booking/release-1',
+        transactionProcessAlias: 'default-booking/release-2',
         unitType: 'day',
         amenities: ['dog_1'],
         location: {
@@ -1684,7 +1684,7 @@ describe('EditListingPage', () => {
 
       publicData: {
         listingType: 'rent-bicycles-daily',
-        transactionProcessAlias: 'default-booking/release-1',
+        transactionProcessAlias: 'default-booking/release-2',
         unitType: 'day',
         amenities: ['dog_1'],
         location: {
@@ -1765,7 +1765,7 @@ describe('EditListingPage', () => {
 
       publicData: {
         listingType: 'rent-bicycles-daily',
-        transactionProcessAlias: 'default-booking/release-1',
+        transactionProcessAlias: 'default-booking/release-2',
         unitType: 'day',
         amenities: ['dog_1'],
         location: {
@@ -1857,7 +1857,7 @@ describe('EditListingPage', () => {
 
       publicData: {
         listingType: 'rent-bicycles-daily',
-        transactionProcessAlias: 'default-booking/release-1',
+        transactionProcessAlias: 'default-booking/release-2',
         unitType: 'day',
         amenities: ['dog_1'],
         location: {
@@ -1936,7 +1936,7 @@ describe('EditListingPage', () => {
 
       publicData: {
         listingType: 'rent-bicycles-nightly',
-        transactionProcessAlias: 'default-booking/release-1',
+        transactionProcessAlias: 'default-booking/release-2',
         unitType: 'night',
         amenities: ['dog_1'],
         location: {
@@ -2079,7 +2079,7 @@ describe('EditListingPage', () => {
 
       publicData: {
         listingType: 'rent-bicycles-hourly',
-        transactionProcessAlias: 'default-booking/release-1',
+        transactionProcessAlias: 'default-booking/release-2',
         unitType: 'hour',
         amenities: ['dog_1'],
         location: {
@@ -2250,7 +2250,7 @@ describe('EditListingPage', () => {
 
       publicData: {
         listingType: 'rent-bicycles-daily',
-        transactionProcessAlias: 'default-booking/release-1',
+        transactionProcessAlias: 'default-booking/release-2',
         unitType: 'hour',
         amenities: ['dog_1'],
         location: {
@@ -2319,7 +2319,7 @@ describe('EditListingPage', () => {
 
       publicData: {
         listingType: 'rent-bicycles-daily',
-        transactionProcessAlias: 'default-booking/release-1',
+        transactionProcessAlias: 'default-booking/release-2',
         unitType: 'hour',
         amenities: ['dog_1'],
         location: {
@@ -2371,7 +2371,7 @@ describe('EditListingPage', () => {
       description: 'Lorem ipsum',
       publicData: {
         listingType: 'rent-bicycles-daily',
-        transactionProcessAlias: 'default-booking/release-1',
+        transactionProcessAlias: 'default-booking/release-2',
         unitType: 'day',
       },
     });
@@ -2429,7 +2429,7 @@ describe('EditListingPage', () => {
 
       publicData: {
         listingType: 'rent-bicycles-nightly',
-        transactionProcessAlias: 'default-booking/release-1',
+        transactionProcessAlias: 'default-booking/release-2',
         unitType: 'night',
         amenities: ['dog_1'],
         location: {
@@ -2492,7 +2492,7 @@ describe('EditListingPage', () => {
 
       publicData: {
         listingType: 'rent-bicycles-hourly',
-        transactionProcessAlias: 'default-booking/release-1',
+        transactionProcessAlias: 'default-booking/release-2',
         unitType: 'hour',
         amenities: ['dog_1'],
         location: {

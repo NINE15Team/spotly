@@ -1,8 +1,8 @@
 import { fakeIntl } from './testData';
 import { getListingPricePerUnitLabel } from './listingPriceLabels';
 
-const SUBSCRIPTION_ALIAS = 'subscription-rental/release-5';
-const BOOKING_ALIAS = 'default-booking/release-1';
+const SUBSCRIPTION_ALIAS = 'subscription-rental/release-6';
+const BOOKING_ALIAS = 'default-booking/release-2';
 
 describe('getListingPricePerUnitLabel', () => {
   it('returns the subscription label for subscription listings', () => {

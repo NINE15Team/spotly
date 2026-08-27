@@ -78,7 +78,7 @@ const selectableListingTypes2 = [
   {
     listingType: 'daily-booking',
     label: 'Daily booking',
-    transactionProcessAlias: 'default-booking/release-1',
+    transactionProcessAlias: 'default-booking/release-2',
     unitType: 'day',
   },
   {
