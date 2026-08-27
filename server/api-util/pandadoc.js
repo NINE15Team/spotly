@@ -18,6 +18,26 @@ const isPandaDocConfigured = () =>
 
 const getTemplateId = () => process.env.PANDADOC_WAIVER_TEMPLATE_ID;
 
+/**
+ * Optional workspace member who should appear as the document owner/sender.
+ * Must be an email (or membership id) that exists in the PandaDoc workspace.
+ * See: https://developers.pandadoc.com/reference/send-document
+ * and https://developers.pandadoc.com/docs/create-document-on-members-behalf
+ *
+ * @returns {{ email: string }|{ membership_id: string }|null}
+ */
+const getPandaDocSender = () => {
+  const email = (process.env.PANDADOC_SENDER_EMAIL || '').trim();
+  if (email) {
+    return { email };
+  }
+  const membershipId = (process.env.PANDADOC_SENDER_MEMBERSHIP_ID || '').trim();
+  if (membershipId) {
+    return { membership_id: membershipId };
+  }
+  return null;
+};
+
 const pandaDocRequest = async (path, options = {}) => {
   if (!process.env.PANDADOC_API_KEY) {
     throw new Error('PANDADOC_API_KEY is not configured');
@@ -79,6 +99,7 @@ const waitForDocumentStatus = async (documentId, targetStatus, maxAttempts = 20)
 const createDocumentForParticipant = async ({ name, email, documentName, metadata }) => {
   const templateId = getTemplateId();
   const { firstName, lastName } = splitName(name);
+  const owner = getPandaDocSender();
 
   const metadataMaybe = metadata && Object.keys(metadata).length ? { metadata } : {};
 
@@ -87,6 +108,8 @@ const createDocumentForParticipant = async ({ name, email, documentName, metadat
     body: JSON.stringify({
       name: documentName || `Waiver - ${name}`,
       template_uuid: templateId,
+      // Create on behalf of the branded workspace member when configured.
+      ...(owner ? { owner } : {}),
       recipients: [{ email, first_name: firstName, last_name: lastName || '.', role: 'Client' }],
       // Pre-fill the "User" text field on the template.
       // Key must match the field's Merge Field name in PandaDoc (User.Name).
@@ -112,11 +135,13 @@ const createDocumentForParticipant = async ({ name, email, documentName, metadat
 };
 
 const sendDocument = async (documentId, { silent = false } = {}) => {
+  const sender = getPandaDocSender();
   await pandaDocRequest(`/documents/${documentId}/send`, {
     method: 'POST',
     body: JSON.stringify({
       silent,
       message: 'Please review and sign your rental waiver.',
+      ...(sender ? { sender } : {}),
     }),
   });
   await waitForDocumentStatus(documentId, 'document.sent');
@@ -232,6 +257,7 @@ const setAutoReminders = async documentId => {
 
 module.exports = {
   isPandaDocConfigured,
+  getPandaDocSender,
   createPrimarySigningSession,
   createAndEmailSecondaryWaiver,
   voidDocument,
@@ -242,4 +268,6 @@ module.exports = {
   setDocumentExpiration,
   setAutoReminders,
   waitForDocumentStatus,
+  // Exported for unit tests
+  sendDocument,
 };
