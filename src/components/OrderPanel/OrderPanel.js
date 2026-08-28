@@ -23,6 +23,7 @@ import {
   LISTING_STATE_PUBLISHED,
 } from '../../util/types';
 import { formatMoney } from '../../util/currency';
+import { getListingPricePerUnitLabel } from '../../util/listingPriceLabels';
 import { createSlug, parse, stringify } from '../../util/urlHelpers';
 import { userDisplayNameAsString } from '../../util/data';
 import {
@@ -149,7 +150,7 @@ const PriceMaybe = props => {
     marketplaceCurrency,
     showCurrencyMismatch = false,
   } = props;
-  const { listingType, unitType } = publicData || {};
+  const { listingType, unitType, transactionProcessAlias } = publicData || {};
 
   const foundListingTypeConfig = validListingTypes.find(conf => conf.listingType === listingType);
   const showPrice = displayPrice(foundListingTypeConfig);
@@ -165,11 +166,16 @@ const PriceMaybe = props => {
   const priceValue = (
     <span className={css.priceValue}>{formatMoneyIfSupportedCurrency(price, intl)}</span>
   );
-  const pricePerUnit = (
-    <span className={css.perUnit}>
-      <FormattedMessage id="OrderPanel.perUnit" values={{ unitType }} />
-    </span>
+  // Subscription listings are billed monthly even though their pricing unit is
+  // stored as "day", so they must read "per month" rather than "per day".
+  const perUnitLabel = getListingPricePerUnitLabel(
+    intl,
+    transactionProcessAlias,
+    unitType,
+    'OrderPanel.perUnit',
+    'OrderPanel.subscriptionPerUnit'
   );
+  const pricePerUnit = <span className={css.perUnit}>{perUnitLabel}</span>;
 
   // TODO: In CTA, we don't have space to show proper error message for a mismatch of marketplace currency
   //       Instead, we show the currency code in place of the price
@@ -181,9 +187,7 @@ const PriceMaybe = props => {
           values={{ priceValue: formattedPrice }}
         />
       </div>
-      <div className={css.perUnitInCTA}>
-        <FormattedMessage id="OrderPanel.perUnit" values={{ unitType }} />
-      </div>
+      <div className={css.perUnitInCTA}>{perUnitLabel}</div>
     </div>
   ) : (
     <div className={css.priceContainer}>

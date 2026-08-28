@@ -24,29 +24,31 @@ describe('Hako listing sections', () => {
     expect(screen.getByText('Bayview Parkade Stall')).toBeInTheDocument();
   });
 
-  it('renders listing heading with rating and actions', () => {
+  it('renders listing heading with share action', () => {
     render(
       <HakoListingHeading
         title="Bayview Parkade Stall"
         subtitle="Secure & Covered"
-        locationLabel="1028 Main St"
-        rating="4.9"
-        reviewCount={12}
+        locationLabel="Bayview, San Francisco"
       />,
-      {
-        messages: {
-          'HakoListing.reviewsCount': '({count} reviews)',
-          'HakoListing.like': 'Like',
-          'HakoListing.share': 'Share',
-        },
-      }
+      { messages: { 'HakoListing.share': 'Share' } }
     );
     expect(screen.getByRole('heading', { name: 'Bayview Parkade Stall' })).toBeInTheDocument();
     expect(screen.getByText('Secure & Covered')).toBeInTheDocument();
-    expect(screen.getByLabelText('Save listing')).toBeInTheDocument();
     expect(screen.getByLabelText('Share listing')).toBeInTheDocument();
-    expect(screen.getByText('Like')).toBeInTheDocument();
     expect(screen.getByText('Share')).toBeInTheDocument();
+  });
+
+  it('shows no ratings and no save/like control', () => {
+    // Ratings were fabricated (a fixed 4.9 / 42 reviews) and the heart button led
+    // nowhere, so both were removed until real data and a favourites feature exist.
+    render(
+      <HakoListingHeading title="Bayview Parkade Stall" locationLabel="Bayview, San Francisco" />,
+      { messages: { 'HakoListing.share': 'Share' } }
+    );
+    expect(screen.queryByLabelText('Save listing')).toBeNull();
+    expect(screen.queryByText('Like')).toBeNull();
+    expect(screen.queryByText('4.9')).toBeNull();
   });
 
   it('renders host bar with contact', () => {

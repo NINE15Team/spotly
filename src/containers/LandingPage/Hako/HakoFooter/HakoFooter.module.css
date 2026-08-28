@@ -43,11 +43,37 @@
   object-fit: contain;
 }
 
-.socials {
-  width: 72px;
-  height: 27px;
+.socialLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--hakoLightText);
+  transition: opacity var(--transitionStyleButton);
+
+  &:hover,
+  &:focus {
+    opacity: 0.8;
+    text-decoration: none;
+  }
+}
+
+.socialIcon {
   display: block;
-  object-fit: contain;
+  width: 24px;
+  height: 24px;
+}
+
+/* Accessible name for the icon-only link. */
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .copyright {

@@ -260,8 +260,16 @@ class ProfileSettingsFormComponent extends Component {
           const submitInProgress = updateInProgress;
           const submittedOnce = Object.keys(this.submittedValues).length > 0;
           const pristineSinceLastSubmit = submittedOnce && isEqual(values, this.submittedValues);
+          // A profile picture is required: covers both a freshly uploaded image
+          // and one the user already had.
+          const hasProfileImage = !!transientUserProfileImage;
           const submitDisabled =
-            invalid || pristine || pristineSinceLastSubmit || uploadInProgress || submitInProgress;
+            invalid ||
+            pristine ||
+            pristineSinceLastSubmit ||
+            uploadInProgress ||
+            submitInProgress ||
+            !hasProfileImage;
 
           const userFieldProps = getPropsForCustomUserFieldInputs(
             userFields,
@@ -339,6 +347,14 @@ class ProfileSettingsFormComponent extends Component {
                     );
                   }}
                 </Field>
+                {!hasProfileImage ? (
+                  <div className={css.error}>
+                    <FormattedMessage
+                      id="ProfileSettingsForm.profileImageRequired"
+                      defaultMessage="A profile picture is required."
+                    />
+                  </div>
+                ) : null}
                 <div className={css.tip}>
                   <FormattedMessage id="ProfileSettingsForm.tip" />
                 </div>

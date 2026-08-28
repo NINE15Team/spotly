@@ -8,6 +8,8 @@ import { useConfiguration } from '../../../../context/configurationContext';
 import { NamedLink, ResponsiveImage } from '../../../../components';
 import { HAKO_ASSETS } from '../assets';
 import { FEATURED_LOCATION } from '../featuredLocation';
+import { publicLocationLabel } from '../../../../util/hakoLocation';
+import { isSubscriptionProcessAlias } from '../../../../transactions/transaction';
 
 import css from './SectionFeaturedSpots.module.css';
 
@@ -18,7 +20,8 @@ const FeaturedSpotCard = ({ listing }) => {
   const id = listing.id?.uuid;
   const { title = '', price, publicData } = listing.attributes || {};
   const slug = createSlug(title);
-  const locationLabel = publicData?.location?.address || null;
+  // Approximate location only — exact addresses are shared after booking.
+  const locationLabel = publicLocationLabel(publicData);
 
   let priceLabel = null;
   if (price && price.currency === config.currency) {
@@ -28,7 +31,12 @@ const FeaturedSpotCard = ({ listing }) => {
       priceLabel = null;
     }
   }
-  const priceUnit = publicData?.unitType ? `/${publicData.unitType}` : '';
+  // Subscription listings are billed monthly even though unitType is "day".
+  const priceUnit = isSubscriptionProcessAlias(publicData?.transactionProcessAlias)
+    ? intl.formatMessage({ id: 'HakoLanding.featured.perMonth', defaultMessage: '/month' })
+    : publicData?.unitType
+    ? `/${publicData.unitType}`
+    : '';
 
   const firstImage = listing.images?.[0] || null;
   const { variantPrefix = 'listing-card' } = config.layout?.listingImage || {};

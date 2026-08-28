@@ -324,6 +324,14 @@
   color: var(--colorStatusActionNeeded, var(--colorAttention));
 }
 
+.itemDate {
+  margin-top: 2px;
+  composes: marketplaceTinyFontStyles from global;
+  font-weight: var(--fontWeightRegular);
+  color: var(--colorGrey500);
+  letter-spacing: normal;
+}
+
 .itemState {
   grid-area: state;
 

@@ -22,6 +22,7 @@ import {
   createSlug,
 } from '../../../util/urlHelpers';
 import { isBookingProcessAlias, isPurchaseProcessAlias } from '../../../transactions/transaction';
+import { listingTypeLabel } from '../../../util/hakoListingTypes';
 
 import {
   NamedLink,
@@ -142,16 +143,18 @@ export const ManageListingCard = props => {
     ? Object.keys(firstImage?.attributes?.variants || {}).filter(k => k.startsWith(variantPrefix))
     : [];
 
-  const views =
-    currentListing?.attributes?.metadata?.views || publicData?.views || (isPublished ? 150 : null);
-  const bookings =
-    currentListing?.attributes?.metadata?.bookings ||
-    publicData?.bookings ||
-    (isPublished ? 5 : null);
-  const earned =
-    currentListing?.attributes?.metadata?.earned ||
-    publicData?.earned ||
-    (isPublished ? '$2k' : null);
+  // Real values only — these used to fall back to invented figures (150 views,
+  // 5 bookings, $2k earned) for every published listing. A stat is hidden until
+  // the marketplace actually supplies it.
+  const metadata = currentListing?.attributes?.metadata || {};
+  const views = metadata.views ?? publicData?.views ?? null;
+  const bookings = metadata.bookings ?? publicData?.bookings ?? null;
+  const earned = metadata.earned ?? publicData?.earned ?? null;
+  const hasStats = views != null || bookings != null || earned != null;
+
+  // Spelled-out listing type so providers can tell day parking from monthly
+  // storage at a glance (Console labels are abbreviated, e.g. "pr hour").
+  const listingTypeName = listingTypeLabel(listingType, listingTypeConfig?.label);
 
   const hasError = hasOpeningError || hasClosingError || hasDiscardingError;
   const thisListingInProgress =
@@ -209,27 +212,37 @@ export const ManageListingCard = props => {
           {priceLabel ? <p className={css.price}>{priceLabel}</p> : null}
         </div>
 
-        {isPublished ? (
+        {listingTypeName ? (
+          <p className={css.listingTypeLabel}>{listingTypeName}</p>
+        ) : null}
+
+        {isPublished && hasStats ? (
           <div className={css.metaRow}>
             <div className={css.stats}>
-              <div className={css.stat}>
-                <span className={css.statLabel}>
-                  <FormattedMessage id="ManageListingCard.views" defaultMessage="Views" />
-                </span>
-                <span className={css.statValue}>{views}</span>
-              </div>
-              <div className={css.stat}>
-                <span className={css.statLabel}>
-                  <FormattedMessage id="ManageListingCard.bookings" defaultMessage="Bookings" />
-                </span>
-                <span className={css.statValue}>{bookings}</span>
-              </div>
-              <div className={css.stat}>
-                <span className={css.statLabel}>
-                  <FormattedMessage id="ManageListingCard.earned" defaultMessage="Earned" />
-                </span>
-                <span className={css.statValue}>{earned}</span>
-              </div>
+              {views != null ? (
+                <div className={css.stat}>
+                  <span className={css.statLabel}>
+                    <FormattedMessage id="ManageListingCard.views" defaultMessage="Views" />
+                  </span>
+                  <span className={css.statValue}>{views}</span>
+                </div>
+              ) : null}
+              {bookings != null ? (
+                <div className={css.stat}>
+                  <span className={css.statLabel}>
+                    <FormattedMessage id="ManageListingCard.bookings" defaultMessage="Bookings" />
+                  </span>
+                  <span className={css.statValue}>{bookings}</span>
+                </div>
+              ) : null}
+              {earned != null ? (
+                <div className={css.stat}>
+                  <span className={css.statLabel}>
+                    <FormattedMessage id="ManageListingCard.earned" defaultMessage="Earned" />
+                  </span>
+                  <span className={css.statValue}>{earned}</span>
+                </div>
+              ) : null}
             </div>
           </div>
         ) : (

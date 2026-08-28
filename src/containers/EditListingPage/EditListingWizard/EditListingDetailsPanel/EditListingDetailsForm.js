@@ -14,6 +14,7 @@ import {
   isValidCurrencyForTransactionProcess,
 } from '../../../../util/fieldHelpers';
 import { maxLength, required, composeValidators } from '../../../../util/validators';
+import { listingTypeLabel } from '../../../../util/hakoListingTypes';
 
 // Import shared components
 import {
@@ -85,7 +86,7 @@ const FieldSelectListingType = props => {
   };
   const getListingTypeLabel = listingType => {
     const listingTypeConfig = listingTypes.find(config => config.listingType === listingType);
-    return listingTypeConfig ? listingTypeConfig.label : listingType;
+    return listingTypeLabel(listingType, listingTypeConfig?.label);
   };
 
   return hasMultipleListingTypes && !hasPredefinedListingType ? (
@@ -107,7 +108,8 @@ const FieldSelectListingType = props => {
           const type = config.listingType;
           return (
             <option key={type} value={type}>
-              {config.label}
+              {/* Console labels are abbreviated ("pr hour"); spell them out. */}
+              {listingTypeLabel(type, config.label)}
             </option>
           );
         })}

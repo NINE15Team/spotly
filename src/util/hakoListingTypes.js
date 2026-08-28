@@ -47,6 +47,30 @@ export const MONTHLY_LISTING_TYPES = [
 ];
 
 /**
+ * Human-readable listing-type names.
+ *
+ * The hosted Console labels are abbreviated ("pr day", "pr hour"), which providers
+ * found unclear, so the UI spells them out instead of showing the raw Console label.
+ * Keyed by listing type id; retired ids are included so older listings still resolve.
+ */
+export const LISTING_TYPE_LABELS = {
+  [DAILY_RENTAL_LISTING_TYPE]: 'Day parking — per day',
+  [HOURLY_RENTAL_LISTING_TYPE]: 'Day parking — per hour',
+  [DAY_PARKING_LISTING_TYPE]: 'Day parking',
+  [MONTHLY_SUBSCRIPTION_LISTING_TYPE]: 'Monthly storage',
+  [MONTHLY_STORAGE_LISTING_TYPE]: 'Monthly storage',
+};
+
+/**
+ * Spelled-out name for a listing type, for display to buyers and providers.
+ * @param {string} listingType
+ * @param {string} [fallback] used when the id is unknown (e.g. the Console label)
+ * @returns {string}
+ */
+export const listingTypeLabel = (listingType, fallback = '') =>
+  LISTING_TYPE_LABELS[listingType] || fallback || listingType || '';
+
+/**
  * @param {string} listingType single value or comma-separated pub_listingType value
  * @returns {boolean}
  */

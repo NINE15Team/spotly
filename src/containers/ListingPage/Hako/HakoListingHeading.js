@@ -30,17 +30,6 @@ export const HakoListingHeading = props => {
     }
   };
 
-  const heartIcon = (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M12 21s-6.7-4.35-9.33-7.4C.8 11.4 1.1 8.1 3.4 6.3c2-1.6 4.9-1.2 6.5.6L12 9l2.1-2.1c1.6-1.8 4.5-2.2 6.5-.6 2.3 1.8 2.6 5.1.73 7.3C18.7 16.65 12 21 12 21z"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-
   const shareIcon = (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <circle cx="18" cy="5" r="2.5" stroke="currentColor" strokeWidth="1.5" />
@@ -65,9 +54,6 @@ export const HakoListingHeading = props => {
           {locationLabel ? <p className={css.location}>{locationLabel}</p> : null}
         </div>
         <div className={css.headingActionsDesktop}>
-          <button type="button" className={css.iconButton} aria-label="Save listing">
-            {heartIcon}
-          </button>
           <button
             type="button"
             className={css.iconButton}
@@ -80,10 +66,6 @@ export const HakoListingHeading = props => {
       </div>
 
       <div className={css.headingActionsMobile}>
-        <button type="button" className={css.actionButton}>
-          {heartIcon}
-          <FormattedMessage id="HakoListing.like" defaultMessage="Like" />
-        </button>
         <button type="button" className={css.actionButton} onClick={handleShare}>
           {shareIcon}
           <FormattedMessage id="HakoListing.share" defaultMessage="Share" />

@@ -25,7 +25,6 @@ export const HAKO_ASSETS = {
   star: '/static/hako/icons/star.svg',
   map: '/static/hako/icons/map.svg',
   user: '/static/hako/icons/user.svg',
-  socials: '/static/hako/icons/socials.svg',
   hero: '/static/hako/images/hero.png',
   listYourSpace: '/static/hako/images/list-your-space.png',
 };

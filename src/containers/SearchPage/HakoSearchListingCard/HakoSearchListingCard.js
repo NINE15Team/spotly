@@ -7,6 +7,7 @@ import { formatMoney } from '../../../util/currency';
 import { createSlug } from '../../../util/urlHelpers';
 import { requireListingImage } from '../../../util/configHelpers';
 import { NamedLink, ResponsiveImage } from '../../../components';
+import { publicLocationLabel } from '../../../util/hakoLocation';
 
 import css from './HakoSearchListingCard.module.css';
 
@@ -36,11 +37,8 @@ export const HakoSearchListingCard = props => {
     ? Object.keys(firstImage?.attributes?.variants || {}).filter(k => k.startsWith(variantPrefix))
     : [];
 
-  const locationLabel =
-    publicData?.location?.address ||
-    publicData?.neighborhood ||
-    publicData?.city ||
-    '';
+  // Approximate location only — exact addresses are shared after booking.
+  const locationLabel = publicLocationLabel(publicData);
 
   const tags = [];
   if (publicData?.spaceType) {

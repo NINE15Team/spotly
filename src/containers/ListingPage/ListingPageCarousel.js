@@ -56,6 +56,7 @@ import {
 
 import { isSubscriptionProcessAlias } from '../../transactions/transaction';
 import { types as sdkTypes } from '../../util/sdkLoader';
+import { publicLocationLabel, publicLocationShort } from '../../util/hakoLocation';
 
 import css from './ListingPage.module.css';
 import hakoCss from './Hako/HakoListingSections.module.css';
@@ -169,17 +170,10 @@ export const ListingPageComponent = props => {
   const unitType = publicData.unitType;
   const isNegotiation = processType === 'negotiation';
 
-  const locationLabel =
-    publicData?.location?.address ||
-    publicData?.location?.building ||
-    publicData?.city ||
-    publicData?.neighborhood ||
-    '';
-  const locationShort =
-    publicData?.neighborhood ||
-    publicData?.city ||
-    (typeof locationLabel === 'string' ? locationLabel.split(',')[0] : '') ||
-    '';
+  // Approximate location only — the exact address (and the building/unit, which
+  // pinpoints the spot) is shared after the booking is confirmed.
+  const locationLabel = publicLocationLabel(publicData);
+  const locationShort = publicLocationShort(publicData);
   const subtitle = publicData?.subtitle || publicData?.tagline || publicData?.spaceType || null;
   let priceLabel = null;
   if (price && price.currency === config.currency) {

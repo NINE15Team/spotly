@@ -56,7 +56,7 @@ describe('ManageListingCard (Hako)', () => {
       },
     });
 
-    const { getByText, getByRole } = render(
+    const { getByText, getByRole, queryByText } = render(
       <ManageListingCard
         listing={listing}
         intl={fakeIntl}
@@ -74,7 +74,10 @@ describe('ManageListingCard (Hako)', () => {
     expect(getByText('ManageListingCard.statusActive')).toBeInTheDocument();
     expect(getByRole('link', { name: 'ManageListingCard.editListingShort' })).toBeInTheDocument();
     expect(getByRole('link', { name: 'ManageListingCard.availabilityShort' })).toBeInTheDocument();
-    expect(getByText('ManageListingCard.views')).toBeInTheDocument();
+    // Stats are only shown when the marketplace supplies them. They used to fall
+    // back to invented figures (150 views / 5 bookings / $2k earned).
+    expect(queryByText('ManageListingCard.views')).toBeNull();
+    expect(queryByText('150')).toBeNull();
   });
 
   it('renders draft listing with Finish Listing and Discard', () => {

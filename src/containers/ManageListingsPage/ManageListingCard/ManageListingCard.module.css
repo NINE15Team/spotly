@@ -127,6 +127,14 @@
   white-space: nowrap;
 }
 
+.listingTypeLabel {
+  margin: 0;
+  font-family: var(--fontFamily);
+  font-size: 13px;
+  line-height: 1.3;
+  color: var(--hakoSecondaryText);
+}
+
 .metaRow {
   display: flex;
   flex-direction: column;

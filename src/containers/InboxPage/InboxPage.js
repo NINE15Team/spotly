@@ -212,6 +212,10 @@ export const InboxItem = props => {
   const rowNotificationDot =
     isSaleNotification || isOrderNotification ? <div className={css.notificationDot} /> : null;
 
+  const lastTransitionedAt = tx.attributes?.lastTransitionedAt;
+  const lastActivityDate =
+    lastTransitionedAt instanceof Date && !isNaN(lastTransitionedAt) ? lastTransitionedAt : null;
+
   const linkClasses = classNames(css.itemLink, {
     [css.bannedUserLink]: isOtherUserBanned,
   });
@@ -254,6 +258,18 @@ export const InboxItem = props => {
               values={{ transactionRole }}
             />
           </div>
+          {/* Last-activity date, so rows for concurrent listings are easy to tell apart. */}
+          {lastActivityDate ? (
+            <div className={css.itemDate}>
+              <time dateTime={lastActivityDate.toISOString()}>
+                {intl.formatDate(lastActivityDate, {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                })}
+              </time>
+            </div>
+          ) : null}
         </div>
       </NamedLink>
     </div>
