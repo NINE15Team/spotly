@@ -51,13 +51,14 @@ const DetailsSideCard = props => {
   } = props;
 
   const { price, publicData } = listing?.attributes || {};
-  const { unitType, transactionProcessAlias } = publicData || {};
+  const { unitType, transactionProcessAlias, listingType } = publicData || {};
   const perUnitLabel = getListingPricePerUnitLabel(
     intl,
     transactionProcessAlias,
     unitType,
     'CheckoutPageWithInquiryProcess.perUnit',
-    'CheckoutPageWithInquiryProcess.subscriptionPerUnit'
+    'CheckoutPageWithInquiryProcess.subscriptionPerUnit',
+    listingType
   );
 
   const { aspectWidth = 1, aspectHeight = 1, variantPrefix = 'listing-card' } =

@@ -9,7 +9,12 @@ import { FormattedMessage, useIntl } from '../../../../util/reactIntl';
 import * as validators from '../../../../util/validators';
 import { formatMoney } from '../../../../util/currency';
 import { types as sdkTypes } from '../../../../util/sdkLoader';
-import { FIXED, isBookingProcess, isSubscriptionProcess } from '../../../../transactions/transaction';
+import {
+  FIXED,
+  isBookingProcess,
+  isSubscriptionProcess,
+} from '../../../../transactions/transaction';
+import { isMonthlyListingType } from '../../../../util/hakoListingTypes';
 
 // Import shared components
 import { Button, Form, FieldCurrencyInput } from '../../../../components';
@@ -132,7 +137,10 @@ export const EditListingPricingForm = props => (
       const { transactionType } = listingTypeConfig || {};
       const { process } = transactionType || {};
       const isBooking = isBookingProcess(process);
-      const isSubscription = isSubscriptionProcess(process?.name);
+      // Monthly listings are priced per month even though the stored unitType is "day".
+      const isSubscription =
+        isSubscriptionProcess(process?.name) ||
+        isMonthlyListingType(listingTypeConfig?.listingType);
 
       const isFixedLengthBooking = isBooking && unitType === FIXED;
       const isBookingPriceVariationsInUse = isBooking && isPriceVariationsInUse;
@@ -163,7 +171,10 @@ export const EditListingPricingForm = props => (
               label={
                 isSubscription
                   ? intl.formatMessage({ id: 'EditListingPricingForm.pricePerMonth' })
-                  : intl.formatMessage({ id: 'EditListingPricingForm.pricePerProduct' }, { unitType })
+                  : intl.formatMessage(
+                      { id: 'EditListingPricingForm.pricePerProduct' },
+                      { unitType }
+                    )
               }
               placeholder={intl.formatMessage({
                 id: 'EditListingPricingForm.priceInputPlaceholder',

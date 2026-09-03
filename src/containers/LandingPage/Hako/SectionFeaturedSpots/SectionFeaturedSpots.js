@@ -10,6 +10,7 @@ import { HAKO_ASSETS } from '../assets';
 import { FEATURED_LOCATION } from '../featuredLocation';
 import { publicLocationLabel } from '../../../../util/hakoLocation';
 import { isSubscriptionProcessAlias } from '../../../../transactions/transaction';
+import { isMonthlyListingType } from '../../../../util/hakoListingTypes';
 
 import css from './SectionFeaturedSpots.module.css';
 
@@ -32,7 +33,10 @@ const FeaturedSpotCard = ({ listing }) => {
     }
   }
   // Subscription listings are billed monthly even though unitType is "day".
-  const priceUnit = isSubscriptionProcessAlias(publicData?.transactionProcessAlias)
+  const isSubscription =
+    isSubscriptionProcessAlias(publicData?.transactionProcessAlias) ||
+    isMonthlyListingType(publicData?.listingType);
+  const priceUnit = isSubscription
     ? intl.formatMessage({ id: 'HakoLanding.featured.perMonth', defaultMessage: '/month' })
     : publicData?.unitType
     ? `/${publicData.unitType}`

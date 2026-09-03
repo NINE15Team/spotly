@@ -216,6 +216,7 @@
   "EditListingAvailabilityPanel.showListingFailed": "Das Abrufen der Eintragsdaten ist fehlgeschlagen.",
   "EditListingAvailabilityPanel.title": "Verfügbarkeit von {listingTitle} ändern",
   "EditListingAvailabilityPlanForm.addAnother": "+ Weiteres hinzufügen",
+  "EditListingAvailabilityPlanForm.applyToAllDays": "Diese Zeiten auf alle Tage anwenden",
   "EditListingAvailabilityPlanForm.dayOfWeek.fri": "Freitag",
   "EditListingAvailabilityPlanForm.dayOfWeek.mon": "Montag",
   "EditListingAvailabilityPlanForm.dayOfWeek.sat": "Samstag",

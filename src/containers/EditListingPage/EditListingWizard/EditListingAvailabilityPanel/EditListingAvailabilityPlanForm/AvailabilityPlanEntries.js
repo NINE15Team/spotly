@@ -66,6 +66,59 @@ const sortEntries = (defaultCompareReturn = 0) => (a, b) => {
 // Curried: find entry by comparing start time and end time
 const findEntryFn = entry => e => e.startTime === entry.startTime && e.endTime === entry.endTime;
 
+// Suggested hours for a newly activated day when no other day has a schedule yet.
+const DEFAULT_START_TIME = '08:00';
+const DEFAULT_END_TIME = '18:00';
+
+const isCompleteEntry = e => !!e?.startTime && !!e?.endTime;
+const cloneEntries = entries => entries.map(e => ({ ...e }));
+
+/**
+ * Pick the time ranges to pre-fill for a newly activated day. Prefers the nearest
+ * earlier weekday that already has a complete schedule, then any other day, and
+ * falls back to a single default range so the provider only has to tweak, not type.
+ *
+ * @param {Array<string>} weekdays ordered weekdays as shown in the form
+ * @param {string} dayOfWeek the day being activated
+ * @param {Object} values form values
+ * @param {Object} seats e.g. { seats: 1 }
+ * @returns {Array<AvailabilityPlanEntry>}
+ */
+export const suggestEntriesForDay = (weekdays, dayOfWeek, values, seats) => {
+  const dayIndex = weekdays.indexOf(dayOfWeek);
+  const before = weekdays.slice(0, Math.max(dayIndex, 0)).reverse();
+  const after = weekdays.slice(dayIndex + 1);
+  const source = [...before, ...after].find(
+    d => Array.isArray(values[d]) && values[d].length > 0 && values[d].every(isCompleteEntry)
+  );
+  return source
+    ? cloneEntries(values[source]).map(e => ({ ...seats, ...e }))
+    : [{ startTime: DEFAULT_START_TIME, endTime: DEFAULT_END_TIME, ...seats }];
+};
+
+/**
+ * Copy one day's complete schedule to every other weekday and mark them active.
+ *
+ * @param {Object} formApi React Final Form api
+ * @param {Array<string>} weekdays
+ * @param {string} dayOfWeek source day
+ * @param {Object} values form values
+ */
+export const applyEntriesToAllDays = (formApi, weekdays, dayOfWeek, values) => {
+  const source = (values[dayOfWeek] || []).filter(isCompleteEntry);
+  if (source.length === 0) {
+    return;
+  }
+  formApi.batch(() => {
+    weekdays.forEach(d => {
+      if (d !== dayOfWeek) {
+        formApi.change(d, cloneEntries(source));
+      }
+    });
+    formApi.change('activePlanDays', [...weekdays]);
+  });
+};
+
 /**
  * AvailabilityPlan entry.
  *
@@ -358,6 +411,7 @@ const SeatsWithTimeRangeHidden = props => {
  * @component
  * @param {Object} props - The component props.
  * @param {string} props.dayOfWeek - the shorthand for the day of week. E.g. 'Mon'.
+ * @param {Array<string>} props.weekdays - all weekdays in display order.
  * @param {Boolean} props.useFullDays - enforce full days (used with 'day' and 'night' unit types).
  * @param {Boolean} props.useMultipleSeats - true if availabilityType is 'multipleSeats'.
  * @param {String} props.unitType - 'hour', 'day', 'night'.
@@ -367,9 +421,26 @@ const SeatsWithTimeRangeHidden = props => {
  * @returns {JSX.Element} The field elements for the form.
  */
 const AvailabilityPlanEntries = props => {
-  const { dayOfWeek, useFullDays, useMultipleSeats, unitType, values, formApi, intl } = props;
+  const {
+    dayOfWeek,
+    weekdays = [],
+    useFullDays,
+    useMultipleSeats,
+    unitType,
+    values,
+    formApi,
+    intl,
+  } = props;
   const entries = values[dayOfWeek];
   const hasEntries = entries && entries[0];
+  const hasCompleteEntries = !!hasEntries && entries.every(isCompleteEntry);
+  const otherDays = weekdays.filter(d => d !== dayOfWeek);
+  // Offer "apply to other days" only when this day is fully set and some other day differs.
+  const otherDaysDiffer = otherDays.some(
+    d => JSON.stringify(values[d] || []) !== JSON.stringify(entries || [])
+  );
+  const showApplyToAllDays =
+    !useFullDays && hasCompleteEntries && otherDays.length > 0 && otherDaysDiffer;
   const getEntryStartTimes = getEntryBoundaries(entries, true);
   const getEntryEndTimes = getEntryBoundaries(entries, false);
 
@@ -405,10 +476,11 @@ const AvailabilityPlanEntries = props => {
             } else {
               const shouldAddEntry = isChecked && !hasEntries;
               if (shouldAddEntry) {
-                const seats = useMultipleSeats ? { seats: 1 } : { seats: 1 };
-                // The 'hour' unit is not initialized with any value,
-                // because user need to pick them themselves.
-                formApi.mutators.push(dayOfWeek, { startTime: null, endTime: null, ...seats });
+                const seats = { seats: 1 };
+                // Pre-fill the day with a suggested schedule (copied from another
+                // configured day, or a sensible default) so it only needs editing.
+                const suggested = suggestEntriesForDay(weekdays, dayOfWeek, values, seats);
+                formApi.mutators.concat(dayOfWeek, suggested);
               } else if (!isChecked) {
                 // If day of week checkbox is unchecked,
                 // we'll remove all the entries for that day.
@@ -476,9 +548,23 @@ const AvailabilityPlanEntries = props => {
                 <InlineTextButton
                   type="button"
                   className={css.buttonAddNew}
-                  onClick={() => fields.push({ startTime: null, endTime: null })}
+                  onClick={() => {
+                    const sorted = [...(entries || [])].filter(isCompleteEntry).sort(sortEntries());
+                    const lastEnd = sorted[sorted.length - 1]?.endTime;
+                    const startTime = lastEnd && lastEnd !== '24:00' ? lastEnd : null;
+                    fields.push({ startTime, endTime: null, seats: 1 });
+                  }}
                 >
                   <FormattedMessage id="EditListingAvailabilityPlanForm.addAnother" />
+                </InlineTextButton>
+              ) : null}
+              {showApplyToAllDays ? (
+                <InlineTextButton
+                  type="button"
+                  className={css.buttonApplyToAll}
+                  onClick={() => applyEntriesToAllDays(formApi, weekdays, dayOfWeek, values)}
+                >
+                  <FormattedMessage id="EditListingAvailabilityPlanForm.applyToAllDays" />
                 </InlineTextButton>
               ) : null}
             </div>
