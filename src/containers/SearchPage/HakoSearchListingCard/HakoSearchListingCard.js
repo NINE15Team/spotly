@@ -40,6 +40,8 @@ export const HakoSearchListingCard = props => {
   // Approximate location only — exact addresses are shared after booking.
   const locationLabel = publicLocationLabel(publicData);
 
+  // Tags come from the listing itself. There is deliberately no placeholder:
+  // every card used to claim "Covered" and "EV" regardless of the real data.
   const tags = [];
   if (publicData?.spaceType) {
     tags.push(String(publicData.spaceType));
@@ -49,9 +51,6 @@ export const HakoSearchListingCard = props => {
       ? publicData.amenities
       : [publicData.amenities];
     amenities.slice(0, 2).forEach(a => tags.push(String(a)));
-  }
-  if (tags.length === 0) {
-    tags.push('Covered', 'EV');
   }
 
   let priceLabel = null;

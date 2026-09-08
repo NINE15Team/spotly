@@ -1,7 +1,11 @@
 import React from 'react';
 import '@testing-library/jest-dom';
 
-import { renderWithProviders as render, testingLibrary } from '../../../util/testHelpers';
+import {
+  renderWithProviders as render,
+  testingLibrary,
+  getHostedConfiguration,
+} from '../../../util/testHelpers';
 import { createUser } from '../../../util/testData';
 
 import {
@@ -13,6 +17,42 @@ import {
 } from './index';
 
 const { screen } = testingLibrary;
+
+// Mirrors the shape of the hosted listing-fields asset (Sharetribe Console).
+const hostedConfigWithFields = {
+  ...getHostedConfiguration(),
+  listingFields: {
+    listingFields: [
+      {
+        key: 'security_features',
+        scope: 'public',
+        schemaType: 'multi-enum',
+        label: 'Security features',
+        enumOptions: [
+          { option: 'CCTV', label: 'CCTV' },
+          { option: 'Gated', label: 'Gated' },
+        ],
+        filterConfig: { indexForSearch: false },
+      },
+      {
+        key: 'Surface_type',
+        scope: 'public',
+        schemaType: 'enum',
+        label: 'Surface type',
+        enumOptions: [{ option: 'Paved', label: 'Paved' }],
+        filterConfig: { indexForSearch: true, showFilter: true },
+      },
+      {
+        key: 'Weight_limit',
+        scope: 'public',
+        schemaType: 'long',
+        label: 'Weight limit (lbs)',
+        numberConfig: { minimum: 1, maximum: 100000 },
+        filterConfig: { indexForSearch: true },
+      },
+    ],
+  },
+};
 
 describe('Hako listing sections', () => {
   it('renders breadcrumbs', () => {
@@ -73,24 +113,50 @@ describe('Hako listing sections', () => {
     expect(screen.getByRole('button', { name: 'Contact Host' })).toBeInTheDocument();
   });
 
-  it('renders amenities and restrictions', () => {
+  it('renders amenities and limits from the listing\'s own hosted fields', () => {
+    // Both sections are data-driven: they used to show a fixed placeholder list
+    // ("EV Charging", "2.11 m", …) on every listing regardless of the real data.
     render(
       <>
-        <HakoAmenities publicData={{ amenities: ['EV Charging', 'Covered Stall'] }} />
-        <HakoVehicleRestrictions publicData={{ vehicleHeight: '2 m' }} />
+        <HakoAmenities
+          publicData={{ security_features: ['CCTV', 'Gated'], Surface_type: 'Paved' }}
+        />
+        <HakoVehicleRestrictions publicData={{ Weight_limit: 4000 }} />
       </>,
       {
+        config: hostedConfigWithFields,
         messages: {
           'HakoListing.amenitiesTitle': 'What this spot offers',
-          'HakoListing.restrictionsTitle': 'Vehicle Restrictions',
-          'HakoListing.restrictionHeight': 'Maximum vehicle height: {value}',
-          'HakoListing.restrictionLength': 'Maximum vehicle length: {value}',
-          'HakoListing.restrictionWeight': 'Maximum vehicle weight: {value}',
+          'HakoListing.restrictionsTitle': 'Size & weight limits',
         },
       }
     );
-    expect(screen.getByText('EV Charging')).toBeInTheDocument();
-    expect(screen.getByText('Covered Stall')).toBeInTheDocument();
-    expect(screen.getByText(/Maximum vehicle height: 2 m/)).toBeInTheDocument();
+    // Multi-enum options use their configured labels, one chip each.
+    expect(screen.getByText('CCTV')).toBeInTheDocument();
+    expect(screen.getByText('Gated')).toBeInTheDocument();
+    // Single-selects are prefixed so the value has context.
+    expect(screen.getByText('Surface type: Paved')).toBeInTheDocument();
+    // Units come from the Console label.
+    expect(screen.getByText(/Weight limit \(lbs\): 4000/)).toBeInTheDocument();
+  });
+
+  it('renders nothing when the listing has no matching field values', () => {
+    const { container } = render(
+      <>
+        <HakoAmenities publicData={{}} />
+        <HakoVehicleRestrictions publicData={{}} />
+      </>,
+      { config: hostedConfigWithFields }
+    );
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it('never invents amenities that the listing does not have', () => {
+    render(<HakoAmenities publicData={{ Surface_type: 'Paved' }} />, {
+      config: hostedConfigWithFields,
+      messages: { 'HakoListing.amenitiesTitle': 'What this spot offers' },
+    });
+    expect(screen.queryByText('EV Charging')).toBeNull();
+    expect(screen.queryByText('Covered Stall')).toBeNull();
   });
 });

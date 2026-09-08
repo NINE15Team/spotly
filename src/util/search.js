@@ -1,6 +1,10 @@
 /**
  * Check if a listing field should be shown as a filter.
  * Listing fields may omit filterConfig entirely, in which case they are not filterable.
+ *
+ * Note: showFilter defaults to indexForSearch (see validFilterConfig in
+ * util/configHelpers.js), so a field that is searchable is offered as a filter
+ * unless Console explicitly sets showFilter to false.
  */
 export const isFilterEnabled = filterConfig => {
   return filterConfig?.showFilter === true;

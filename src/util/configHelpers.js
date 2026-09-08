@@ -558,7 +558,14 @@ const validFilterConfig = (config, schemaType) => {
     config.indexForSearch,
     false
   );
-  const [isValidShowFilter, showFilter] = validBoolean('showFilter', config.showFilter, false);
+  // A field that has a search index is offered as a filter by default: requiring
+  // both indexForSearch and showFilter meant an indexed field (e.g. Weight limit)
+  // silently never appeared. Console can still opt out with showFilter: false.
+  const [isValidShowFilter, showFilter] = validBoolean(
+    'showFilter',
+    config.showFilter,
+    config.indexForSearch === true
+  );
   const [isValidLabel, label] = validLabel(config.label);
   const [isValidFilterType, filterType] = validFilterType(config.filterType, schemaType);
   const [isValidSearchMode, searchMode] = validSearchMode(config.searchMode, schemaType);

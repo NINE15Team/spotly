@@ -152,7 +152,9 @@ const FilterComponent = props => {
   switch (schemaType) {
     case SCHEMA_TYPE_ENUM: {
       const { scope, enumOptions, filterConfig = {} } = config;
-      const { label, filterType } = filterConfig;
+      const { filterType } = filterConfig;
+      // Console does not always set a separate filter label; fall back to the field's own.
+      const label = filterConfig.label || config.label;
       const queryParamNames = [constructQueryParamName(key, scope)];
       return filterType === 'SelectSingleFilter' ? (
         <SelectSingleFilter
@@ -182,7 +184,8 @@ const FilterComponent = props => {
     }
     case SCHEMA_TYPE_MULTI_ENUM: {
       const { scope, enumOptions, filterConfig = {} } = config;
-      const { label, searchMode } = filterConfig;
+      const { searchMode } = filterConfig;
+      const label = filterConfig.label || config.label;
       const queryParamNames = [constructQueryParamName(key, scope)];
       return (
         <SelectMultipleFilter
@@ -201,7 +204,7 @@ const FilterComponent = props => {
     }
     case SCHEMA_TYPE_LONG: {
       const { minimum, maximum, scope, step, filterConfig = {} } = config;
-      const { label } = filterConfig;
+      const label = filterConfig.label || config.label;
       const queryParamNames = [constructQueryParamName(key, scope)];
       return (
         <IntegerRangeFilter

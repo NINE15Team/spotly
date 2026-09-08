@@ -181,6 +181,17 @@
   }
 }
 
+/* Saved state for the heart control. */
+.iconButtonActive {
+  border-color: var(--hakoPrimary);
+  color: var(--hakoPrimary);
+}
+
+.actionButtonActive {
+  border-color: var(--hakoPrimary);
+  color: var(--hakoPrimary);
+}
+
 .actionButton {
   display: inline-flex;
   align-items: center;

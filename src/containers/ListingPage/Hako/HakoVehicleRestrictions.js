@@ -1,85 +1,43 @@
 import React from 'react';
 import classNames from 'classnames';
+
 import { FormattedMessage } from '../../../util/reactIntl';
+import { useConfiguration } from '../../../context/configurationContext';
+import { getMeasurementEntries } from '../../../util/hakoListingDetails';
 
 import css from './HakoListingSections.module.css';
 
-const pickRestriction = (publicData, keys, fallback) => {
-  for (const key of keys) {
-    if (publicData?.[key] != null && publicData[key] !== '') {
-      return publicData[key];
-    }
-  }
-  return fallback;
-};
-
 /**
- * Vehicle restrictions list for Hako listing details.
+ * Size and weight limits for the spot.
+ *
+ * Values come from the listing's own public data via the hosted listing-fields
+ * config. Units are part of the Console label (e.g. "Maximum vehicle length
+ * (feet)"), so they always match what the provider actually entered — this used
+ * to render fixed metric placeholders (2.11 m / 10 m / 4,000 kg) on every listing.
  */
 export const HakoVehicleRestrictions = props => {
-  const { publicData = {}, className } = props;
+  const { publicData, className } = props;
+  const config = useConfiguration();
+  const listingFields = config?.listing?.listingFields || [];
 
-  const height = pickRestriction(
-    publicData,
-    ['vehicleHeight', 'maxVehicleHeight', 'heightLimit'],
-    '2.11 m'
-  );
-  const length = pickRestriction(
-    publicData,
-    ['vehicleLength', 'maxVehicleLength', 'lengthLimit'],
-    '10 m'
-  );
-  const weight = pickRestriction(
-    publicData,
-    ['vehicleWeight', 'maxVehicleWeight', 'weightLimit'],
-    '4,000 kg'
-  );
+  const entries = getMeasurementEntries(publicData, listingFields);
 
-  const items = [
-    {
-      id: 'height',
-      message: (
-        <FormattedMessage
-          id="HakoListing.restrictionHeight"
-          defaultMessage="Maximum vehicle height: {value}"
-          values={{ value: height }}
-        />
-      ),
-    },
-    {
-      id: 'length',
-      message: (
-        <FormattedMessage
-          id="HakoListing.restrictionLength"
-          defaultMessage="Maximum vehicle length: {value}"
-          values={{ value: length }}
-        />
-      ),
-    },
-    {
-      id: 'weight',
-      message: (
-        <FormattedMessage
-          id="HakoListing.restrictionWeight"
-          defaultMessage="Maximum vehicle weight: {value}"
-          values={{ value: weight }}
-        />
-      ),
-    },
-  ];
+  if (entries.length === 0) {
+    return null;
+  }
 
   return (
     <section className={classNames(css.section, className)}>
       <h2 className={css.sectionTitle}>
         <FormattedMessage
           id="HakoListing.restrictionsTitle"
-          defaultMessage="Vehicle Restrictions"
+          defaultMessage="Size &amp; weight limits"
         />
       </h2>
       <ul className={css.restrictionList}>
-        {items.map(item => (
-          <li key={item.id} className={css.restrictionItem}>
-            {item.message}
+        {entries.map(entry => (
+          <li key={entry.key} className={css.restrictionItem}>
+            {entry.label}: {entry.value}
           </li>
         ))}
       </ul>

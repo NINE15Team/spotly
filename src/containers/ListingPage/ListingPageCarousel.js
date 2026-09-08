@@ -287,6 +287,7 @@ export const ListingPageComponent = props => {
               subtitle={subtitle}
               locationLabel={locationLabel}
               priceLabel={priceLabel}
+              listingId={listingId?.uuid}
             />
 
             <HakoHostBar

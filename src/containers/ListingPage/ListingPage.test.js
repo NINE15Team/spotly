@@ -279,7 +279,7 @@ describe('ListingPage variants', () => {
     const listingRouteConfig = routeConfiguration.find(conf => conf.name === 'ListingPage');
     const ListingPage = listingRouteConfig.component;
 
-    const { getByPlaceholderText, getByRole, getByText } = render(<ListingPage {...props} />, {
+    const { getByPlaceholderText, getByRole, getByText, queryByRole } = render(<ListingPage {...props} />, {
       initialState,
       config,
       routeConfiguration,
@@ -304,8 +304,11 @@ describe('ListingPage variants', () => {
       // Hako structure sections
       expect(getByText('Search')).toBeInTheDocument();
       expect(getByRole('heading', { name: 'listing1 title' })).toBeInTheDocument();
+      // Both sections are data-driven. This fixture has enum/multi-enum values, so
+      // the amenities section renders, but no numeric limits, so that one does not.
+      // They used to show a fixed placeholder list regardless of the listing data.
       expect(getByRole('heading', { name: 'What this spot offers' })).toBeInTheDocument();
-      expect(getByRole('heading', { name: 'Vehicle Restrictions' })).toBeInTheDocument();
+      expect(queryByRole('heading', { name: 'Vehicle Restrictions' })).toBeNull();
       expect(getByRole('heading', { name: 'About this space' })).toBeInTheDocument();
       expect(getByRole('heading', { name: 'ListingPage.locationTitle' })).toBeInTheDocument();
       expect(getByText('Exact location shared after booking confirmation')).toBeInTheDocument();

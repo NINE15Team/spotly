@@ -3,45 +3,54 @@ import { publicLocationLabel, publicLocationShort } from './hakoLocation';
 const withAddress = address => ({ location: { address } });
 
 describe('publicLocationLabel', () => {
-  it('drops a street-level segment so the exact address is not public', () => {
+  it('shows only City, State from a full street address', () => {
+    expect(
+      publicLocationLabel(withAddress('1500 Atlantic Boulevard, Auburn Hills, Michigan 48326, United States'))
+    ).toBe('Auburn Hills, Michigan');
     expect(
       publicLocationLabel(withAddress('6127 Echo Street, Los Angeles, California 90042, United States'))
-    ).toBe('Los Angeles, California 90042, United States');
+    ).toBe('Los Angeles, California');
   });
 
-  it('leaves city-level addresses untouched', () => {
+  it('prefers the structured city/state when Sharetribe stored them', () => {
+    expect(
+      publicLocationLabel({
+        location: {
+          address: '4439 Gale Street, Livermore, California 94550, United States',
+          city: 'Livermore',
+          state: 'CA',
+        },
+      })
+    ).toBe('Livermore, CA');
+  });
+
+  it('drops the country and postal code', () => {
+    const label = publicLocationLabel(
+      withAddress('1500 Atlantic Boulevard, Auburn Hills, Michigan 48326, United States')
+    );
+    expect(label).not.toMatch(/United States/);
+    expect(label).not.toMatch(/48326/);
+  });
+
+  it('never exposes the street line or the building / unit', () => {
+    const label = publicLocationLabel({
+      location: { address: '1500 Atlantic Boulevard, Auburn Hills, Michigan 48326', building: 'Stall 7' },
+    });
+    expect(label).toBe('Auburn Hills, Michigan');
+    expect(label).not.toMatch(/Atlantic|Stall/);
+  });
+
+  it('handles city-level addresses that have no street line', () => {
     expect(publicLocationLabel(withAddress('New York City, New York 10001, United States'))).toBe(
-      'New York City, New York 10001, United States'
+      'New York City, New York'
     );
     expect(publicLocationLabel(withAddress('California City, California, United States'))).toBe(
-      'California City, California, United States'
+      'California City, California'
     );
   });
 
-  it('keeps a non-numeric first segment (it is not a street number)', () => {
-    expect(publicLocationLabel(withAddress('Test Track, Redbank Queensland 4301, Australia'))).toBe(
-      'Test Track, Redbank Queensland 4301, Australia'
-    );
-  });
-
-  it('never exposes the building / unit, which pinpoints the spot', () => {
-    expect(publicLocationLabel({ location: { address: '', building: 'A 43' } })).toBe('');
-    expect(publicLocationLabel({ location: { address: '12 Main St, Detroit', building: 'Stall 7' } }))
-      .toBe('Detroit');
-  });
-
-  it('prefers an explicit neighborhood or city when present', () => {
-    expect(publicLocationLabel({ neighborhood: 'Bayview', location: { address: '1 A St, SF' } })).toBe(
-      'Bayview'
-    );
-    expect(publicLocationLabel({ city: 'Detroit', location: { address: '1 A St, SF' } })).toBe(
-      'Detroit'
-    );
-  });
-
-  it('never reduces a label to nothing', () => {
-    // A bare street segment with nothing after it must still render something.
-    expect(publicLocationLabel(withAddress('6127 Echo Street'))).toBe('6127 Echo Street');
+  it('handles non-US addresses without mangling them', () => {
+    expect(publicLocationLabel(withAddress('Testico, Savona, Italy'))).toBe('Testico, Savona');
   });
 
   it('handles missing data', () => {
@@ -52,10 +61,10 @@ describe('publicLocationLabel', () => {
 });
 
 describe('publicLocationShort', () => {
-  it('returns the first non-street segment', () => {
+  it('returns the city only', () => {
     expect(
-      publicLocationShort(withAddress('6127 Echo Street, Los Angeles, California 90042, United States'))
-    ).toBe('Los Angeles');
+      publicLocationShort(withAddress('1500 Atlantic Boulevard, Auburn Hills, Michigan 48326, United States'))
+    ).toBe('Auburn Hills');
   });
 
   it('returns an empty string when there is no location', () => {
