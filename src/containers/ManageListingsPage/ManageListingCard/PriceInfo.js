@@ -68,13 +68,14 @@ const PriceInfo = props => {
   const isPriceVariationsInUse = isPriceVariationsEnabled(publicData, listingTypeConfig);
   const hasMultiplePriceVariants = isPriceVariationsInUse && publicData?.priceVariants?.length > 1;
 
-  const { transactionProcessAlias, unitType } = publicData || {};
+  const { transactionProcessAlias, unitType, listingType } = publicData || {};
   const perUnitString = getListingPricePerUnitLabel(
     intl,
     transactionProcessAlias,
     unitType,
     'ManageListingCard.perUnit',
-    'ManageListingCard.subscriptionPerUnit'
+    'ManageListingCard.subscriptionPerUnit',
+    listingType
   );
 
   const priceValue = <span className={css.priceValue}>{formattedPrice}</span>;

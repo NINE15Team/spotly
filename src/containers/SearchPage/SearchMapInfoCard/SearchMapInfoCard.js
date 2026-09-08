@@ -40,7 +40,8 @@ const ListingCard = props => {
     publicData?.transactionProcessAlias,
     publicData?.unitType,
     'SearchMapInfoCard.perUnit',
-    'SearchMapInfoCard.subscriptionPerUnit'
+    'SearchMapInfoCard.subscriptionPerUnit',
+    publicData?.listingType
   );
   const priceValue = formattedPrice ? formattedPrice : '';
 

@@ -137,6 +137,7 @@ const EditListingAvailabilityPlanForm = props => {
                 return (
                   <AvailabilityPlanEntries
                     dayOfWeek={w}
+                    weekdays={weekdays}
                     useFullDays={useFullDays}
                     useMultipleSeats={useMultipleSeats}
                     unitType={unitType}

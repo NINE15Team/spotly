@@ -75,7 +75,8 @@ export const getListingCardTranslations = (listing, config, intl) => {
         publicData?.transactionProcessAlias,
         publicData?.unitType,
         'ListingCard.perUnit',
-        'ListingCard.subscriptionPerUnit'
+        'ListingCard.subscriptionPerUnit',
+        publicData?.listingType
       )
     : '';
 

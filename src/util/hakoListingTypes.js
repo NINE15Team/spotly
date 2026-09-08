@@ -54,11 +54,11 @@ export const MONTHLY_LISTING_TYPES = [
  * Keyed by listing type id; retired ids are included so older listings still resolve.
  */
 export const LISTING_TYPE_LABELS = {
-  [DAILY_RENTAL_LISTING_TYPE]: 'Day parking — per day',
-  [HOURLY_RENTAL_LISTING_TYPE]: 'Day parking — per hour',
-  [DAY_PARKING_LISTING_TYPE]: 'Day parking',
-  [MONTHLY_SUBSCRIPTION_LISTING_TYPE]: 'Monthly storage',
-  [MONTHLY_STORAGE_LISTING_TYPE]: 'Monthly storage',
+  [DAILY_RENTAL_LISTING_TYPE]: 'Per day',
+  [HOURLY_RENTAL_LISTING_TYPE]: 'Per hour',
+  [DAY_PARKING_LISTING_TYPE]: 'Per day',
+  [MONTHLY_SUBSCRIPTION_LISTING_TYPE]: 'Per month',
+  [MONTHLY_STORAGE_LISTING_TYPE]: 'Per month',
 };
 
 /**

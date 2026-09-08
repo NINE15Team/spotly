@@ -216,6 +216,7 @@
   "EditListingAvailabilityPanel.showListingFailed": "Échec de la récupération des données de l'annonce.",
   "EditListingAvailabilityPanel.title": "Modifier la disponibilité de {listingTitle}",
   "EditListingAvailabilityPlanForm.addAnother": "+ En ajouter une autre",
+  "EditListingAvailabilityPlanForm.applyToAllDays": "Appliquer ces horaires à tous les jours",
   "EditListingAvailabilityPlanForm.dayOfWeek.fri": "Vendredi",
   "EditListingAvailabilityPlanForm.dayOfWeek.mon": "Lundi",
   "EditListingAvailabilityPlanForm.dayOfWeek.sat": "Samedi",

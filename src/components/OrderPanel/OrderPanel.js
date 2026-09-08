@@ -75,7 +75,9 @@ const NegotiationRequestQuoteForm = loadable(() =>
 );
 
 const SubscriptionOrderForm = loadable(() =>
-  import(/* webpackChunkName: "SubscriptionOrderForm" */ './SubscriptionOrderForm/SubscriptionOrderForm')
+  import(
+    /* webpackChunkName: "SubscriptionOrderForm" */ './SubscriptionOrderForm/SubscriptionOrderForm'
+  )
 );
 
 // This defines when ModalInMobile shows content as Modal
@@ -173,7 +175,8 @@ const PriceMaybe = props => {
     transactionProcessAlias,
     unitType,
     'OrderPanel.perUnit',
-    'OrderPanel.subscriptionPerUnit'
+    'OrderPanel.subscriptionPerUnit',
+    listingType
   );
   const pricePerUnit = <span className={css.perUnit}>{perUnitLabel}</span>;
 
@@ -459,7 +462,9 @@ const OrderPanel = props => {
   return (
     <div className={classes}>
       <ModalInMobile
-        containerClassName={classNames(css.modalContainer, { [css.hakoModalContainer]: isHakoLayout })}
+        containerClassName={classNames(css.modalContainer, {
+          [css.hakoModalContainer]: isHakoLayout,
+        })}
         id="OrderFormInModal"
         isModalOpenOnMobile={isOrderOpen}
         onClose={() => {
