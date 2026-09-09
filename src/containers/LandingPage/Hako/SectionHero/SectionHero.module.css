@@ -372,14 +372,16 @@
   display: flex;
   align-items: center;
   gap: 20px;
+
+  /* Same width and surface treatment as .searchBar above it, so the two boxes
+     line up as a pair. Keep these in step if the search bar changes. */
   width: 100%;
   max-width: 655px;
   padding: 14px 24px;
   box-sizing: border-box;
-  background-color: rgba(12, 22, 29, 0.55);
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  background-color: rgba(255, 255, 255, 0.3);
+  border: 1px solid var(--hakoWhite);
   border-radius: var(--hakoBorderRadiusSmall);
-  backdrop-filter: blur(4px);
 
   /* Stack on narrow screens so the wordmark and copy both stay readable. */
   flex-direction: column;
@@ -388,8 +390,6 @@
   @media (--viewportMedium) {
     flex-direction: row;
     text-align: left;
-    width: auto;
-    max-width: none;
   }
 }
 
@@ -407,7 +407,7 @@
     display: block;
     width: 1px;
     align-self: stretch;
-    background-color: rgba(255, 255, 255, 0.3);
+    background-color: rgba(255, 255, 255, 0.6);
   }
 }
 

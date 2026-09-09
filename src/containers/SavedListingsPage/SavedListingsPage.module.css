@@ -1,0 +1,85 @@
+@import '../../styles/customMediaQueries.css';
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px var(--hakoLateralPaddingMobile) 64px;
+  box-sizing: border-box;
+
+  @media (--viewportMedium) {
+    padding: 48px var(--hakoLateralPaddingDesktop) 80px;
+  }
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.title {
+  margin: 0;
+}
+
+.count {
+  margin: 0;
+  font-family: var(--fontFamily);
+  font-size: 15px;
+  line-height: 22px;
+  color: var(--hakoSecondaryText);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.stateBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 40px 0;
+}
+
+.stateText {
+  margin: 0;
+  font-family: var(--fontFamily);
+  font-size: 16px;
+  line-height: 24px;
+  color: var(--hakoSecondaryText);
+}
+
+.browseLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 45px;
+  padding: 10px 24px;
+  border-radius: var(--hakoBorderRadiusSmall);
+  background-color: var(--hakoPrimary);
+  color: var(--hakoWhite);
+  font-family: var(--fontFamily);
+  font-size: 16px;
+  line-height: 23px;
+
+  &:hover,
+  &:focus {
+    background-color: var(--colorPrimaryButtonDark);
+    text-decoration: none;
+    color: var(--hakoWhite);
+  }
+}
+
+.deviceNote {
+  margin: 0;
+  font-family: var(--fontFamily);
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--hakoSecondaryText);
+}

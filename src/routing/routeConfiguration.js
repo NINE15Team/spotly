@@ -14,6 +14,7 @@ const pageDataLoadingAPI = getPageDataLoadingAPI();
 
 const AboutPage = loadable(() => import(/* webpackChunkName: "AboutPage" */ '../containers/AboutPage/AboutPage'));
 const AuthenticationPage = loadable(() => import(/* webpackChunkName: "AuthenticationPage" */ '../containers/AuthenticationPage/AuthenticationPage'));
+const SavedListingsPage = loadable(() => import(/* webpackChunkName: "SavedListingsPage" */ '../containers/SavedListingsPage/SavedListingsPage'));
 const BecomeAHostPage = loadable(() => import(/* webpackChunkName: "BecomeAHostPage" */ '../containers/BecomeAHostPage/BecomeAHostPage'));
 const CheckoutPage = loadable(() => import(/* webpackChunkName: "CheckoutPage" */ '../containers/CheckoutPage/CheckoutPage'));
 const CMSPage = loadable(() => import(/* webpackChunkName: "CMSPage" */ '../containers/CMSPage/CMSPage'));
@@ -398,6 +399,13 @@ const routeConfiguration = (layoutConfig, accessControlConfig) => {
       path: '/become-a-host',
       name: 'BecomeAHostPage',
       component: BecomeAHostPage,
+    },
+    {
+      // Saved spots live in localStorage, so this page is device-local and
+      // needs no authentication or loadData.
+      path: '/saved',
+      name: 'SavedListingsPage',
+      component: SavedListingsPage,
     },
     {
       path: '/contact',

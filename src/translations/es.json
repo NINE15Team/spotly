@@ -477,6 +477,7 @@
   "HakoLanding.footer.faq": "FAQ",
   "HakoLanding.footer.postListing": "Post a Listing",
   "HakoLanding.footer.becomeAHost": "Become a Host",
+  "HakoLanding.footer.savedSpots": "Saved Spots",
   "HakoLanding.footer.privacy": "Privacy Policy",
   "HakoLanding.footer.terms": "Terms of Service",
   "HakoLanding.hero.accent": "near you",
@@ -1510,5 +1511,11 @@
   "UserNav.profileSettings": "Configuración de perfil",
   "UserNav.screenreader.userNav": "Navegación de perfil de usuario",
   "UserNav.yourListings": "Tus anuncios",
-  "HakoLanding.featured.titleInLocation": "Featured spots in {location}"
+  "HakoLanding.featured.titleInLocation": "Featured spots in {location}",
+  "SavedListingsPage.title": "Saved spots",
+  "SavedListingsPage.count": "{count, plural, one {# saved spot} other {# saved spots}}",
+  "SavedListingsPage.empty": "You haven't saved any spots yet. Tap the heart on a listing to save it here.",
+  "SavedListingsPage.browse": "Browse spots",
+  "SavedListingsPage.error": "We couldn't load your saved spots. Please try again.",
+  "SavedListingsPage.deviceNote": "Saved spots are stored on this device and this browser only."
 }
