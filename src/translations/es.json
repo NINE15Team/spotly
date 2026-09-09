@@ -1517,5 +1517,6 @@
   "SavedListingsPage.empty": "You haven't saved any spots yet. Tap the heart on a listing to save it here.",
   "SavedListingsPage.browse": "Browse spots",
   "SavedListingsPage.error": "We couldn't load your saved spots. Please try again.",
-  "SavedListingsPage.deviceNote": "Saved spots are stored on this device and this browser only."
+  "SavedListingsPage.deviceNote": "Saved spots are stored on this device and this browser only.",
+  "HakoListing.checkoutNotice": "Please vacate your parking spot or remove stored items by the agreed checkout time. Vehicles and belongings left past checkout are subject to towing/removal at the owner's expense."
 }

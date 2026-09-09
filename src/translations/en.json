@@ -643,6 +643,7 @@
   "HakoListing.saved": "Saved",
   "HakoListing.startingFrom": "Starting from {price}",
   "HakoListing.amenitiesTitle": "What this spot offers",
+  "HakoListing.checkoutNotice": "Please vacate your parking spot or remove stored items by the agreed checkout time. Vehicles and belongings left past checkout are subject to towing/removal at the owner's expense.",
   "HakoListing.restrictionsTitle": "Size & weight limits",
   "HakoListing.aboutTitle": "About this space",
   "HakoListing.mapAddressNote": "Exact location shared after booking confirmation",

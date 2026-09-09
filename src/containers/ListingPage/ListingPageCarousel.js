@@ -52,6 +52,7 @@ import {
   HakoHostBar,
   HakoAmenities,
   HakoVehicleRestrictions,
+  HakoCheckoutNotice,
 } from './Hako';
 
 import { isSubscriptionProcessAlias } from '../../transactions/transaction';
@@ -317,6 +318,7 @@ export const ListingPageComponent = props => {
               showAddressNote
             />
             <SectionReviews reviews={reviews} fetchReviewsError={fetchReviewsError} />
+            <HakoCheckoutNotice />
           </div>
           <div className={css.orderColumnForProductLayout}>
             <OrderPanel

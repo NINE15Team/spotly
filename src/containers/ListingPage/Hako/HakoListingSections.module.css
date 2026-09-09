@@ -437,3 +437,18 @@
   line-height: normal;
   color: var(--hakoSecondaryText);
 }
+
+/* Marketplace-wide checkout / vacate policy at the end of the listing page. */
+.checkoutNotice {
+  margin: 0;
+  padding: 16px 20px;
+  border: 1px solid rgba(12, 22, 29, 0.15);
+  border-radius: var(--hakoBorderRadiusSmall);
+  /* Light tint with near-black text: --hakoMuted (#c1c9d9) behind secondary grey
+     text only reaches ~2.2:1 contrast, well under the 4.5:1 minimum. */
+  background-color: rgba(12, 22, 29, 0.04);
+  font-family: var(--fontFamily);
+  font-size: 14px;
+  line-height: 22px;
+  color: var(--hakoPrimaryText);
+}
