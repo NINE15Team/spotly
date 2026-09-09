@@ -753,6 +753,18 @@ export const CheckoutPageWithPayment = props => {
                 onPrimaryDocumentCreated={setPrimaryPandadocDocumentId}
               />
             ) : null}
+
+            <div className={css.towingWarning}>
+              <H4 as="h2" className={css.towingWarningHeading}>
+                <FormattedMessage id="CheckoutPage.towingWarningTitle" />
+              </H4>
+              <p className={css.towingWarningText}>
+                <FormattedMessage id="CheckoutPage.towingWarningText" />
+              </p>
+              <p className={css.towingWarningText}>
+                <FormattedMessage id="CheckoutPage.towingWarningExtend" />
+              </p>
+            </div>
           </section>
         </main>
 

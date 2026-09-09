@@ -231,6 +231,35 @@
   }
 }
 
+.towingWarning {
+  margin-top: 36px;
+  padding-top: 24px;
+  border-top: 1px solid var(--colorGrey100);
+
+  @media (--viewportMedium) {
+    margin-top: 48px;
+    padding-top: 32px;
+  }
+}
+
+.towingWarningHeading {
+  margin: 0 0 6px 0;
+
+  @media (--viewportMedium) {
+    margin: 0 0 8px 0;
+  }
+}
+
+.towingWarningText {
+  composes: marketplaceSmallFontStyles from global;
+  color: var(--colorGrey700);
+  margin: 0 0 6px 0;
+
+  @media (--viewportMedium) {
+    margin: 0 0 8px 0;
+  }
+}
+
 .orderError,
 .notFoundError {
   margin: 11px 0 12px 0;
