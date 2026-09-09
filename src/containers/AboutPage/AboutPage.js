@@ -1,7 +1,7 @@
 import React from 'react';
 import classNames from 'classnames';
 
-import { Page, LayoutSingleColumn } from '../../components';
+import { AlpineLogo, Page, LayoutSingleColumn } from '../../components';
 import TopbarContainer from '../TopbarContainer/TopbarContainer';
 import FooterContainer from '../FooterContainer/FooterContainer';
 
@@ -75,7 +75,11 @@ export const AboutPageComponent = () => {
                 ))}
               </div>
               <div className={css.mediaFrame}>
-                {section.imageSrc ? (
+                {section.logo === 'alpine' ? (
+                  <div className={css.logoFrame}>
+                    <AlpineLogo className={css.alpineLogo} width={280} height={35} />
+                  </div>
+                ) : section.imageSrc ? (
                   <img
                     className={css.mediaImage}
                     src={section.imageSrc}

@@ -8,7 +8,7 @@ import {
   DAY_PARKING_LISTING_TYPE,
   MONTHLY_STORAGE_LISTING_TYPE,
 } from '../../../../util/hakoListingTypes';
-import { LocationAutocompleteInput } from '../../../../components';
+import { AlpineLogo, LocationAutocompleteInput } from '../../../../components';
 import { HAKO_ASSETS } from '../assets';
 
 import css from './SectionHero.module.css';
@@ -244,6 +244,18 @@ export const SectionHero = props => {
             </form>
           )}
         />
+      </div>
+
+      <div className={css.alpineBadge}>
+        <AlpineLogo className={css.alpineBadgeLogo} />
+        <span className={css.alpineBadgeDivider} aria-hidden="true" />
+        <p className={css.alpineBadgeText}>
+          <FormattedMessage
+            id="HakoLanding.hero.builtByAlpine"
+            defaultMessage="Built by <b>Alpine</b>, A trusted In-Vehicle Entertainment Leader Since 1967"
+            values={{ b: chunks => <strong>{chunks}</strong> }}
+          />
+        </p>
       </div>
     </section>
   );

@@ -363,3 +363,59 @@
   outline: none;
   text-decoration: none;
 }
+
+/* "Built by Alpine" badge under the search bar. The hero is a centred flex
+   column, so the pill centres itself and just needs a max width. */
+.alpineBadge {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+  max-width: 655px;
+  padding: 14px 24px;
+  box-sizing: border-box;
+  background-color: rgba(12, 22, 29, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: var(--hakoBorderRadiusSmall);
+  backdrop-filter: blur(4px);
+
+  /* Stack on narrow screens so the wordmark and copy both stay readable. */
+  flex-direction: column;
+  text-align: center;
+
+  @media (--viewportMedium) {
+    flex-direction: row;
+    text-align: left;
+    width: auto;
+    max-width: none;
+  }
+}
+
+.alpineBadgeLogo {
+  flex-shrink: 0;
+  width: 139px;
+  height: 17px;
+  color: var(--hakoWhite);
+}
+
+.alpineBadgeDivider {
+  display: none;
+
+  @media (--viewportMedium) {
+    display: block;
+    width: 1px;
+    align-self: stretch;
+    background-color: rgba(255, 255, 255, 0.3);
+  }
+}
+
+.alpineBadgeText {
+  margin: 0;
+  font-family: var(--fontFamily);
+  font-weight: 400;
+  font-size: 15px;
+  line-height: 23px;
+  color: var(--hakoLightText);
+}

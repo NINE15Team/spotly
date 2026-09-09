@@ -489,6 +489,7 @@
   "HakoLanding.hero.location": "Location",
   "HakoLanding.hero.monthlyStorage": "Monthly Storage",
   "HakoLanding.hero.search": "Search",
+  "HakoLanding.hero.builtByAlpine": "Built by <b>Alpine</b>, A trusted In-Vehicle Entertainment Leader Since 1967",
   "HakoLanding.howItWorks.step1Description": "Enter your destination and dates. Browse spots on the map or in list view.",
   "HakoLanding.howItWorks.step1Title": "Search by location",
   "HakoLanding.howItWorks.step2Description": "Pay securely via Stripe. No cash, no waiting — your spot is reserved immediately.",

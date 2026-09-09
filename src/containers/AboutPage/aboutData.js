@@ -1,5 +1,4 @@
 import whyWeBuiltImage from '../../assets/Why We Built.jpeg';
-import whyHostImage from '../../assets/Why Host.jpeg';
 import { HAKO_ASSETS } from '../LandingPage/Hako/assets';
 
 /**
@@ -32,8 +31,8 @@ export const ABOUT_SECTIONS = [
       'Alpine is a premium automotive technology brand with 50+ years of innovation. Hako was launched as part of our vision for mobility — making space as easy to access as the cars that need it.',
       'Our team brings marketplace, parking, and product experience together to build a platform drivers and hosts can rely on every day.',
     ],
-    imageSrc: whyHostImage,
-    imageAlt: 'Why host with Hako',
+    // Alpine wordmark instead of a photo — this section is about the parent brand.
+    logo: 'alpine',
     imageFirst: true,
   },
 ];
