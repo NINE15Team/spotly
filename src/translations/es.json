@@ -1518,5 +1518,5 @@
   "SavedListingsPage.browse": "Browse spots",
   "SavedListingsPage.error": "We couldn't load your saved spots. Please try again.",
   "SavedListingsPage.deviceNote": "Saved spots are stored on this device and this browser only.",
-  "HakoListing.checkoutNotice": "Please vacate your parking spot or remove stored items by the agreed checkout time. Vehicles and belongings left past checkout are subject to towing/removal at the owner's expense."
+  "HakoListing.checkoutNotice": "Please vacate your parking spot or remove stored items by the agreed checkout time. Vehicles and belongings left past checkout are subject to towing/removal at the renter's expense."
 }

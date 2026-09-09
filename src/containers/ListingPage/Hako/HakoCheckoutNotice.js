@@ -16,7 +16,7 @@ export const HakoCheckoutNotice = ({ className }) => (
     <p className={css.checkoutNotice}>
       <FormattedMessage
         id="HakoListing.checkoutNotice"
-        defaultMessage="Please vacate your parking spot or remove stored items by the agreed checkout time. Vehicles and belongings left past checkout are subject to towing/removal at the owner's expense."
+        defaultMessage="Please vacate your parking spot or remove stored items by the agreed checkout time. Vehicles and belongings left past checkout are subject to towing/removal at the renter's expense."
       />
     </p>
   </section>
