@@ -38,7 +38,7 @@ const canDeferMapLibrary = (initialPathname, routeConfiguration) => {
  *         should be whitelisted in the policy. Check: server/csp.js
  */
 export const IncludeScripts = props => {
-  const { marketplaceRootURL: rootURL, maps, analytics } = props?.config || {};
+  const { maps, analytics } = props?.config || {};
   const { googleAnalyticsId, plausibleDomains } = analytics;
 
   const routeConfiguration = useRouteConfiguration();
@@ -62,10 +62,17 @@ export const IncludeScripts = props => {
   if (isMapboxInUse) {
     // NOTE: remember to update mapbox-sdk.min.js to a new version regularly.
     // mapbox-sdk.min.js is included from static folder for CSP purposes.
+    //
+    // The path is root-relative on purpose: the script must be same-origin with the
+    // page so that CSP's `script-src 'self'` allows it. Building it from
+    // marketplaceRootURL breaks when the page is served from an alias host
+    // (e.g. https://www.spotly.xyz while REACT_APP_MARKETPLACE_ROOT_URL is
+    // https://spotly.xyz) — the browser treats it as cross-origin and blocks it,
+    // so the map never loads.
     mapLibraries.push(
       <script
         key="mapboxSDK"
-        src={`${rootURL}/static/scripts/mapbox/mapbox-sdk@0.16.2/mapbox-sdk.min.js`}
+        src="/static/scripts/mapbox/mapbox-sdk@0.16.2/mapbox-sdk.min.js"
         async
       ></script>
     );

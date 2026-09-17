@@ -56,6 +56,7 @@ const redirectSSL =
     : process.env.REACT_APP_SHARETRIBE_USING_SSL;
 const REDIRECT_SSL = redirectSSL === 'true';
 const TRUST_PROXY = process.env.SERVER_SHARETRIBE_TRUST_PROXY || null;
+const REDIRECT_TO_CANONICAL_HOST = process.env.SERVER_REDIRECT_TO_CANONICAL_HOST === 'true';
 const CSP = process.env.REACT_APP_CSP;
 const cspReportUrl = '/csp-report';
 const cspEnabled = CSP === 'block' || CSP === 'report';
@@ -162,6 +163,45 @@ if (TRUST_PROXY === 'true') {
   app.disable('trust proxy');
 } else if (TRUST_PROXY !== null) {
   app.set('trust proxy', TRUST_PROXY);
+}
+
+// Redirect alias hosts (e.g. www.spotly.xyz) to the canonical host defined in
+// REACT_APP_MARKETPLACE_ROOT_URL (e.g. spotly.xyz) when SERVER_REDIRECT_TO_CANONICAL_HOST is `true`.
+//
+// Why: the app is only fully functional on the canonical origin. Serving it from another
+// host means auth cookies, CSP 'self' rules, canonical/OG URLs and the sitemap all point to
+// a different origin than the one the visitor is on, which shows up as e.g. the map SDK
+// failing to load. A 301 keeps a single origin for users and search engines.
+//
+// Notes:
+// - Must come after the TRUST_PROXY setup so req.hostname reflects X-Forwarded-Host.
+// - Health checks on /_status.json are exempt so load balancers hitting the raw host still work.
+// - Only host is compared; protocol redirects are handled by REDIRECT_SSL above.
+if (REDIRECT_TO_CANONICAL_HOST) {
+  let canonicalHost = null;
+  try {
+    canonicalHost = new URL(process.env.REACT_APP_MARKETPLACE_ROOT_URL).host.toLowerCase();
+  } catch (e) {
+    console.error(
+      'SERVER_REDIRECT_TO_CANONICAL_HOST is enabled but REACT_APP_MARKETPLACE_ROOT_URL is not a valid URL.'
+    );
+  }
+
+  if (canonicalHost && !/^localhost(:\d+)?$/.test(canonicalHost)) {
+    app.use((req, res, next) => {
+      // req.hostname strips the port; compare against the canonical host including its port (if any).
+      // X-Forwarded-Host may be a comma-separated list when there are several proxies — use the first.
+      const requestHost = (req.get('x-forwarded-host') || req.get('host') || '')
+        .split(',')[0]
+        .trim()
+        .toLowerCase();
+      if (!requestHost || requestHost === canonicalHost || req.path === '/_status.json') {
+        return next();
+      }
+      const protocol = REDIRECT_SSL ? 'https' : req.protocol;
+      return res.redirect(301, `${protocol}://${canonicalHost}${req.originalUrl}`);
+    });
+  }
 }
 
 app.use(compression());
