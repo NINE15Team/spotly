@@ -191,6 +191,13 @@ export const refreshWaiverStatus = body => {
   return post('/api/waivers/refresh-status', body);
 };
 
+// Check whether the primary renter's waiver document has been completed.
+// Fallback for when the embedded PandaDoc "completed" postMessage is missed
+// (e.g. user closes the signing modal or backgrounds the tab mid-sign).
+export const getPrimaryWaiverStatus = body => {
+  return post('/api/waivers/primary-status', body);
+};
+
 // Create user with identity provider (e.g. Facebook or Google)
 //
 // If loginWithIdp api call fails and user can't authenticate to Marketplace API with idp

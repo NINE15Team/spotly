@@ -491,6 +491,7 @@ class StripePaymentForm extends Component {
       primaryWaiverSigned,
       onPrimaryWaiverSigned,
       onPrimaryDocumentCreated,
+      onManageDisableScrolling,
     } = formRenderProps;
 
     this.finalFormAPI = formApi;
@@ -514,11 +515,11 @@ class StripePaymentForm extends Component {
     );
 
     // Gate payment on the primary participant having signed their waiver inline.
+    // The waiver is the one submit blocker the renter cannot see the cause of:
+    // the button simply goes dead. Track it separately so we can explain it.
+    const waiverBlocksSubmit = showWaiver && !primaryWaiverSigned;
     const submitDisabled =
-      invalid ||
-      onetimePaymentNeedsAttention ||
-      submitInProgress ||
-      (showWaiver && !primaryWaiverSigned);
+      invalid || onetimePaymentNeedsAttention || submitInProgress || waiverBlocksSubmit;
     const hasCardError = this.state.error && !submitInProgress;
     const hasPaymentErrors = confirmCardPaymentError || confirmPaymentError;
     const classes = classNames(rootClassName || css.root, className);
@@ -616,6 +617,7 @@ class StripePaymentForm extends Component {
               primaryWaiverSigned={primaryWaiverSigned}
               onSigned={onPrimaryWaiverSigned}
               onSessionCreated={onPrimaryDocumentCreated}
+              onManageDisableScrolling={onManageDisableScrolling}
             />
           </React.Fragment>
         ) : null}
@@ -724,6 +726,11 @@ class StripePaymentForm extends Component {
         <div className={css.submitContainer}>
           {hasPaymentErrors ? (
             <span className={css.errorMessage}>{paymentErrorMessage}</span>
+          ) : null}
+          {waiverBlocksSubmit ? (
+            <span className={css.errorMessage}>
+              <FormattedMessage id="StripePaymentForm.waiverRequired" />
+            </span>
           ) : null}
           <PrimaryButton
             className={css.submitButton}

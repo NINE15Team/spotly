@@ -3,7 +3,8 @@ import classNames from 'classnames';
 
 // Import configs and util modules
 import { FormattedMessage } from '../../../../util/reactIntl';
-import { getDefaultTimeZoneOnBrowser, timestampToDate } from '../../../../util/dates';
+import { timestampToDate } from '../../../../util/dates';
+import { isSelectableTimeZone, resolveDefaultTimeZone } from '../../../../util/timeZones';
 import { AVAILABILITY_MULTIPLE_SEATS, LISTING_STATE_DRAFT } from '../../../../util/types';
 import { DAY, isFullDay } from '../../../../transactions/transaction';
 
@@ -29,8 +30,10 @@ const rotateDays = (days, startOfWeek) => {
   return startOfWeek === 0 ? days : days.slice(startOfWeek).concat(days.slice(0, startOfWeek));
 };
 
-const defaultTimeZone = () =>
-  typeof window !== 'undefined' ? getDefaultTimeZoneOnBrowser() : 'Etc/UTC';
+// Default time zone for a new plan: the browser's zone if the selector can
+// show it, else the marketplace default (US Eastern). Never returns Etc/UTC,
+// which the selector cannot display.
+const defaultTimeZone = () => resolveDefaultTimeZone();
 
 ///////////////////////////////////////////////////
 // EditListingAvailabilityExceptionPanel - utils //
@@ -64,7 +67,10 @@ const createEntryDayGroups = (entries = {}) => {
 // Create initial values for the availability plan
 const createInitialPlanValues = availabilityPlan => {
   const { timezone, entries } = availabilityPlan || {};
-  const tz = timezone || defaultTimeZone();
+  // A saved zone the selector cannot show (e.g. Etc/UTC written for unbookable
+  // listing types) would display as the first option while the form kept the
+  // old value — normalise it so what the user sees is what gets saved.
+  const tz = isSelectableTimeZone(timezone) ? timezone : defaultTimeZone();
   return {
     timezone: tz,
     ...createEntryDayGroups(entries),

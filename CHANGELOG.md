@@ -14,6 +14,21 @@ way to update this template, but currently, we follow a pattern:
 
 ## Upcoming version 2026-XX-XX
 
+- [fix] H-07 Monthly storage receipts: subscription-rental emails (request received, confirmed,
+  renewed, and provider requested/accepted/confirmed) now include a receipt breakdown — period
+  start/end, monthly price, marketplace fee and total — matching the hourly/daily booking emails.
+  Template-only change; push `subscription-rental` and repoint the alias to deploy.
+- [fix] Waiver signing (PandaDoc) on checkout now opens in a fullscreen modal on every device
+  instead of an inline 600px iframe / iOS Safari full-page redirect (ported from alpine
+  `pandaDoc-iframe-issue`). Adds `POST /api/waivers/primary-status` as a recipient-verified
+  fallback when PandaDoc's completion postMessage is missed, a "Continue signing / check status"
+  flow, and an explanation under the disabled Pay button.
+- [fix] Availability time zone defaulted to "Africa/Abidjan" when the browser could not report a
+  time zone (the `Etc/UTC` fallback is not in the selector, so React rendered the first option
+  while the form silently kept `Etc/UTC`). The default is now the browser zone if the selector can
+  show it, else US Eastern; a saved zone the selector cannot show is normalised the same way. The
+  selector lists US zones first with friendly labels. See `src/util/timeZones.js`.
+
 ## [v11.1.0] 2026-05-18
 
 - [fix] SearchPage.duck.js: fix integer filter preparation (configs were mixed)

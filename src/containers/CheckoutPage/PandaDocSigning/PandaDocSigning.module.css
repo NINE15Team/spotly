@@ -21,15 +21,94 @@
   color: var(--colorGrey700);
 }
 
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  @media (--viewportMedium) {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
 .startButton {
   margin-top: 8px;
+
+  @media (--viewportMedium) {
+    margin-top: 0;
+    flex-basis: 260px;
+    flex-grow: 0;
+  }
+}
+
+.checkStatusButton {
+  @media (--viewportMedium) {
+    flex-basis: 220px;
+    flex-grow: 0;
+  }
+}
+
+.pendingMessage {
+  composes: textSmall from global;
+  color: var(--colorGrey700);
+  margin: 12px 0 0 0;
+}
+
+/*
+ * Modal overrides: the signing document needs the whole screen on mobile
+ * (the Modal's default container is min-height: 100vh, so we only strip the
+ * padding so the iframe can fill it) and a wider column on desktop.
+ */
+.modalContainer {
+  flex-grow: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+
+  background-color: var(--colorWhite);
+  border-radius: var(--borderRadius);
+
+  /* Leave room for the fixed close button rendered by Modal */
+  padding: 56px 0 0 0;
+  min-height: 100vh;
+  height: 100%;
+
+  @media (--viewportMedium) {
+    flex-basis: 960px;
+    max-width: 96vw;
+    flex-grow: 0;
+    min-height: auto;
+    height: calc(100vh - 48px);
+
+    padding: 56px 24px 24px 24px;
+    margin-top: 24px;
+    margin-bottom: 24px;
+    border-bottom: 8px solid var(--marketplaceColor);
+  }
+}
+
+.modalContent {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  min-height: 0;
 }
 
 .iframe {
+  display: block;
   width: 100%;
-  min-height: 600px;
-  border: 1px solid var(--colorGrey100);
-  border-radius: 4px;
+  flex-grow: 1;
+  border: 0;
+
+  /* Mobile: Modal's fixed --vh height minus the close-button padding */
+  min-height: calc(var(--vh, 1vh) * 100 - 56px);
+
+  @media (--viewportMedium) {
+    min-height: 0;
+    border: 1px solid var(--colorGrey100);
+    border-radius: 4px;
+  }
 }
 
 .signedMessage {

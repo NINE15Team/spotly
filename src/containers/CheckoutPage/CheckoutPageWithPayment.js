@@ -514,6 +514,7 @@ export const CheckoutPageWithPayment = props => {
     showTransactionFields,
     config,
     fetchSpeculatedTransaction,
+    onManageDisableScrolling,
   } = props;
 
   // Since the listing data is already given from the ListingPage
@@ -751,6 +752,7 @@ export const CheckoutPageWithPayment = props => {
                 primaryWaiverSigned={primaryWaiverSigned}
                 onPrimaryWaiverSigned={setPrimaryWaiverSigned}
                 onPrimaryDocumentCreated={setPrimaryPandadocDocumentId}
+                onManageDisableScrolling={onManageDisableScrolling}
               />
             ) : null}
 

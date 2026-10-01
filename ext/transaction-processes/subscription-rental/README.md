@@ -84,6 +84,20 @@ Notable flows:
 - `extend-subscription` → monthly renewal receipt (`subscription-renewed-customer`)
 - `payment-overdue` / `reactivate-subscription` / `cancel-subscription-from-overdue` / `abort-subscription` → both parties notified where applicable
 
+### Receipt breakdown (H-07)
+
+The request, confirmation, renewal and provider-side templates include a receipt card matching the
+hourly/daily booking emails: period start/end, `{price} / month`, marketplace fee and
+`payin-total` (customer) / `payout-total` (provider). It is driven by `tx-line-items`, where the
+subscription order line is `line-item/day × 1` (see `server/api-util/subscriptionLineItems.js`);
+the templates label it "/ month" instead of branching on line-item code. `booking.end` is
+exclusive, so the end date shown is `end − 1 day`. The renewal email shows the agreed monthly
+amount and the extended booking end as "Paid through"; the Stripe invoice total lives in
+`metadata.lastRenewalInvoice` but is not rendered (no cents→major helper in templates).
+
+All new strings are `{{t "Key" "default"}}` and become editable in Console → Build → Content →
+Email texts after the process is pushed.
+
 Full matrix: [docs/subscription-email-notifications.md](../../../docs/subscription-email-notifications.md)
 
 See: [Sharetribe booking acceptance](https://www.sharetribe.com/docs/concepts/payments/payments-with-stripe/#provider-acceptance)

@@ -39,6 +39,7 @@ const waiversConfig = require('./api/waivers-config');
 const waiversPrimarySession = require('./api/waivers-primary-session');
 const waiversSendSecondary = require('./api/waivers-send-secondary');
 const waiversRefreshStatus = require('./api/waivers-refresh-status');
+const waiversPrimaryStatus = require('./api/waivers-primary-status');
 const participantsSwap = require('./api/participants-swap');
 
 // ================ Raw-body webhooks (must be BEFORE the transit parser) ======= //
@@ -94,6 +95,7 @@ router.get('/waivers/config', waiversConfig);
 router.post('/waivers/primary-session', waiversPrimarySession);
 router.post('/waivers/send-secondary', waiversSendSecondary);
 router.post('/waivers/refresh-status', waiversRefreshStatus);
+router.post('/waivers/primary-status', waiversPrimaryStatus);
 router.post('/participants/swap', participantsSwap);
 
 // Create user with identity provider (e.g. Facebook or Google)

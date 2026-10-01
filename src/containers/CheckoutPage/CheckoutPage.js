@@ -25,7 +25,7 @@ import { activateSubscription } from '../../util/api';
 import { requireListingImage } from '../../util/configHelpers';
 
 // Import global thunk functions
-import { isScrollingDisabled } from '../../ducks/ui.duck';
+import { isScrollingDisabled, manageDisableScrolling } from '../../ducks/ui.duck';
 import { confirmCardPayment, retrievePaymentIntent } from '../../ducks/stripe.duck';
 import { savePaymentMethod } from '../../ducks/paymentMethods.duck';
 
@@ -284,6 +284,8 @@ const mapDispatchToProps = dispatch => ({
     dispatch(confirmPayment(transactionId, transitionName, transitionParams)),
   onSavePaymentMethod: (stripeCustomer, stripePaymentMethodId) =>
     dispatch(savePaymentMethod(stripeCustomer, stripePaymentMethodId)),
+  onManageDisableScrolling: (componentId, disableScrolling) =>
+    dispatch(manageDisableScrolling(componentId, disableScrolling)),
   onActivateSubscription: params => activateSubscription(params),
 });
 

@@ -201,6 +201,21 @@ const getDocumentStatus = async documentId => {
   return doc?.status;
 };
 
+/**
+ * Fetch a document's status together with its recipient emails, so callers
+ * can verify that the requesting user is actually a recipient before
+ * revealing anything about the document.
+ *
+ * @returns {Promise<{ status: string, recipientEmails: string[] }>}
+ */
+const getDocumentStatusForRecipientCheck = async documentId => {
+  const doc = await pandaDocRequest(`/documents/${documentId}/details`, { method: 'GET' });
+  const recipientEmails = (doc?.recipients || [])
+    .map(r => (r?.email || '').trim().toLowerCase())
+    .filter(Boolean);
+  return { status: doc?.status, recipientEmails };
+};
+
 const isDocumentCompleted = status =>
   status === 'document.completed' || status === 'document.paid';
 
@@ -262,6 +277,7 @@ module.exports = {
   createAndEmailSecondaryWaiver,
   voidDocument,
   getDocumentStatus,
+  getDocumentStatusForRecipientCheck,
   isDocumentCompleted,
   isDocumentExpired,
   isDocumentVoided,
