@@ -118,18 +118,20 @@ MKT=alpsalpinerentaspot-dev
 flex-cli process push --process subscription-rental \
   --path ext/transaction-processes/subscription-rental -m "$MKT"
 
-# Point the EXISTING alias at the new version printed by push (example: --version 6)
+# Point the EXISTING alias at the new version printed by push. Live aliases (Oct 2026):
+# subscription-rental/release-6, default-booking/release-2 — check Console → Advanced →
+# Transaction processes if unsure; src/config/configListing.js must reference the same alias.
 flex-cli process update-alias -m "$MKT" \
-  --process subscription-rental --version <latest> --alias release-5
+  --process subscription-rental --version <latest> --alias release-6
 ```
 
-Same pattern for booking (keep `release-1`, move it to the new version):
+Same pattern for booking (keep `release-2`, move it to the new version):
 
 ```bash
 flex-cli process push --process default-booking \
   --path ext/transaction-processes/default-booking -m "$MKT"
 flex-cli process update-alias -m "$MKT" \
-  --process default-booking --version <latest> --alias release-1
+  --process default-booking --version <latest> --alias release-2
 ```
 
 | Do | Don't |

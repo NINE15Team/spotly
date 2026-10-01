@@ -23,14 +23,13 @@ const TRANSITIONS = {
   CANCEL_SUBSCRIPTION_FROM_OVERDUE: 'transition/cancel-subscription-from-overdue',
   EXPIRE: 'transition/expire',
   ABORT_SUBSCRIPTION: 'transition/abort-subscription',
+  EXPIRE_PAYMENT: 'transition/expire-payment',
+  // Waiver self-loops (operator, via Integration API): write waiver status into
+  // protected data WITHOUT changing state. They still become `lastTransition`,
+  // so never gate on lastTransition directly — use getSubscriptionState().
+  UPDATE_WAIVER_STATUS: 'transition/update-waiver-status',
+  UPDATE_WAIVER_STATUS_FROM_ACTIVE: 'transition/update-waiver-status-from-active',
 };
-
-// Transitions whose resulting state is an active (live-billing) subscription.
-const ACTIVE_ENTRY_TRANSITIONS = [
-  TRANSITIONS.ACCEPT_SUBSCRIPTION,
-  TRANSITIONS.CONFIRM_SUBSCRIPTION,
-  TRANSITIONS.EXTEND_SUBSCRIPTION,
-];
 
 const STATES = {
   PENDING_PAYMENT: 'state/pending-payment',
@@ -39,7 +38,51 @@ const STATES = {
   PAYMENT_OVERDUE: 'state/payment-overdue',
   CANCELLED: 'state/cancelled',
   EXPIRED: 'state/expired',
+  PAYMENT_EXPIRED: 'state/payment-expired',
 };
+
+/**
+ * Resulting state of each transition — mirrors the `:to` of every transition in
+ * process.edn. Sharetribe exposes only `lastTransition`, not the state, so this
+ * is how the server knows where a transaction is.
+ */
+const TRANSITION_TO_STATE = {
+  [TRANSITIONS.REQUEST_PAYMENT]: STATES.PENDING_PAYMENT,
+  [TRANSITIONS.EXPIRE_PAYMENT]: STATES.PAYMENT_EXPIRED,
+  [TRANSITIONS.CONFIRM_PAYMENT]: STATES.PAYMENT_CONFIRMED,
+  [TRANSITIONS.UPDATE_WAIVER_STATUS]: STATES.PAYMENT_CONFIRMED,
+  [TRANSITIONS.ABORT_SUBSCRIPTION]: STATES.CANCELLED,
+  [TRANSITIONS.ACCEPT_SUBSCRIPTION]: STATES.ACTIVE,
+  [TRANSITIONS.DECLINE_SUBSCRIPTION]: STATES.CANCELLED,
+  [TRANSITIONS.EXPIRE_ACCEPTANCE]: STATES.EXPIRED,
+  [TRANSITIONS.CONFIRM_SUBSCRIPTION]: STATES.ACTIVE,
+  [TRANSITIONS.EXTEND_SUBSCRIPTION]: STATES.ACTIVE,
+  [TRANSITIONS.UPDATE_WAIVER_STATUS_FROM_ACTIVE]: STATES.ACTIVE,
+  [TRANSITIONS.PAYMENT_OVERDUE]: STATES.PAYMENT_OVERDUE,
+  [TRANSITIONS.REACTIVATE_SUBSCRIPTION]: STATES.ACTIVE,
+  [TRANSITIONS.EXPIRE]: STATES.EXPIRED,
+  [TRANSITIONS.CANCEL_SUBSCRIPTION]: STATES.CANCELLED,
+  [TRANSITIONS.CANCEL_SUBSCRIPTION_FROM_OVERDUE]: STATES.CANCELLED,
+};
+
+const FINAL_STATES = [STATES.CANCELLED, STATES.EXPIRED, STATES.PAYMENT_EXPIRED];
+
+/**
+ * Current process state of a subscription transaction, derived from its last
+ * transition. Returns null for an unknown transition.
+ *
+ * @param {Object} transaction Sharetribe transaction resource
+ * @returns {string|null} one of STATES
+ */
+const getSubscriptionState = transaction => {
+  const lastTransition = transaction?.attributes?.lastTransition;
+  return TRANSITION_TO_STATE[lastTransition] || null;
+};
+
+const isSubscriptionInState = (transaction, ...states) =>
+  states.includes(getSubscriptionState(transaction));
+
+const isSubscriptionFinal = transaction => isSubscriptionInState(transaction, ...FINAL_STATES);
 
 const METADATA_KEYS = {
   STRIPE_CUSTOMER_ID: 'stripeCustomerId',
@@ -69,8 +112,12 @@ module.exports = {
   SUBSCRIPTION_PROCESS_NAME,
   SUBSCRIPTION_PROCESS_ALIAS,
   TRANSITIONS,
-  ACTIVE_ENTRY_TRANSITIONS,
   STATES,
+  TRANSITION_TO_STATE,
+  FINAL_STATES,
+  getSubscriptionState,
+  isSubscriptionInState,
+  isSubscriptionFinal,
   METADATA_KEYS,
   isSubscriptionProcess,
   resolveSubscriptionProcessAlias,

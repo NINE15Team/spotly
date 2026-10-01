@@ -153,7 +153,9 @@ describe('activateSubscription', () => {
 
   it('reuses an existing Stripe customer id from metadata', async () => {
     mockShowTransaction(
-      buildTransaction({ attributes: { metadata: { [METADATA_KEYS.STRIPE_CUSTOMER_ID]: 'cus_existing' } } })
+      buildTransaction({
+        attributes: { metadata: { [METADATA_KEYS.STRIPE_CUSTOMER_ID]: 'cus_existing' } },
+      })
     );
 
     const result = await activateSubscription({ uuid: 'tx-1' });
@@ -175,7 +177,8 @@ describe('activateSubscription', () => {
     );
     const firstMetadataCallOrder =
       integrationSdk.updateTransactionMetadata.mock.invocationCallOrder[0];
-    const subscriptionCallOrder = subscriptionStripe.createStripeSubscription.mock.invocationCallOrder[0];
+    const subscriptionCallOrder =
+      subscriptionStripe.createStripeSubscription.mock.invocationCallOrder[0];
     expect(firstMetadataCallOrder).toBeLessThan(subscriptionCallOrder);
   });
 
@@ -274,7 +277,9 @@ describe('activateSubscription', () => {
       status: 409,
       statusText: 'Conflict',
       data: {
-        errors: [{ code: 'transaction-invalid-transition', status: 409, title: 'Invalid transition.' }],
+        errors: [
+          { code: 'transaction-invalid-transition', status: 409, title: 'Invalid transition.' },
+        ],
       },
     };
     const marketplaceSdk = {
@@ -296,18 +301,14 @@ describe('activateSubscription', () => {
     mockShowTransaction(buildTransaction());
     subscriptionStripe.getPaymentIntentIdFromProtectedData.mockReturnValue(null);
 
-    await expect(activateSubscription({ uuid: 'tx-1' })).rejects.toThrow(
-      /PaymentIntent not found/
-    );
+    await expect(activateSubscription({ uuid: 'tx-1' })).rejects.toThrow(/PaymentIntent not found/);
   });
 
   it('throws when the listing monthly price cannot be resolved', async () => {
     mockShowTransaction(buildTransaction(), buildIncluded({ currency: 'USD' })); // no amount
     integrationSdk.showListing.mockResolvedValue({ data: { data: null } });
 
-    await expect(activateSubscription({ uuid: 'tx-1' })).rejects.toThrow(
-      /monthly price not found/
-    );
+    await expect(activateSubscription({ uuid: 'tx-1' })).rejects.toThrow(/monthly price not found/);
   });
 
   it('falls back to showListing when the listing is not in included data', async () => {
@@ -324,7 +325,12 @@ describe('activateSubscription', () => {
       },
     ]);
     integrationSdk.showListing.mockResolvedValue({
-      data: { data: { id: { uuid: 'listing-1' }, attributes: { title: 'Spot', price: { amount: 1200, currency: 'USD' } } } },
+      data: {
+        data: {
+          id: { uuid: 'listing-1' },
+          attributes: { title: 'Spot', price: { amount: 1200, currency: 'USD' } },
+        },
+      },
     });
 
     const result = await activateSubscription({ uuid: 'tx-1' });
@@ -361,7 +367,9 @@ describe('declineSubscription', () => {
       status: 409,
       statusText: 'Conflict',
       data: {
-        errors: [{ code: 'transaction-invalid-transition', status: 409, title: 'Invalid transition.' }],
+        errors: [
+          { code: 'transaction-invalid-transition', status: 409, title: 'Invalid transition.' },
+        ],
       },
     };
     const marketplaceSdk = {
@@ -469,6 +477,21 @@ describe('handleInvoicePaymentFailed', () => {
   });
 });
 
+describe('handleInvoicePaymentFailed — after a waiver status update', () => {
+  it('still marks the subscription payment-overdue', async () => {
+    integrationSdk.findTransactionByStripeSubscriptionId.mockResolvedValue({
+      id: { uuid: 'tx-1' },
+      attributes: { lastTransition: TRANSITIONS.UPDATE_WAIVER_STATUS_FROM_ACTIVE },
+    });
+
+    await handleInvoicePaymentFailed('sub_123');
+
+    expect(integrationSdk.transitionTransaction).toHaveBeenCalledWith(
+      expect.objectContaining({ transition: TRANSITIONS.PAYMENT_OVERDUE })
+    );
+  });
+});
+
 // --- handleSubscriptionDeleted ----------------------------------------------
 describe('handleSubscriptionDeleted', () => {
   it('cancels an active subscription', async () => {
@@ -511,7 +534,10 @@ describe('handleSubscriptionDeleted', () => {
 
 // --- requestCancelAtPeriodEnd -----------------------------------------------
 describe('requestCancelAtPeriodEnd', () => {
-  const buildShowForCancel = (lastTransition, metadata = { [METADATA_KEYS.STRIPE_SUBSCRIPTION_ID]: 'sub_123' }) => {
+  const buildShowForCancel = (
+    lastTransition,
+    metadata = { [METADATA_KEYS.STRIPE_SUBSCRIPTION_ID]: 'sub_123' }
+  ) => {
     integrationSdk.showTransaction.mockResolvedValue({
       data: { data: { id: { uuid: 'tx-1' }, attributes: { lastTransition, metadata } } },
     });
@@ -534,12 +560,15 @@ describe('requestCancelAtPeriodEnd', () => {
     );
   });
 
-  it('throws when the subscription is in a non-cancellable state', async () => {
+  it('throws a 409 that handleError can forward (status + statusText + data)', async () => {
     buildShowForCancel(TRANSITIONS.CANCEL_SUBSCRIPTION);
 
-    await expect(requestCancelAtPeriodEnd({ uuid: 'tx-1' })).rejects.toThrow(
-      /cannot be cancelled/
-    );
+    await expect(requestCancelAtPeriodEnd({ uuid: 'tx-1' })).rejects.toMatchObject({
+      message: expect.stringMatching(/cannot be cancelled/),
+      status: 409,
+      statusText: expect.stringMatching(/cannot be cancelled/),
+      data: { state: 'state/cancelled', lastTransition: TRANSITIONS.CANCEL_SUBSCRIPTION },
+    });
   });
 
   it.each([
@@ -548,6 +577,9 @@ describe('requestCancelAtPeriodEnd', () => {
     TRANSITIONS.EXTEND_SUBSCRIPTION,
     TRANSITIONS.PAYMENT_OVERDUE,
     TRANSITIONS.REACTIVATE_SUBSCRIPTION,
+    // Waiver self-loop keeps the subscription active (regression: Heroku 409
+    // "Subscription cannot be cancelled in the current state").
+    TRANSITIONS.UPDATE_WAIVER_STATUS_FROM_ACTIVE,
   ])('succeeds from allowed state: %s', async lastTransition => {
     buildShowForCancel(lastTransition);
 
@@ -561,7 +593,11 @@ describe('requestCancelAtPeriodEnd', () => {
     TRANSITIONS.EXPIRE,
     TRANSITIONS.CANCEL_SUBSCRIPTION_FROM_OVERDUE,
     TRANSITIONS.DECLINE_SUBSCRIPTION,
-  ])('throws for final state: %s', async lastTransition => {
+    // Still awaiting provider approval (incl. after a waiver status update):
+    // Stripe billing does not exist yet, nothing to cancel at period end.
+    TRANSITIONS.CONFIRM_PAYMENT,
+    TRANSITIONS.UPDATE_WAIVER_STATUS,
+  ])('throws for non-billing state: %s', async lastTransition => {
     buildShowForCancel(lastTransition);
 
     await expect(requestCancelAtPeriodEnd({ uuid: 'tx-1' })).rejects.toThrow(/cannot be cancelled/);
@@ -575,6 +611,10 @@ describe('handleSubscriptionDeleted — terminal state no-ops', () => {
     TRANSITIONS.CANCEL_SUBSCRIPTION,
     TRANSITIONS.CANCEL_SUBSCRIPTION_FROM_OVERDUE,
     TRANSITIONS.EXPIRE,
+    TRANSITIONS.DECLINE_SUBSCRIPTION,
+    TRANSITIONS.ABORT_SUBSCRIPTION,
+    TRANSITIONS.EXPIRE_ACCEPTANCE,
+    TRANSITIONS.EXPIRE_PAYMENT,
   ])('is a no-op when already in terminal state: %s', async lastTransition => {
     integrationSdk.findTransactionByStripeSubscriptionId.mockResolvedValue({
       id: { uuid: 'tx-1' },
@@ -584,6 +624,38 @@ describe('handleSubscriptionDeleted — terminal state no-ops', () => {
     await handleSubscriptionDeleted('sub_123');
 
     expect(integrationSdk.transitionTransaction).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    TRANSITIONS.REQUEST_PAYMENT,
+    TRANSITIONS.CONFIRM_PAYMENT,
+    TRANSITIONS.UPDATE_WAIVER_STATUS,
+    'transition/unknown',
+  ])(
+    'does not run an invalid cancel transition from non-billing state: %s',
+    async lastTransition => {
+      integrationSdk.findTransactionByStripeSubscriptionId.mockResolvedValue({
+        id: { uuid: 'tx-1' },
+        attributes: { lastTransition },
+      });
+
+      await handleSubscriptionDeleted('sub_123');
+
+      expect(integrationSdk.transitionTransaction).not.toHaveBeenCalled();
+    }
+  );
+
+  it('cancels after a waiver status update kept the subscription active', async () => {
+    integrationSdk.findTransactionByStripeSubscriptionId.mockResolvedValue({
+      id: { uuid: 'tx-1' },
+      attributes: { lastTransition: TRANSITIONS.UPDATE_WAIVER_STATUS_FROM_ACTIVE },
+    });
+
+    await handleSubscriptionDeleted('sub_123');
+
+    expect(integrationSdk.transitionTransaction).toHaveBeenCalledWith(
+      expect.objectContaining({ transition: TRANSITIONS.CANCEL_SUBSCRIPTION })
+    );
   });
 
   it('is a no-op when no transaction matches', async () => {
@@ -601,7 +673,9 @@ describe('handleInvoicePaid — all active-entry transitions extend the period',
     TRANSITIONS.CONFIRM_SUBSCRIPTION,
     TRANSITIONS.ACCEPT_SUBSCRIPTION,
     TRANSITIONS.EXTEND_SUBSCRIPTION,
-  ])('extends period from active-entry transition: %s', async lastTransition => {
+    TRANSITIONS.REACTIVATE_SUBSCRIPTION,
+    TRANSITIONS.UPDATE_WAIVER_STATUS_FROM_ACTIVE,
+  ])('extends period from active state via: %s', async lastTransition => {
     integrationSdk.findTransactionByStripeSubscriptionId.mockResolvedValue({
       id: { uuid: 'tx-1' },
       attributes: { lastTransition },

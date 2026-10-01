@@ -13,17 +13,9 @@ const { isIntegrationSdkConfigured, getIntegrationSdk } = require('../api-util/i
 const { syncWaiverStatusesForTransaction } = require('../api-util/waiverStatusSync');
 const { sendSecondaryWaiversForTransaction } = require('../api-util/waiverDelivery');
 const { WAIVER_STATUS_PENDING, ROLE_SECONDARY } = require('../api-util/participants');
+const { STATES, isSubscriptionInState } = require('../api-util/subscriptionConstants');
 
 const WAIVER_PROCESSES = ['default-booking', 'subscription-rental'];
-
-// Subscription is only "live" (secondaries should exist) once accepted → active.
-const SUBSCRIPTION_ACTIVE_TRANSITIONS = [
-  'transition/accept-subscription',
-  'transition/confirm-subscription',
-  'transition/extend-subscription',
-  'transition/reactivate-subscription',
-  'transition/update-waiver-status-from-active',
-];
 
 const hasPendingParticipant = participants =>
   participants.some(p => p.waiver_status === WAIVER_STATUS_PENDING && p.pandadoc_document_id);
@@ -40,7 +32,7 @@ const hasUnsentSecondaries = (tx, participants) => {
   const processName = tx?.attributes?.processName;
   if (processName === 'subscription-rental') {
     // Only re-drive delivery once the subscription is actually active.
-    return SUBSCRIPTION_ACTIVE_TRANSITIONS.includes(tx?.attributes?.lastTransition);
+    return isSubscriptionInState(tx, STATES.ACTIVE);
   }
   return true;
 };

@@ -23,6 +23,18 @@ way to update this template, but currently, we follow a pattern:
   `pandaDoc-iframe-issue`). Adds `POST /api/waivers/primary-status` as a recipient-verified
   fallback when PandaDoc's completion postMessage is missed, a "Continue signing / check status"
   flow, and an explanation under the disabled Pay button.
+- [fix] H-19 Fee transparency: receipt emails now match the checkout breakdown. The renter receipt
+  (`booking-accepted-request`, subscription request/confirmed/renewed) was dropping the
+  `line-item/sales-tax` row, so listed lines did not add up to the total charged; it now shows
+  "Sales tax". The fee line is "{marketplaceName} fee *" with the same footnote as checkout in
+  both renter and host emails. Template-only; push `default-booking` and `subscription-rental`.
+- [fix] Subscription cancel/accept/decline/abort returned 409 and Stripe `invoice.paid` /
+  `invoice.payment_failed` / `customer.subscription.deleted` were ignored once a PandaDoc waiver
+  status update had run: the waiver self-loop transitions (`update-waiver-status*`) overwrite
+  `lastTransition`, and every subscription gate compared `lastTransition` to a hard-coded list.
+  Gates now derive the process state (`getSubscriptionState`, `server/api-util/subscriptionConstants.js`)
+  and check that. `customer.subscription.deleted` also no longer attempts an invalid cancel from
+  non-billing states, and the cancel 409 now reaches the client instead of a generic 500.
 - [fix] Availability time zone defaulted to "Africa/Abidjan" when the browser could not report a
   time zone (the `Etc/UTC` fallback is not in the selector, so React rendered the first option
   while the form silently kept `Etc/UTC`). The default is now the browser zone if the selector can

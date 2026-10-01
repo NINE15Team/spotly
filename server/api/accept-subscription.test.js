@@ -69,6 +69,24 @@ describe('POST /api/accept-subscription', () => {
     expect(activateSubscription).not.toHaveBeenCalled();
   });
 
+  it('still accepts after a waiver status update kept the request in payment-confirmed', async () => {
+    const sdk = { id: 'provider-sdk' };
+    assertProviderOnTransaction.mockResolvedValue({
+      transaction: { attributes: { lastTransition: TRANSITIONS.UPDATE_WAIVER_STATUS } },
+      sdk,
+    });
+    activateSubscription.mockResolvedValue({ stripeSubscriptionId: 'sub_1' });
+    const res = makeRes();
+
+    await acceptSubscription({ body: { transactionId: 'tx-1' } }, res);
+
+    expect(activateSubscription).toHaveBeenCalledWith('tx-1', {
+      transition: TRANSITIONS.ACCEPT_SUBSCRIPTION,
+      marketplaceSdk: sdk,
+    });
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
   it('accepts via the provider SDK and serializes the result', async () => {
     const sdk = { id: 'provider-sdk' };
     assertProviderOnTransaction.mockResolvedValue({

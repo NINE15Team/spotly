@@ -1,5 +1,12 @@
 const log = require('../log');
-const { TRANSITIONS, ACTIVE_ENTRY_TRANSITIONS, METADATA_KEYS } = require('./subscriptionConstants');
+const {
+  TRANSITIONS,
+  STATES,
+  METADATA_KEYS,
+  getSubscriptionState,
+  isSubscriptionInState,
+  isSubscriptionFinal,
+} = require('./subscriptionConstants');
 const { getSubunitAmountFromMoneyLike } = require('./currency');
 const {
   transitionTransaction,
@@ -81,14 +88,20 @@ const getBookingFromTransactionResponse = apiData => {
   return getRelationship(apiData.included, 'booking', bookingRef);
 };
 
-const assertLastTransition = (transaction, expectedTransition) => {
-  const lastTransition = transaction?.attributes?.lastTransition;
-  if (lastTransition !== expectedTransition) {
+// Gate on the derived STATE, never on lastTransition: waiver self-loop
+// transitions (update-waiver-status*) overwrite lastTransition without moving
+// the transaction, and would otherwise make every gate below reject.
+const assertSubscriptionState = (transaction, ...expectedStates) => {
+  const state = getSubscriptionState(transaction);
+  if (!expectedStates.includes(state)) {
     const error = new Error(
-      `Invalid transaction state. Expected last transition ${expectedTransition}, got ${lastTransition}.`
+      `Invalid transaction state. Expected ${expectedStates.join(
+        ' or '
+      )}, got ${state} (last transition ${transaction?.attributes?.lastTransition}).`
     );
     error.status = 409;
     error.statusText = error.message;
+    error.data = { state, lastTransition: transaction?.attributes?.lastTransition };
     throw error;
   }
 };
@@ -183,7 +196,7 @@ const activateSubscription = async (transactionId, options = {}) => {
   const apiData = txResponse.data;
   const transaction = apiData.data;
 
-  assertLastTransition(transaction, TRANSITIONS.CONFIRM_PAYMENT);
+  assertSubscriptionState(transaction, STATES.PAYMENT_CONFIRMED);
 
   const protectedData = transaction.attributes.protectedData || {};
   const metadata = transaction.attributes.metadata || {};
@@ -283,9 +296,7 @@ const activateSubscription = async (transactionId, options = {}) => {
     transactionId: transaction.id,
     transition,
     operatorFallbackTransition:
-      transition === TRANSITIONS.ACCEPT_SUBSCRIPTION
-        ? TRANSITIONS.CONFIRM_SUBSCRIPTION
-        : null,
+      transition === TRANSITIONS.ACCEPT_SUBSCRIPTION ? TRANSITIONS.CONFIRM_SUBSCRIPTION : null,
   });
 
   // Capture first payment if process version lacks stripe-capture on the transition.
@@ -315,7 +326,7 @@ const declineSubscription = async (transactionId, options = {}) => {
   const txResponse = await showTransaction(transactionId);
   const transaction = txResponse.data.data;
 
-  assertLastTransition(transaction, TRANSITIONS.CONFIRM_PAYMENT);
+  assertSubscriptionState(transaction, STATES.PAYMENT_CONFIRMED);
 
   await runProcessTransition({
     marketplaceSdk,
@@ -377,9 +388,9 @@ const handleInvoicePaid = async (stripeSubscriptionId, invoice = null) => {
     }
   }
 
-  const lastTransition = transaction.attributes.lastTransition;
+  const state = getSubscriptionState(transaction);
 
-  if (lastTransition === TRANSITIONS.PAYMENT_OVERDUE) {
+  if (state === STATES.PAYMENT_OVERDUE) {
     const txResponse = await showTransaction(transaction.id);
     const booking = getBookingFromTransactionResponse(txResponse.data);
     const bookingStart = booking?.attributes?.start;
@@ -395,10 +406,17 @@ const handleInvoicePaid = async (stripeSubscriptionId, invoice = null) => {
     return;
   }
 
-  if (ACTIVE_ENTRY_TRANSITIONS.includes(lastTransition)) {
+  if (state === STATES.ACTIVE) {
     await extendSubscriptionPeriod(transaction);
     log.info('Subscription period extended', { transactionId: transaction.id.uuid });
+    return;
   }
+
+  log.warn('invoice.paid: transaction not in an extendable state', {
+    transactionId: transaction.id.uuid,
+    state,
+    lastTransition: transaction.attributes.lastTransition,
+  });
 };
 
 const handleInvoicePaymentFailed = async stripeSubscriptionId => {
@@ -408,12 +426,11 @@ const handleInvoicePaymentFailed = async stripeSubscriptionId => {
     return;
   }
 
-  const lastTransition = transaction.attributes.lastTransition;
-  if (lastTransition === TRANSITIONS.PAYMENT_OVERDUE) {
+  if (isSubscriptionInState(transaction, STATES.PAYMENT_OVERDUE)) {
     return;
   }
 
-  if (ACTIVE_ENTRY_TRANSITIONS.includes(lastTransition)) {
+  if (isSubscriptionInState(transaction, STATES.ACTIVE)) {
     await transitionTransaction({
       transactionId: transaction.id,
       transition: TRANSITIONS.PAYMENT_OVERDUE,
@@ -429,20 +446,26 @@ const handleSubscriptionDeleted = async stripeSubscriptionId => {
     return;
   }
 
-  const lastTransition = transaction.attributes.lastTransition;
-
-  if (
-    lastTransition === TRANSITIONS.CANCEL_SUBSCRIPTION ||
-    lastTransition === TRANSITIONS.CANCEL_SUBSCRIPTION_FROM_OVERDUE ||
-    lastTransition === TRANSITIONS.EXPIRE
-  ) {
+  if (isSubscriptionFinal(transaction)) {
     return;
   }
 
-  const cancelTransition =
-    lastTransition === TRANSITIONS.PAYMENT_OVERDUE
-      ? TRANSITIONS.CANCEL_SUBSCRIPTION_FROM_OVERDUE
-      : TRANSITIONS.CANCEL_SUBSCRIPTION;
+  // Only active / payment-overdue have a cancel transition. Anything else
+  // (pending-payment, payment-confirmed, unknown) has no live billing in
+  // Sharetribe's eyes; running cancel-subscription there would be rejected
+  // and make Stripe retry the webhook for days.
+  if (!isSubscriptionInState(transaction, STATES.ACTIVE, STATES.PAYMENT_OVERDUE)) {
+    log.warn('customer.subscription.deleted: transaction not in a cancellable state', {
+      transactionId: transaction.id.uuid,
+      state: getSubscriptionState(transaction),
+      lastTransition: transaction.attributes.lastTransition,
+    });
+    return;
+  }
+
+  const cancelTransition = isSubscriptionInState(transaction, STATES.PAYMENT_OVERDUE)
+    ? TRANSITIONS.CANCEL_SUBSCRIPTION_FROM_OVERDUE
+    : TRANSITIONS.CANCEL_SUBSCRIPTION;
 
   await transitionTransaction({
     transactionId: transaction.id,
@@ -467,20 +490,24 @@ const requestCancelAtPeriodEnd = async transactionId => {
   if (!stripeSubscriptionId) {
     const error = new Error('No Stripe subscription on this transaction.');
     error.status = 400;
+    error.statusText = error.message;
+    error.data = {};
     throw error;
   }
 
-  const lastTransition = transaction.attributes.lastTransition;
-  const allowed = [
-    TRANSITIONS.ACCEPT_SUBSCRIPTION,
-    TRANSITIONS.CONFIRM_SUBSCRIPTION,
-    TRANSITIONS.EXTEND_SUBSCRIPTION,
-    TRANSITIONS.PAYMENT_OVERDUE,
-    TRANSITIONS.REACTIVATE_SUBSCRIPTION,
-  ];
-  if (!allowed.includes(lastTransition)) {
+  // Cancel-at-period-end is only meaningful while Stripe is still billing:
+  // active or in dunning (payment-overdue). State, not lastTransition — see
+  // assertSubscriptionState.
+  if (!isSubscriptionInState(transaction, STATES.ACTIVE, STATES.PAYMENT_OVERDUE)) {
     const error = new Error('Subscription cannot be cancelled in the current state.');
+    // status + statusText + data are all required for handleError to forward
+    // the real status instead of a generic 500.
     error.status = 409;
+    error.statusText = error.message;
+    error.data = {
+      state: getSubscriptionState(transaction),
+      lastTransition: transaction.attributes.lastTransition,
+    };
     throw error;
   }
 

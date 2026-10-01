@@ -1,6 +1,10 @@
 const { handleError, serialize } = require('../api-util/sdk');
-const { isIntegrationSdkConfigured, transitionTransaction, showTransaction } = require('../api-util/integrationSdk');
-const { TRANSITIONS } = require('../api-util/subscriptionConstants');
+const {
+  isIntegrationSdkConfigured,
+  transitionTransaction,
+  showTransaction,
+} = require('../api-util/integrationSdk');
+const { TRANSITIONS, STATES, isSubscriptionInState } = require('../api-util/subscriptionConstants');
 
 /**
  * POST /api/operator-abort-subscription
@@ -33,7 +37,7 @@ module.exports = async (req, res) => {
     const transaction = showResp?.data?.data;
     const lastTransition = transaction?.attributes?.lastTransition;
 
-    if (lastTransition !== TRANSITIONS.CONFIRM_PAYMENT) {
+    if (!isSubscriptionInState(transaction, STATES.PAYMENT_CONFIRMED)) {
       res.status(409).json({
         message: `Cannot abort: transaction is not in payment-confirmed state.`,
         lastTransition,

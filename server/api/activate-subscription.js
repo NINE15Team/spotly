@@ -4,7 +4,7 @@ const { isIntegrationSdkConfigured } = require('../api-util/integrationSdk');
 const { isStripeConfigured } = require('../api-util/stripeClient');
 const { assertCustomerOnTransaction } = require('../api-util/subscriptionAuth');
 const { activateSubscription } = require('../api-util/subscriptionService');
-const { TRANSITIONS } = require('../api-util/subscriptionConstants');
+const { STATES, isSubscriptionInState } = require('../api-util/subscriptionConstants');
 const { sendSecondaryWaiversForTransaction } = require('../api-util/waiverDelivery');
 
 /**
@@ -30,7 +30,7 @@ module.exports = async (req, res) => {
   try {
     const { transaction } = await assertCustomerOnTransaction(req, res, transactionId);
 
-    if (transaction.attributes.lastTransition !== TRANSITIONS.CONFIRM_PAYMENT) {
+    if (!isSubscriptionInState(transaction, STATES.PAYMENT_CONFIRMED)) {
       res.status(409).json({
         message: 'Transaction is not ready for subscription activation.',
         lastTransition: transaction.attributes.lastTransition,
@@ -45,7 +45,9 @@ module.exports = async (req, res) => {
     try {
       await sendSecondaryWaiversForTransaction(transactionId);
     } catch (waiverErr) {
-      log.error(waiverErr, 'activate-subscription-send-secondary-waivers-failed', { transactionId });
+      log.error(waiverErr, 'activate-subscription-send-secondary-waivers-failed', {
+        transactionId,
+      });
     }
 
     res

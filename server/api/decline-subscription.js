@@ -3,7 +3,7 @@ const { isIntegrationSdkConfigured } = require('../api-util/integrationSdk');
 const { isStripeConfigured } = require('../api-util/stripeClient');
 const { assertProviderOnTransaction } = require('../api-util/subscriptionAuth');
 const { declineSubscription } = require('../api-util/subscriptionService');
-const { TRANSITIONS } = require('../api-util/subscriptionConstants');
+const { STATES, isSubscriptionInState } = require('../api-util/subscriptionConstants');
 
 /**
  * POST /api/decline-subscription
@@ -28,7 +28,7 @@ module.exports = async (req, res) => {
   try {
     const { transaction, sdk } = await assertProviderOnTransaction(req, res, transactionId);
 
-    if (transaction.attributes.lastTransition !== TRANSITIONS.CONFIRM_PAYMENT) {
+    if (!isSubscriptionInState(transaction, STATES.PAYMENT_CONFIRMED)) {
       res.status(409).json({
         message: 'Transaction is not awaiting provider approval.',
         lastTransition: transaction.attributes.lastTransition,
