@@ -160,7 +160,8 @@ const TransitionMessage = props => {
     </InlineTextButton>
   ) : null;
 
-  // If there is a transition specific message, use it.
+  // If there is a transition specific message, use it. A config may carry extra
+  // `values` for its translation (e.g. a formatted end date).
   const messageConfig = stateData.transitionMessages?.find(m => m.transition === transitionName);
   const transitionMessage = messageConfig
     ? intl.formatMessage(
@@ -173,6 +174,7 @@ const TransitionMessage = props => {
           deliveryMethod,
           stateStatus,
           negotiationOffer,
+          ...(messageConfig.values || {}),
         }
       )
     : '';

@@ -29,6 +29,13 @@ const TRANSITIONS = {
   // so never gate on lastTransition directly — use getSubscriptionState().
   UPDATE_WAIVER_STATUS: 'transition/update-waiver-status',
   UPDATE_WAIVER_STATUS_FROM_ACTIVE: 'transition/update-waiver-status-from-active',
+  // Cancellation-intent self-loops (operator). Record that the customer asked
+  // to cancel / un-cancelled, for the activity feed, Console and emails. The
+  // actual cancel-subscription still happens on Stripe's deleted webhook.
+  REQUEST_CANCELLATION: 'transition/request-cancellation',
+  REQUEST_CANCELLATION_FROM_OVERDUE: 'transition/request-cancellation-from-overdue',
+  RESUME_SUBSCRIPTION: 'transition/resume-subscription',
+  RESUME_SUBSCRIPTION_FROM_OVERDUE: 'transition/resume-subscription-from-overdue',
 };
 
 const STATES = {
@@ -58,6 +65,10 @@ const TRANSITION_TO_STATE = {
   [TRANSITIONS.CONFIRM_SUBSCRIPTION]: STATES.ACTIVE,
   [TRANSITIONS.EXTEND_SUBSCRIPTION]: STATES.ACTIVE,
   [TRANSITIONS.UPDATE_WAIVER_STATUS_FROM_ACTIVE]: STATES.ACTIVE,
+  [TRANSITIONS.REQUEST_CANCELLATION]: STATES.ACTIVE,
+  [TRANSITIONS.RESUME_SUBSCRIPTION]: STATES.ACTIVE,
+  [TRANSITIONS.REQUEST_CANCELLATION_FROM_OVERDUE]: STATES.PAYMENT_OVERDUE,
+  [TRANSITIONS.RESUME_SUBSCRIPTION_FROM_OVERDUE]: STATES.PAYMENT_OVERDUE,
   [TRANSITIONS.PAYMENT_OVERDUE]: STATES.PAYMENT_OVERDUE,
   [TRANSITIONS.REACTIVATE_SUBSCRIPTION]: STATES.ACTIVE,
   [TRANSITIONS.EXPIRE]: STATES.EXPIRED,

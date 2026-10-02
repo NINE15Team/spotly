@@ -55,6 +55,30 @@ unanswered.
 | `reactivate-subscription` | Operator (server) | After successful retry |
 | `cancel-subscription` | Operator (server) | Releases booking at period end |
 | `expire` | Operator (server) | After all renewal retries fail |
+| `request-cancellation` / `-from-overdue` | Operator (server) | **Self-loop.** Records that the customer asked to cancel at period end (activity feed, Console, emails). State unchanged. |
+| `resume-subscription` / `-from-overdue` | Operator (server) | **Self-loop.** Customer withdrew the cancellation (Billing Portal). State unchanged. |
+
+## Cancellation flow (intent vs outcome)
+
+Cancelling is two separate events, a month apart:
+
+1. **Intent** — customer clicks *Cancel subscription* (or cancels in the Stripe Billing Portal).
+   Server sets `cancel_at_period_end` in Stripe, writes `metadata.cancelAtPeriodEnd` +
+   `metadata.cancelAt` on the transaction (drives the UI: heading "ends on <date>", cancel button
+   hidden), and runs `request-cancellation` with `protectedData.cancellationRequest`. The
+   transaction **stays `active`**: the customer keeps access and the provider keeps getting paid
+   for the current period.
+2. **Outcome** — at period end Stripe fires `customer.subscription.deleted`; the webhook runs
+   `cancel-subscription` → `cancelled`, booking released.
+
+`customer.subscription.updated` keeps metadata in sync with Stripe and fires
+`request-cancellation` / `resume-subscription` when the flag flips — this is how Billing Portal
+cancel/resume shows up in history. Metadata is written **before** the transition so the endpoint and
+a racing webhook don't both fire it.
+
+The Stripe → Sharetribe lookup in webhooks goes through the Stripe subscription's
+`metadata.sharetribeTransactionId` (set on creation). The Integration API has **no metadata filter**
+on `transactions.query`, so never try to search transactions by Stripe id.
 
 ## Who runs the transition (Integration API vs Marketplace API)
 

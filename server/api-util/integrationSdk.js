@@ -1,7 +1,6 @@
 const sharetribeIntegrationSdk = require('sharetribe-flex-integration-sdk');
 const Decimal = require('decimal.js');
 const log = require('../log');
-const { METADATA_KEYS } = require('./subscriptionConstants');
 
 const CLIENT_ID = process.env.SHARETRIBE_INTEGRATION_CLIENT_ID;
 const CLIENT_SECRET = process.env.SHARETRIBE_INTEGRATION_CLIENT_SECRET;
@@ -159,18 +158,11 @@ const updateListingPublicDataLocation = (listingId, location) => {
   });
 };
 
-/**
- * Find transaction by Stripe subscription id stored in metadata.
- */
-const findTransactionByStripeSubscriptionId = async stripeSubscriptionId => {
-  const integrationSdk = getIntegrationSdk();
-  const response = await integrationSdk.transactions.query({
-    metadata: { [METADATA_KEYS.STRIPE_SUBSCRIPTION_ID]: stripeSubscriptionId },
-    perPage: 1,
-  });
-  const transactions = response?.data?.data || [];
-  return transactions[0] || null;
-};
+// NOTE: there is intentionally no findTransactionByStripeSubscriptionId here.
+// The Integration API's transactions.query does not support filtering by
+// metadata (it throws "Don't know how to serialize query parameter 'metadata'").
+// The Stripe → Sharetribe lookup lives in subscriptionService and goes through
+// the Stripe subscription's metadata.sharetribeTransactionId instead.
 
 /**
  * Find an active (non-final) subscription for a listing, regardless of customer.
@@ -233,7 +225,6 @@ module.exports = {
   showListing,
   updateListingPublicDataLocation,
   updateTransactionMetadata,
-  findTransactionByStripeSubscriptionId,
   findActiveSubscriptionForListing,
   handleIntegrationError,
 };

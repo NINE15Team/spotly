@@ -30,6 +30,7 @@ export const getPendingCancellation = transaction => {
  */
 export const getStateDataForSubscriptionProcess = (txInfo, processInfo) => {
   const { transaction, transactionRole, subscriptionHandlers = {}, intl } = txInfo;
+  const { processName, processState, states } = processInfo;
   const _ = CONDITIONAL_RESOLVER_WILDCARD;
 
   const pendingCancellation = getPendingCancellation(transaction);
@@ -54,6 +55,34 @@ export const getStateDataForSubscriptionProcess = (txInfo, processInfo) => {
       }
     : {};
 
+  // Activity-feed copy for the cancellation-intent self-loops. These are
+  // operator transitions, so the feed's generic "{actor} did X" would read
+  // "operator"; the copy names the customer explicitly instead. The end date
+  // is only shown while the request is still active (a later resume clears it).
+  const role = transactionRole === PROVIDER ? 'provider' : 'customer';
+  const requestKey = isCancelling && cancelAtFormatted ? 'request-cancellation' : 'request-cancellation-no-date';
+  const feedValues = { cancelAt: cancelAtFormatted };
+  const transitionMessages = [
+    {
+      transition: 'transition/request-cancellation',
+      translationId: `TransactionPage.ActivityFeed.${processName}.${requestKey}.${role}`,
+      values: feedValues,
+    },
+    {
+      transition: 'transition/request-cancellation-from-overdue',
+      translationId: `TransactionPage.ActivityFeed.${processName}.${requestKey}.${role}`,
+      values: feedValues,
+    },
+    {
+      transition: 'transition/resume-subscription',
+      translationId: `TransactionPage.ActivityFeed.${processName}.resume-subscription.${role}`,
+    },
+    {
+      transition: 'transition/resume-subscription-from-overdue',
+      translationId: `TransactionPage.ActivityFeed.${processName}.resume-subscription.${role}`,
+    },
+  ];
+
   const {
     cancelInProgress,
     cancelError,
@@ -68,8 +97,6 @@ export const getStateDataForSubscriptionProcess = (txInfo, processInfo) => {
     onAcceptSubscription,
     onDeclineSubscription,
   } = subscriptionHandlers;
-
-  const { processName, processState, states } = processInfo;
 
   const acceptButtonProps =
     onAcceptSubscription && intl
@@ -208,5 +235,9 @@ export const getStateDataForSubscriptionProcess = (txInfo, processInfo) => {
   // Multi-participant waiver signing: show the status panel while a subscription
   // is awaiting approval (payment-confirmed) or live (active).
   const waiverPanelStates = [states.PAYMENT_CONFIRMED, states.ACTIVE];
-  return { ...result, showWaiverStatusPanel: waiverPanelStates.includes(processState) };
+  return {
+    ...result,
+    transitionMessages,
+    showWaiverStatusPanel: waiverPanelStates.includes(processState),
+  };
 };

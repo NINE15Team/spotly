@@ -128,6 +128,38 @@
    :actions [{:name :action/update-protected-data}],
    :from :state/active,
    :to :state/active,
+   :privileged? true}
+  ;; --- Cancellation intent ----------------------------------------------------
+  ;; The customer asking to cancel does NOT end the subscription: Stripe keeps
+  ;; billing until period end and only then fires customer.subscription.deleted,
+  ;; which runs cancel-subscription. These operator self-loops record the
+  ;; *request* in the transaction history (activity feed, Console timeline,
+  ;; emails) without changing state. protectedData gets cancellationRequest
+  ;; {cancelAt, requestedAt, source}; metadata.cancelAtPeriodEnd drives the UI.
+  ;; `resume` is the Billing Portal un-cancel path.
+  {:name :transition/request-cancellation,
+   :actor :actor.role/operator,
+   :actions [{:name :action/update-protected-data}],
+   :from :state/active,
+   :to :state/active,
+   :privileged? true}
+  {:name :transition/request-cancellation-from-overdue,
+   :actor :actor.role/operator,
+   :actions [{:name :action/update-protected-data}],
+   :from :state/payment-overdue,
+   :to :state/payment-overdue,
+   :privileged? true}
+  {:name :transition/resume-subscription,
+   :actor :actor.role/operator,
+   :actions [{:name :action/update-protected-data}],
+   :from :state/active,
+   :to :state/active,
+   :privileged? true}
+  {:name :transition/resume-subscription-from-overdue,
+   :actor :actor.role/operator,
+   :actions [{:name :action/update-protected-data}],
+   :from :state/payment-overdue,
+   :to :state/payment-overdue,
    :privileged? true}],
  :notifications
  [{:name :notification/subscription-request-received-customer,
@@ -221,4 +253,39 @@
   {:name :notification/subscription-expired-provider,
    :on :transition/expire,
    :to :actor.role/provider,
-   :template :subscription-expired}]}
+   :template :subscription-expired}
+  ;; Cancellation requested (active)
+  {:name :notification/subscription-cancellation-requested-customer,
+   :on :transition/request-cancellation,
+   :to :actor.role/customer,
+   :template :subscription-cancellation-requested-customer}
+  {:name :notification/subscription-cancellation-requested-provider,
+   :on :transition/request-cancellation,
+   :to :actor.role/provider,
+   :template :subscription-cancellation-requested-provider}
+  ;; Cancellation requested (payment-overdue) — same templates
+  {:name :notification/subscription-cancellation-requested-from-overdue-customer,
+   :on :transition/request-cancellation-from-overdue,
+   :to :actor.role/customer,
+   :template :subscription-cancellation-requested-customer}
+  {:name :notification/subscription-cancellation-requested-from-overdue-provider,
+   :on :transition/request-cancellation-from-overdue,
+   :to :actor.role/provider,
+   :template :subscription-cancellation-requested-provider}
+  ;; Resumed (cancellation withdrawn)
+  {:name :notification/subscription-resumed-customer,
+   :on :transition/resume-subscription,
+   :to :actor.role/customer,
+   :template :subscription-resumed-customer}
+  {:name :notification/subscription-resumed-provider,
+   :on :transition/resume-subscription,
+   :to :actor.role/provider,
+   :template :subscription-resumed-provider}
+  {:name :notification/subscription-resumed-from-overdue-customer,
+   :on :transition/resume-subscription-from-overdue,
+   :to :actor.role/customer,
+   :template :subscription-resumed-customer}
+  {:name :notification/subscription-resumed-from-overdue-provider,
+   :on :transition/resume-subscription-from-overdue,
+   :to :actor.role/provider,
+   :template :subscription-resumed-provider}]}

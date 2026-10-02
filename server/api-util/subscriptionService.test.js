@@ -20,7 +20,6 @@ jest.mock('./integrationSdk', () => {
     showListing: jest.fn(),
     transitionTransaction: jest.fn().mockResolvedValue({}),
     updateTransactionMetadata: jest.fn().mockResolvedValue({}),
-    findTransactionByStripeSubscriptionId: jest.fn(),
     findActiveSubscriptionForListing: jest.fn(),
   };
 });
@@ -36,6 +35,7 @@ jest.mock('./subscriptionStripe', () => {
     createMonthlyStripePrice: jest.fn().mockResolvedValue({ id: 'price_123' }),
     createStripeSubscription: jest.fn().mockResolvedValue({ id: 'sub_123' }),
     cancelStripeSubscriptionAtPeriodEnd: jest.fn().mockResolvedValue({}),
+    retrieveStripeSubscription: jest.fn(),
   };
 });
 
@@ -50,6 +50,7 @@ const {
   handleSubscriptionUpdated,
   requestCancelAtPeriodEnd,
   checkForExistingSubscription,
+  findTransactionByStripeSubscriptionId,
 } = require('./subscriptionService');
 
 // --- Fixtures ----------------------------------------------------------------
@@ -95,6 +96,20 @@ const mockShowTransaction = (transaction, included = buildIncluded()) => {
   integrationSdk.showTransaction.mockResolvedValue({
     data: { data: transaction, included },
   });
+};
+
+// Webhook lookup path: Stripe subscription.metadata.sharetribeTransactionId →
+// Integration API transactions.show. `null` simulates a subscription we don't own.
+const mockTransactionForSubscription = (transaction, included = buildIncluded()) => {
+  if (!transaction) {
+    subscriptionStripe.retrieveStripeSubscription.mockResolvedValue({ id: 'sub_x', metadata: {} });
+    return;
+  }
+  subscriptionStripe.retrieveStripeSubscription.mockResolvedValue({
+    id: 'sub_123',
+    metadata: { sharetribeTransactionId: transaction.id.uuid },
+  });
+  mockShowTransaction(transaction, included);
 };
 
 beforeEach(() => {
@@ -403,7 +418,7 @@ describe('handleInvoicePaid', () => {
   const invoice = { id: 'in_1', total: 1200, tax: 0, currency: 'usd', period_end: 1793602800 };
 
   it('is idempotent: skips an invoice that was already processed (retry / Resend)', async () => {
-    integrationSdk.findTransactionByStripeSubscriptionId.mockResolvedValue({
+    mockTransactionForSubscription({
       id: { uuid: 'tx-1' },
       attributes: {
         lastTransition: TRANSITIONS.CONFIRM_SUBSCRIPTION,
@@ -418,11 +433,10 @@ describe('handleInvoicePaid', () => {
   });
 
   it('records the invoice only after the extend transition succeeds', async () => {
-    integrationSdk.findTransactionByStripeSubscriptionId.mockResolvedValue({
+    mockTransactionForSubscription({
       id: { uuid: 'tx-1' },
       attributes: { lastTransition: TRANSITIONS.CONFIRM_SUBSCRIPTION, metadata: {} },
     });
-    mockShowTransaction(buildTransaction());
 
     await handleInvoicePaid('sub_123', invoice);
 
@@ -439,11 +453,10 @@ describe('handleInvoicePaid', () => {
   });
 
   it('does not mark the invoice processed when the transition fails', async () => {
-    integrationSdk.findTransactionByStripeSubscriptionId.mockResolvedValue({
+    mockTransactionForSubscription({
       id: { uuid: 'tx-1' },
       attributes: { lastTransition: TRANSITIONS.CONFIRM_SUBSCRIPTION, metadata: {} },
     });
-    mockShowTransaction(buildTransaction());
     integrationSdk.transitionTransaction.mockRejectedValueOnce(new Error('flex down'));
 
     await expect(handleInvoicePaid('sub_123', invoice)).rejects.toThrow('flex down');
@@ -452,11 +465,10 @@ describe('handleInvoicePaid', () => {
   });
 
   it('extends the period when the subscription is active', async () => {
-    integrationSdk.findTransactionByStripeSubscriptionId.mockResolvedValue({
+    mockTransactionForSubscription({
       id: { uuid: 'tx-1' },
       attributes: { lastTransition: TRANSITIONS.CONFIRM_SUBSCRIPTION },
     });
-    mockShowTransaction(buildTransaction());
 
     await handleInvoicePaid('sub_123');
 
@@ -466,11 +478,10 @@ describe('handleInvoicePaid', () => {
   });
 
   it('extends the period when the subscription was provider-accepted', async () => {
-    integrationSdk.findTransactionByStripeSubscriptionId.mockResolvedValue({
+    mockTransactionForSubscription({
       id: { uuid: 'tx-1' },
       attributes: { lastTransition: TRANSITIONS.ACCEPT_SUBSCRIPTION },
     });
-    mockShowTransaction(buildTransaction());
 
     await handleInvoicePaid('sub_123');
 
@@ -480,11 +491,10 @@ describe('handleInvoicePaid', () => {
   });
 
   it('reactivates the subscription when payment was overdue', async () => {
-    integrationSdk.findTransactionByStripeSubscriptionId.mockResolvedValue({
+    mockTransactionForSubscription({
       id: { uuid: 'tx-1' },
       attributes: { lastTransition: TRANSITIONS.PAYMENT_OVERDUE },
     });
-    mockShowTransaction(buildTransaction());
 
     await handleInvoicePaid('sub_123');
 
@@ -494,7 +504,7 @@ describe('handleInvoicePaid', () => {
   });
 
   it('is a no-op when no transaction matches the subscription', async () => {
-    integrationSdk.findTransactionByStripeSubscriptionId.mockResolvedValue(null);
+    mockTransactionForSubscription(null);
 
     await handleInvoicePaid('sub_unknown');
 
@@ -505,7 +515,7 @@ describe('handleInvoicePaid', () => {
 // --- handleInvoicePaymentFailed ---------------------------------------------
 describe('handleInvoicePaymentFailed', () => {
   it('marks an active subscription as payment-overdue', async () => {
-    integrationSdk.findTransactionByStripeSubscriptionId.mockResolvedValue({
+    mockTransactionForSubscription({
       id: { uuid: 'tx-1' },
       attributes: { lastTransition: TRANSITIONS.CONFIRM_SUBSCRIPTION },
     });
@@ -518,7 +528,7 @@ describe('handleInvoicePaymentFailed', () => {
   });
 
   it('does nothing when already payment-overdue', async () => {
-    integrationSdk.findTransactionByStripeSubscriptionId.mockResolvedValue({
+    mockTransactionForSubscription({
       id: { uuid: 'tx-1' },
       attributes: { lastTransition: TRANSITIONS.PAYMENT_OVERDUE },
     });
@@ -531,7 +541,7 @@ describe('handleInvoicePaymentFailed', () => {
 
 describe('handleInvoicePaymentFailed — after a waiver status update', () => {
   it('still marks the subscription payment-overdue', async () => {
-    integrationSdk.findTransactionByStripeSubscriptionId.mockResolvedValue({
+    mockTransactionForSubscription({
       id: { uuid: 'tx-1' },
       attributes: { lastTransition: TRANSITIONS.UPDATE_WAIVER_STATUS_FROM_ACTIVE },
     });
@@ -547,7 +557,7 @@ describe('handleInvoicePaymentFailed — after a waiver status update', () => {
 // --- handleSubscriptionDeleted ----------------------------------------------
 describe('handleSubscriptionDeleted', () => {
   it('cancels an active subscription', async () => {
-    integrationSdk.findTransactionByStripeSubscriptionId.mockResolvedValue({
+    mockTransactionForSubscription({
       id: { uuid: 'tx-1' },
       attributes: { lastTransition: TRANSITIONS.CONFIRM_SUBSCRIPTION },
     });
@@ -560,7 +570,7 @@ describe('handleSubscriptionDeleted', () => {
   });
 
   it('uses the from-overdue cancel transition when overdue', async () => {
-    integrationSdk.findTransactionByStripeSubscriptionId.mockResolvedValue({
+    mockTransactionForSubscription({
       id: { uuid: 'tx-1' },
       attributes: { lastTransition: TRANSITIONS.PAYMENT_OVERDUE },
     });
@@ -573,7 +583,7 @@ describe('handleSubscriptionDeleted', () => {
   });
 
   it('is a no-op when already cancelled', async () => {
-    integrationSdk.findTransactionByStripeSubscriptionId.mockResolvedValue({
+    mockTransactionForSubscription({
       id: { uuid: 'tx-1' },
       attributes: { lastTransition: TRANSITIONS.CANCEL_SUBSCRIPTION },
     });
@@ -623,6 +633,79 @@ describe('requestCancelAtPeriodEnd', () => {
       }
     );
     expect(result.cancelAt).toBe('2026-11-02T12:00:00.000Z');
+  });
+
+  it('fires request-cancellation (active) with the request in protectedData, after metadata', async () => {
+    buildShowForCancel(TRANSITIONS.CONFIRM_SUBSCRIPTION);
+    const cancelAtUnix = Math.floor(Date.UTC(2026, 10, 2, 12, 0, 0) / 1000);
+    subscriptionStripe.cancelStripeSubscriptionAtPeriodEnd.mockResolvedValueOnce({
+      id: 'sub_123',
+      cancel_at_period_end: true,
+      cancel_at: cancelAtUnix,
+    });
+
+    await requestCancelAtPeriodEnd({ uuid: 'tx-1' });
+
+    expect(integrationSdk.transitionTransaction).toHaveBeenCalledWith({
+      transactionId: { uuid: 'tx-1' },
+      transition: TRANSITIONS.REQUEST_CANCELLATION,
+      params: {
+        protectedData: {
+          cancellationRequest: {
+            active: true,
+            cancelAt: '2026-11-02T12:00:00.000Z',
+            requestedAt: expect.any(String),
+            source: 'customer',
+          },
+        },
+      },
+    });
+    // Metadata first so a racing webhook sees the flag and does not double-fire.
+    expect(integrationSdk.updateTransactionMetadata.mock.invocationCallOrder[0]).toBeLessThan(
+      integrationSdk.transitionTransaction.mock.invocationCallOrder[0]
+    );
+  });
+
+  it('fires request-cancellation-from-overdue when in dunning', async () => {
+    buildShowForCancel(TRANSITIONS.PAYMENT_OVERDUE);
+
+    await requestCancelAtPeriodEnd({ uuid: 'tx-1' });
+
+    expect(integrationSdk.transitionTransaction).toHaveBeenCalledWith(
+      expect.objectContaining({ transition: TRANSITIONS.REQUEST_CANCELLATION_FROM_OVERDUE })
+    );
+  });
+
+  it('does not fire the transition again on a repeat cancel (flag already set)', async () => {
+    buildShowForCancel(TRANSITIONS.REQUEST_CANCELLATION, {
+      [METADATA_KEYS.STRIPE_SUBSCRIPTION_ID]: 'sub_123',
+      [METADATA_KEYS.CANCEL_AT_PERIOD_END]: true,
+      [METADATA_KEYS.CANCEL_AT]: '2026-11-02T12:00:00.000Z',
+    });
+    subscriptionStripe.cancelStripeSubscriptionAtPeriodEnd.mockResolvedValueOnce({
+      id: 'sub_123',
+      cancel_at_period_end: true,
+      cancel_at: Math.floor(Date.UTC(2026, 10, 2, 12, 0, 0) / 1000),
+    });
+
+    const result = await requestCancelAtPeriodEnd({ uuid: 'tx-1' });
+
+    expect(result.cancelAtPeriodEnd).toBe(true);
+    expect(integrationSdk.transitionTransaction).not.toHaveBeenCalled();
+    expect(integrationSdk.updateTransactionMetadata).not.toHaveBeenCalled();
+  });
+
+  it('still succeeds (metadata written) when the intent transition fails', async () => {
+    buildShowForCancel(TRANSITIONS.CONFIRM_SUBSCRIPTION);
+    integrationSdk.transitionTransaction.mockRejectedValueOnce(new Error('unknown transition'));
+
+    const result = await requestCancelAtPeriodEnd({ uuid: 'tx-1' });
+
+    expect(result.cancelAtPeriodEnd).toBe(true);
+    expect(integrationSdk.updateTransactionMetadata).toHaveBeenCalledWith(
+      { uuid: 'tx-1' },
+      expect.objectContaining({ [METADATA_KEYS.CANCEL_AT_PERIOD_END]: true })
+    );
   });
 
   it('falls back to the booking end when Stripe returns no cancel_at', async () => {
@@ -685,6 +768,9 @@ describe('requestCancelAtPeriodEnd', () => {
     // Waiver self-loop keeps the subscription active (regression: Heroku 409
     // "Subscription cannot be cancelled in the current state").
     TRANSITIONS.UPDATE_WAIVER_STATUS_FROM_ACTIVE,
+    // Cancel after a Billing Portal resume.
+    TRANSITIONS.RESUME_SUBSCRIPTION,
+    TRANSITIONS.RESUME_SUBSCRIPTION_FROM_OVERDUE,
   ])('succeeds from allowed state: %s', async lastTransition => {
     buildShowForCancel(lastTransition);
 
@@ -715,7 +801,7 @@ describe('handleSubscriptionUpdated', () => {
   const cancelAtUnix = Math.floor(Date.UTC(2026, 10, 2, 12, 0, 0) / 1000);
 
   it('writes the pending-cancellation flag when Stripe reports cancel_at_period_end', async () => {
-    integrationSdk.findTransactionByStripeSubscriptionId.mockResolvedValue({
+    mockTransactionForSubscription({
       id: { uuid: 'tx-1' },
       attributes: { lastTransition: TRANSITIONS.CONFIRM_SUBSCRIPTION, metadata: {} },
     });
@@ -736,7 +822,7 @@ describe('handleSubscriptionUpdated', () => {
   });
 
   it('treats a bare cancel_at (Stripe dashboard "cancel on date") as pending', async () => {
-    integrationSdk.findTransactionByStripeSubscriptionId.mockResolvedValue({
+    mockTransactionForSubscription({
       id: { uuid: 'tx-1' },
       attributes: { lastTransition: TRANSITIONS.CONFIRM_SUBSCRIPTION, metadata: {} },
     });
@@ -757,7 +843,7 @@ describe('handleSubscriptionUpdated', () => {
   });
 
   it('reads current_period_end from subscription items on newer API versions', async () => {
-    integrationSdk.findTransactionByStripeSubscriptionId.mockResolvedValue({
+    mockTransactionForSubscription({
       id: { uuid: 'tx-1' },
       attributes: { lastTransition: TRANSITIONS.CONFIRM_SUBSCRIPTION, metadata: {} },
     });
@@ -775,8 +861,81 @@ describe('handleSubscriptionUpdated', () => {
     );
   });
 
+  it('fires request-cancellation with source=stripe when the portal cancels', async () => {
+    mockTransactionForSubscription({
+      id: { uuid: 'tx-1' },
+      attributes: { lastTransition: TRANSITIONS.CONFIRM_SUBSCRIPTION, metadata: {} },
+    });
+
+    await handleSubscriptionUpdated({
+      id: 'sub_123',
+      cancel_at_period_end: true,
+      cancel_at: cancelAtUnix,
+    });
+
+    expect(integrationSdk.transitionTransaction).toHaveBeenCalledWith(
+      expect.objectContaining({
+        transition: TRANSITIONS.REQUEST_CANCELLATION,
+        params: {
+          protectedData: {
+            cancellationRequest: expect.objectContaining({ active: true, source: 'stripe' }),
+          },
+        },
+      })
+    );
+  });
+
+  it('fires resume-subscription when the portal un-cancels', async () => {
+    mockTransactionForSubscription({
+      id: { uuid: 'tx-1' },
+      attributes: {
+        lastTransition: TRANSITIONS.REQUEST_CANCELLATION,
+        metadata: {
+          [METADATA_KEYS.CANCEL_AT_PERIOD_END]: true,
+          [METADATA_KEYS.CANCEL_AT]: '2026-11-02T12:00:00.000Z',
+        },
+      },
+    });
+
+    await handleSubscriptionUpdated({ id: 'sub_123', cancel_at_period_end: false, cancel_at: null });
+
+    expect(integrationSdk.transitionTransaction).toHaveBeenCalledWith(
+      expect.objectContaining({
+        transition: TRANSITIONS.RESUME_SUBSCRIPTION,
+        params: {
+          protectedData: { cancellationRequest: expect.objectContaining({ active: false }) },
+        },
+      })
+    );
+  });
+
+  it('updates metadata but fires no transition when only the end date moves', async () => {
+    mockTransactionForSubscription({
+      id: { uuid: 'tx-1' },
+      attributes: {
+        lastTransition: TRANSITIONS.REQUEST_CANCELLATION,
+        metadata: {
+          [METADATA_KEYS.CANCEL_AT_PERIOD_END]: true,
+          [METADATA_KEYS.CANCEL_AT]: '2026-11-01T12:00:00.000Z',
+        },
+      },
+    });
+
+    await handleSubscriptionUpdated({
+      id: 'sub_123',
+      cancel_at_period_end: true,
+      cancel_at: cancelAtUnix,
+    });
+
+    expect(integrationSdk.updateTransactionMetadata).toHaveBeenCalledWith(
+      { uuid: 'tx-1' },
+      expect.objectContaining({ [METADATA_KEYS.CANCEL_AT]: '2026-11-02T12:00:00.000Z' })
+    );
+    expect(integrationSdk.transitionTransaction).not.toHaveBeenCalled();
+  });
+
   it('clears the flag when the customer resumes via the Billing Portal', async () => {
-    integrationSdk.findTransactionByStripeSubscriptionId.mockResolvedValue({
+    mockTransactionForSubscription({
       id: { uuid: 'tx-1' },
       attributes: {
         lastTransition: TRANSITIONS.CONFIRM_SUBSCRIPTION,
@@ -796,7 +955,7 @@ describe('handleSubscriptionUpdated', () => {
   });
 
   it('is a no-op when metadata already matches Stripe', async () => {
-    integrationSdk.findTransactionByStripeSubscriptionId.mockResolvedValue({
+    mockTransactionForSubscription({
       id: { uuid: 'tx-1' },
       attributes: {
         lastTransition: TRANSITIONS.CONFIRM_SUBSCRIPTION,
@@ -816,17 +975,96 @@ describe('handleSubscriptionUpdated', () => {
     expect(integrationSdk.updateTransactionMetadata).not.toHaveBeenCalled();
   });
 
-  it('is a no-op for final transactions and unknown subscriptions', async () => {
-    integrationSdk.findTransactionByStripeSubscriptionId.mockResolvedValueOnce({
+  it('is a no-op for final transactions', async () => {
+    mockTransactionForSubscription({
       id: { uuid: 'tx-1' },
       attributes: { lastTransition: TRANSITIONS.CANCEL_SUBSCRIPTION, metadata: {} },
     });
+
     await handleSubscriptionUpdated({ id: 'sub_123', cancel_at_period_end: true });
 
-    integrationSdk.findTransactionByStripeSubscriptionId.mockResolvedValueOnce(null);
-    await handleSubscriptionUpdated({ id: 'sub_404', cancel_at_period_end: true });
-
     expect(integrationSdk.updateTransactionMetadata).not.toHaveBeenCalled();
+  });
+
+  it('is a no-op for subscriptions we did not create (no sharetribeTransactionId)', async () => {
+    // Event payload carries the subscription, so no Stripe retrieve is needed.
+    await handleSubscriptionUpdated({ id: 'sub_404', cancel_at_period_end: true, metadata: {} });
+
+    expect(subscriptionStripe.retrieveStripeSubscription).not.toHaveBeenCalled();
+    expect(integrationSdk.showTransaction).not.toHaveBeenCalled();
+    expect(integrationSdk.updateTransactionMetadata).not.toHaveBeenCalled();
+  });
+
+  it('uses the subscription from the event payload instead of re-fetching from Stripe', async () => {
+    mockShowTransaction({
+      id: { uuid: 'tx-1' },
+      attributes: { lastTransition: TRANSITIONS.CONFIRM_SUBSCRIPTION, metadata: {} },
+    });
+
+    await handleSubscriptionUpdated({
+      id: 'sub_123',
+      cancel_at_period_end: true,
+      cancel_at: cancelAtUnix,
+      metadata: { sharetribeTransactionId: 'tx-1' },
+    });
+
+    expect(subscriptionStripe.retrieveStripeSubscription).not.toHaveBeenCalled();
+    expect(integrationSdk.showTransaction).toHaveBeenCalledWith('tx-1');
+    expect(integrationSdk.updateTransactionMetadata).toHaveBeenCalled();
+  });
+});
+
+// --- findTransactionByStripeSubscriptionId -----------------------------------
+describe('findTransactionByStripeSubscriptionId', () => {
+  it('resolves via Stripe metadata.sharetribeTransactionId → transactions.show', async () => {
+    const tx = {
+      id: { uuid: 'tx-1' },
+      attributes: {
+        lastTransition: TRANSITIONS.CONFIRM_SUBSCRIPTION,
+        metadata: { [METADATA_KEYS.STRIPE_SUBSCRIPTION_ID]: 'sub_123' },
+      },
+    };
+    mockTransactionForSubscription(tx);
+
+    const result = await findTransactionByStripeSubscriptionId('sub_123');
+
+    expect(subscriptionStripe.retrieveStripeSubscription).toHaveBeenCalledWith('sub_123');
+    expect(integrationSdk.showTransaction).toHaveBeenCalledWith('tx-1');
+    expect(result).toEqual(tx);
+  });
+
+  it('never uses transactions.query (Integration API has no metadata filter)', async () => {
+    mockTransactionForSubscription({
+      id: { uuid: 'tx-1' },
+      attributes: { lastTransition: TRANSITIONS.CONFIRM_SUBSCRIPTION, metadata: {} },
+    });
+
+    await findTransactionByStripeSubscriptionId('sub_123');
+
+    expect(integrationSdk.queryTransactions).toBeUndefined();
+  });
+
+  it('returns null when the transaction points at a different Stripe subscription', async () => {
+    mockTransactionForSubscription({
+      id: { uuid: 'tx-1' },
+      attributes: {
+        lastTransition: TRANSITIONS.CONFIRM_SUBSCRIPTION,
+        metadata: { [METADATA_KEYS.STRIPE_SUBSCRIPTION_ID]: 'sub_other' },
+      },
+    });
+
+    const result = await findTransactionByStripeSubscriptionId('sub_123');
+
+    expect(result).toBeNull();
+  });
+
+  it('returns null (does not throw) when Stripe retrieve fails', async () => {
+    subscriptionStripe.retrieveStripeSubscription.mockRejectedValue(new Error('stripe down'));
+
+    const result = await findTransactionByStripeSubscriptionId('sub_123');
+
+    expect(result).toBeNull();
+    expect(integrationSdk.showTransaction).not.toHaveBeenCalled();
   });
 });
 
@@ -841,7 +1079,7 @@ describe('handleSubscriptionDeleted — terminal state no-ops', () => {
     TRANSITIONS.EXPIRE_ACCEPTANCE,
     TRANSITIONS.EXPIRE_PAYMENT,
   ])('is a no-op when already in terminal state: %s', async lastTransition => {
-    integrationSdk.findTransactionByStripeSubscriptionId.mockResolvedValue({
+    mockTransactionForSubscription({
       id: { uuid: 'tx-1' },
       attributes: { lastTransition },
     });
@@ -859,7 +1097,7 @@ describe('handleSubscriptionDeleted — terminal state no-ops', () => {
   ])(
     'does not run an invalid cancel transition from non-billing state: %s',
     async lastTransition => {
-      integrationSdk.findTransactionByStripeSubscriptionId.mockResolvedValue({
+      mockTransactionForSubscription({
         id: { uuid: 'tx-1' },
         attributes: { lastTransition },
       });
@@ -871,7 +1109,7 @@ describe('handleSubscriptionDeleted — terminal state no-ops', () => {
   );
 
   it('cancels after a waiver status update kept the subscription active', async () => {
-    integrationSdk.findTransactionByStripeSubscriptionId.mockResolvedValue({
+    mockTransactionForSubscription({
       id: { uuid: 'tx-1' },
       attributes: { lastTransition: TRANSITIONS.UPDATE_WAIVER_STATUS_FROM_ACTIVE },
     });
@@ -884,7 +1122,7 @@ describe('handleSubscriptionDeleted — terminal state no-ops', () => {
   });
 
   it('is a no-op when no transaction matches', async () => {
-    integrationSdk.findTransactionByStripeSubscriptionId.mockResolvedValue(null);
+    mockTransactionForSubscription(null);
 
     await handleSubscriptionDeleted('sub_unknown');
 
@@ -901,12 +1139,10 @@ describe('handleInvoicePaid — all active-entry transitions extend the period',
     TRANSITIONS.REACTIVATE_SUBSCRIPTION,
     TRANSITIONS.UPDATE_WAIVER_STATUS_FROM_ACTIVE,
   ])('extends period from active state via: %s', async lastTransition => {
-    integrationSdk.findTransactionByStripeSubscriptionId.mockResolvedValue({
+    mockTransactionForSubscription({
       id: { uuid: 'tx-1' },
       attributes: { lastTransition },
-    });
-    integrationSdk.showTransaction.mockResolvedValue({
-      data: { data: buildTransaction(), included: buildIncluded() },
+      relationships: { booking: { data: { id: { uuid: 'booking-1' }, type: 'booking' } } },
     });
 
     await handleInvoicePaid('sub_123');
@@ -924,7 +1160,7 @@ describe('handleInvoicePaymentFailed — active-entry states', () => {
     TRANSITIONS.ACCEPT_SUBSCRIPTION,
     TRANSITIONS.EXTEND_SUBSCRIPTION,
   ])('marks payment-overdue from %s', async lastTransition => {
-    integrationSdk.findTransactionByStripeSubscriptionId.mockResolvedValue({
+    mockTransactionForSubscription({
       id: { uuid: 'tx-1' },
       attributes: { lastTransition },
     });
@@ -937,7 +1173,7 @@ describe('handleInvoicePaymentFailed — active-entry states', () => {
   });
 
   it('is a no-op when no transaction matches', async () => {
-    integrationSdk.findTransactionByStripeSubscriptionId.mockResolvedValue(null);
+    mockTransactionForSubscription(null);
 
     await handleInvoicePaymentFailed('sub_unknown');
 

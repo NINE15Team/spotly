@@ -1,0 +1,1 @@
+{{set-translations (asset "content/email-texts.json")}}{{t "SubscriptionCancellationRequestedProvider.Subject" "{customerDisplayName} is ending their subscription for {listingTitle}" listingTitle=transaction.listing.title customerDisplayName=transaction.customer.display-name}}

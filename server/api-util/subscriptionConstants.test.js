@@ -36,6 +36,18 @@ describe('subscriptionConstants state resolution', () => {
     ).toBe(true);
   });
 
+  it('treats cancellation-intent self-loops as staying in the same state', () => {
+    expect(getSubscriptionState(tx(TRANSITIONS.REQUEST_CANCELLATION))).toBe(STATES.ACTIVE);
+    expect(getSubscriptionState(tx(TRANSITIONS.RESUME_SUBSCRIPTION))).toBe(STATES.ACTIVE);
+    expect(getSubscriptionState(tx(TRANSITIONS.REQUEST_CANCELLATION_FROM_OVERDUE))).toBe(
+      STATES.PAYMENT_OVERDUE
+    );
+    expect(getSubscriptionState(tx(TRANSITIONS.RESUME_SUBSCRIPTION_FROM_OVERDUE))).toBe(
+      STATES.PAYMENT_OVERDUE
+    );
+    expect(isSubscriptionFinal(tx(TRANSITIONS.REQUEST_CANCELLATION))).toBe(false);
+  });
+
   it('returns null for unknown or missing transitions', () => {
     expect(getSubscriptionState(tx('transition/nope'))).toBeNull();
     expect(getSubscriptionState(null)).toBeNull();

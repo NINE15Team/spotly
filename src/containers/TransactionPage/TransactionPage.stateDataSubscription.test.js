@@ -153,6 +153,80 @@ describe('getStateDataForSubscriptionProcess (TransactionPage)', () => {
     });
   });
 
+  describe('activity feed transition messages', () => {
+    const findMsg = (result, transition) =>
+      result.transitionMessages.find(m => m.transition === transition);
+
+    it('customer sees "you asked to cancel … ends on <date>" while the request is active', () => {
+      const txInfo = {
+        transaction: buildTransaction({
+          cancelAtPeriodEnd: true,
+          cancelAt: '2026-11-02T12:00:00.000Z',
+        }),
+        transactionRole: CUSTOMER,
+        intl: fakeIntl,
+        subscriptionHandlers: buildHandlers(),
+      };
+      const result = getStateDataForSubscriptionProcess(txInfo, buildProcessInfo(states.ACTIVE));
+
+      const msg = findMsg(result, 'transition/request-cancellation');
+      expect(msg.translationId).toBe(
+        'TransactionPage.ActivityFeed.subscription-rental.request-cancellation.customer'
+      );
+      expect(msg.values).toEqual({ cancelAt: '2026-11-02' });
+      // Overdue variant shares the copy.
+      expect(findMsg(result, 'transition/request-cancellation-from-overdue').translationId).toBe(
+        msg.translationId
+      );
+    });
+
+    it('provider gets the provider copy', () => {
+      const txInfo = {
+        transaction: buildTransaction({
+          cancelAtPeriodEnd: true,
+          cancelAt: '2026-11-02T12:00:00.000Z',
+        }),
+        transactionRole: PROVIDER,
+        intl: fakeIntl,
+        subscriptionHandlers: {},
+      };
+      const result = getStateDataForSubscriptionProcess(txInfo, buildProcessInfo(states.ACTIVE));
+
+      expect(findMsg(result, 'transition/request-cancellation').translationId).toBe(
+        'TransactionPage.ActivityFeed.subscription-rental.request-cancellation.provider'
+      );
+      expect(findMsg(result, 'transition/resume-subscription').translationId).toBe(
+        'TransactionPage.ActivityFeed.subscription-rental.resume-subscription.provider'
+      );
+    });
+
+    it('drops the date from the request copy once the request is no longer active (resumed)', () => {
+      const txInfo = {
+        transaction: buildTransaction({ cancelAtPeriodEnd: false, cancelAt: null }),
+        transactionRole: CUSTOMER,
+        intl: fakeIntl,
+        subscriptionHandlers: buildHandlers(),
+      };
+      const result = getStateDataForSubscriptionProcess(txInfo, buildProcessInfo(states.ACTIVE));
+
+      expect(findMsg(result, 'transition/request-cancellation').translationId).toBe(
+        'TransactionPage.ActivityFeed.subscription-rental.request-cancellation-no-date.customer'
+      );
+    });
+
+    it('is present in final states too, so history still renders after cancellation', () => {
+      const txInfo = {
+        transaction: buildTransaction({ cancelAtPeriodEnd: true, cancelAt: '2026-11-02T12:00:00.000Z' }),
+        transactionRole: CUSTOMER,
+        intl: fakeIntl,
+        subscriptionHandlers: {},
+      };
+      const result = getStateDataForSubscriptionProcess(txInfo, buildProcessInfo(states.CANCELLED));
+
+      expect(result.transitionMessages).toHaveLength(4);
+    });
+  });
+
   describe('getPendingCancellation', () => {
     it('returns null when the flag is absent or false', () => {
       expect(getPendingCancellation(buildTransaction({}))).toBeNull();

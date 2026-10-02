@@ -13,7 +13,6 @@ const {
   showTransaction,
   showListing,
   updateTransactionMetadata,
-  findTransactionByStripeSubscriptionId,
   findActiveSubscriptionForListing,
   normalizeUuid,
 } = require('./integrationSdk');
@@ -24,6 +23,7 @@ const {
   resolveSubscriptionStripeCustomer,
   createMonthlyStripePrice,
   createStripeSubscription,
+  retrieveStripeSubscription,
   cancelStripeSubscriptionAtPeriodEnd,
   rethrowStripeError,
 } = require('./subscriptionStripe');
@@ -105,6 +105,59 @@ const getStripePeriodEndIso = stripeSubscription => {
   const items = stripeSubscription.items?.data || [];
   const ends = items.map(item => item.current_period_end).filter(Number.isFinite);
   return ends.length ? unixToIso(Math.max(...ends)) : null;
+};
+
+/**
+ * Resolve the Sharetribe transaction for a Stripe subscription.
+ *
+ * The Integration API's transactions.query has no metadata filter, so we go the
+ * other way: every subscription we create carries metadata.sharetribeTransactionId
+ * (see createStripeSubscription). Pass the subscription object when the webhook
+ * already includes it (customer.subscription.*) to skip the Stripe round-trip.
+ *
+ * Returns the transaction entity (response.data.data) or null.
+ */
+const findTransactionByStripeSubscriptionId = async (
+  stripeSubscriptionId,
+  stripeSubscription = null
+) => {
+  if (!stripeSubscriptionId) {
+    return null;
+  }
+
+  let subscription = stripeSubscription;
+  if (!subscription?.metadata) {
+    try {
+      subscription = await retrieveStripeSubscription(stripeSubscriptionId);
+    } catch (e) {
+      log.error(e, 'stripe-subscription-retrieve-failed', { stripeSubscriptionId });
+      return null;
+    }
+  }
+
+  const transactionId = subscription?.metadata?.sharetribeTransactionId;
+  if (!transactionId) {
+    log.warn('Stripe subscription has no sharetribeTransactionId metadata', {
+      stripeSubscriptionId,
+    });
+    return null;
+  }
+
+  const txResponse = await showTransaction(transactionId);
+  const transaction = txResponse?.data?.data || null;
+
+  // Guard against a stale/foreign pointer: the transaction must point back.
+  const linkedSubscriptionId = transaction?.attributes?.metadata?.[METADATA_KEYS.STRIPE_SUBSCRIPTION_ID];
+  if (linkedSubscriptionId && linkedSubscriptionId !== stripeSubscriptionId) {
+    log.warn('Stripe subscription / transaction link mismatch', {
+      stripeSubscriptionId,
+      transactionId,
+      linkedSubscriptionId,
+    });
+    return null;
+  }
+
+  return transaction;
 };
 
 const getBookingFromTransactionResponse = apiData => {
@@ -569,12 +622,11 @@ const requestCancelAtPeriodEnd = async transactionId => {
     toIsoMaybe(booking?.attributes?.end) ||
     null;
 
-  // Mirror the pending cancellation onto the transaction. The process state
-  // stays `active` until customer.subscription.deleted fires, so without this
-  // the UI has no way to show "ends on <date>" or hide the cancel button.
-  await updateTransactionMetadata(transaction.id, {
-    [METADATA_KEYS.CANCEL_AT_PERIOD_END]: true,
-    [METADATA_KEYS.CANCEL_AT]: cancelAt,
+  await recordCancellationIntent({
+    transaction,
+    cancelAtPeriodEnd: true,
+    cancelAt,
+    source: 'customer',
   });
 
   log.info('Subscription cancellation scheduled', {
@@ -584,6 +636,89 @@ const requestCancelAtPeriodEnd = async transactionId => {
   });
 
   return { cancelAtPeriodEnd: true, cancelAt, stripeSubscriptionId };
+};
+
+/**
+ * Pick the intent self-loop for the transaction's current state, or null when
+ * the state has none (should not happen: callers gate on active / overdue).
+ */
+const getIntentTransition = (transaction, cancelAtPeriodEnd) => {
+  const state = getSubscriptionState(transaction);
+  if (state === STATES.ACTIVE) {
+    return cancelAtPeriodEnd ? TRANSITIONS.REQUEST_CANCELLATION : TRANSITIONS.RESUME_SUBSCRIPTION;
+  }
+  if (state === STATES.PAYMENT_OVERDUE) {
+    return cancelAtPeriodEnd
+      ? TRANSITIONS.REQUEST_CANCELLATION_FROM_OVERDUE
+      : TRANSITIONS.RESUME_SUBSCRIPTION_FROM_OVERDUE;
+  }
+  return null;
+};
+
+/**
+ * Record a cancellation request / resume on the Sharetribe transaction.
+ *
+ * 1. metadata.cancelAtPeriodEnd / cancelAt — read by the UI (hide cancel button,
+ *    "ends on <date>" heading). Written first so a racing
+ *    customer.subscription.updated webhook sees it and does not double-fire.
+ * 2. A state-preserving self-loop transition (request-cancellation /
+ *    resume-subscription) — puts the event in the activity feed, Console
+ *    timeline and triggers the customer + provider emails. Fired only when the
+ *    flag actually flips, never on a repeat click or a date-only change.
+ *
+ * The transition is best-effort: if it fails (e.g. the process version without
+ * these transitions is still aliased), the metadata is already correct and the
+ * UI is right; we log loudly instead of failing the user's request.
+ */
+const recordCancellationIntent = async ({ transaction, cancelAtPeriodEnd, cancelAt, source }) => {
+  const metadata = transaction.attributes.metadata || {};
+  const currentFlag = !!metadata[METADATA_KEYS.CANCEL_AT_PERIOD_END];
+  const currentCancelAt = metadata[METADATA_KEYS.CANCEL_AT] || null;
+  const flagChanged = currentFlag !== cancelAtPeriodEnd;
+
+  if (!flagChanged && currentCancelAt === (cancelAt || null)) {
+    return { transition: null, changed: false };
+  }
+
+  await updateTransactionMetadata(transaction.id, {
+    [METADATA_KEYS.CANCEL_AT_PERIOD_END]: cancelAtPeriodEnd,
+    [METADATA_KEYS.CANCEL_AT]: cancelAt || null,
+  });
+
+  if (!flagChanged) {
+    return { transition: null, changed: true };
+  }
+
+  const transition = getIntentTransition(transaction, cancelAtPeriodEnd);
+  if (!transition) {
+    return { transition: null, changed: true };
+  }
+
+  try {
+    await transitionTransaction({
+      transactionId: transaction.id,
+      transition,
+      params: {
+        protectedData: {
+          cancellationRequest: {
+            active: cancelAtPeriodEnd,
+            cancelAt: cancelAt || null,
+            requestedAt: new Date().toISOString(),
+            source,
+          },
+        },
+      },
+    });
+  } catch (e) {
+    log.error(e, 'cancellation-intent-transition-failed', {
+      transactionId: transaction.id.uuid,
+      transition,
+      source,
+    });
+    return { transition: null, changed: true, transitionError: e };
+  }
+
+  return { transition, changed: true };
 };
 
 /**
@@ -597,12 +732,14 @@ const handleSubscriptionUpdated = async stripeSubscription => {
     return;
   }
 
-  const transaction = await findTransactionByStripeSubscriptionId(stripeSubscriptionId);
+  const transaction = await findTransactionByStripeSubscriptionId(
+    stripeSubscriptionId,
+    stripeSubscription
+  );
   if (!transaction || isSubscriptionFinal(transaction)) {
     return;
   }
 
-  const metadata = transaction.attributes.metadata || {};
   // Either flag means Stripe will stop billing at a known point: cancel_at_period_end
   // (our cancel endpoint / Billing Portal) or a bare cancel_at (Stripe dashboard
   // "cancel on date"). Both should surface as a pending cancellation.
@@ -612,24 +749,22 @@ const handleSubscriptionUpdated = async stripeSubscription => {
     ? unixToIso(stripeSubscription.cancel_at) || getStripePeriodEndIso(stripeSubscription)
     : null;
 
-  const currentFlag = !!metadata[METADATA_KEYS.CANCEL_AT_PERIOD_END];
-  const currentCancelAt = metadata[METADATA_KEYS.CANCEL_AT] || null;
-
-  if (currentFlag === stripeFlag && currentCancelAt === stripeCancelAt) {
-    return;
-  }
-
-  await updateTransactionMetadata(transaction.id, {
-    [METADATA_KEYS.CANCEL_AT_PERIOD_END]: stripeFlag,
-    [METADATA_KEYS.CANCEL_AT]: stripeCancelAt,
-  });
-
-  log.info('Subscription cancel-at-period-end synced from Stripe', {
-    transactionId: transaction.id.uuid,
-    stripeSubscriptionId,
+  const result = await recordCancellationIntent({
+    transaction,
     cancelAtPeriodEnd: stripeFlag,
     cancelAt: stripeCancelAt,
+    source: 'stripe',
   });
+
+  if (result.changed) {
+    log.info('Subscription cancel-at-period-end synced from Stripe', {
+      transactionId: transaction.id.uuid,
+      stripeSubscriptionId,
+      cancelAtPeriodEnd: stripeFlag,
+      cancelAt: stripeCancelAt,
+      transition: result.transition,
+    });
+  }
 };
 
 /**
@@ -663,4 +798,5 @@ module.exports = {
   handleSubscriptionUpdated,
   requestCancelAtPeriodEnd,
   checkForExistingSubscription,
+  findTransactionByStripeSubscriptionId,
 };

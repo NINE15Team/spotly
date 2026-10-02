@@ -24,6 +24,14 @@ export const transitions = {
   // protectedData (participant waiver statuses) without changing state.
   UPDATE_WAIVER_STATUS: 'transition/update-waiver-status',
   UPDATE_WAIVER_STATUS_ACTIVE: 'transition/update-waiver-status-from-active',
+
+  // Cancellation intent: operator self-loops that record the customer asking
+  // to cancel at period end (or withdrawing that request) without changing
+  // state. The real cancel-subscription fires on Stripe's deleted webhook.
+  REQUEST_CANCELLATION: 'transition/request-cancellation',
+  REQUEST_CANCELLATION_FROM_OVERDUE: 'transition/request-cancellation-from-overdue',
+  RESUME_SUBSCRIPTION: 'transition/resume-subscription',
+  RESUME_SUBSCRIPTION_FROM_OVERDUE: 'transition/resume-subscription-from-overdue',
 };
 
 export const states = {
@@ -69,6 +77,8 @@ export const graph = {
         [transitions.PAYMENT_OVERDUE]: states.PAYMENT_OVERDUE,
         [transitions.CANCEL_SUBSCRIPTION]: states.CANCELLED,
         [transitions.UPDATE_WAIVER_STATUS_ACTIVE]: states.ACTIVE,
+        [transitions.REQUEST_CANCELLATION]: states.ACTIVE,
+        [transitions.RESUME_SUBSCRIPTION]: states.ACTIVE,
       },
     },
     [states.PAYMENT_OVERDUE]: {
@@ -76,6 +86,8 @@ export const graph = {
         [transitions.REACTIVATE_SUBSCRIPTION]: states.ACTIVE,
         [transitions.EXPIRE]: states.EXPIRED,
         [transitions.CANCEL_SUBSCRIPTION_FROM_OVERDUE]: states.CANCELLED,
+        [transitions.REQUEST_CANCELLATION_FROM_OVERDUE]: states.PAYMENT_OVERDUE,
+        [transitions.RESUME_SUBSCRIPTION_FROM_OVERDUE]: states.PAYMENT_OVERDUE,
       },
     },
     [states.CANCELLED]: { type: 'final' },
@@ -97,6 +109,11 @@ export const isRelevantPastTransition = transition => {
     transitions.CANCEL_SUBSCRIPTION_FROM_OVERDUE,
     transitions.EXPIRE,
     transitions.ABORT_SUBSCRIPTION,
+    // Shown in the feed with transition-specific copy (see stateDataSubscription).
+    transitions.REQUEST_CANCELLATION,
+    transitions.REQUEST_CANCELLATION_FROM_OVERDUE,
+    transitions.RESUME_SUBSCRIPTION,
+    transitions.RESUME_SUBSCRIPTION_FROM_OVERDUE,
   ].includes(transition);
 };
 

@@ -368,6 +368,11 @@ const createStripeSubscription = async ({
   });
 };
 
+const retrieveStripeSubscription = async subscriptionId => {
+  const stripe = getStripe();
+  return stripe.subscriptions.retrieve(subscriptionId);
+};
+
 const cancelStripeSubscriptionAtPeriodEnd = async subscriptionId => {
   const stripe = getStripe();
   return stripe.subscriptions.update(subscriptionId, {
@@ -396,6 +401,7 @@ module.exports = {
   resolveSubscriptionStripeCustomer,
   createMonthlyStripePrice,
   createStripeSubscription,
+  retrieveStripeSubscription,
   cancelStripeSubscriptionAtPeriodEnd,
   createBillingPortalSession,
   METADATA_KEYS,
