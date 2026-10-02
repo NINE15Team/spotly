@@ -84,8 +84,10 @@
 
 .modalContainer {
   composes: marketplaceModalBaseStyles from global;
-  min-height: 100vh;
-  height: 100%;
+  /* Fill the modal's scroll layer, but grow with the content so the scroll layer can
+     scroll to the "Save schedule" button on phones (see Modal.module.css). */
+  min-height: 100%;
+  height: auto;
 
   padding-left: 0;
   padding-right: 0;

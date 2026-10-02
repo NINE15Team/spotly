@@ -17,6 +17,7 @@ jest.mock('../../util/maps', () => ({
 
 const messages = {
   'LocationAutocompleteInput.currentLocation': 'Current location',
+  'LocationAutocompleteInput.currentLocationLocating': 'Locating…',
   'LocationAutocompleteInput.currentLocationDenied':
     'Location access is blocked. Allow location for this site in your browser settings, or type an address.',
   'LocationAutocompleteInput.currentLocationUnavailable':
@@ -78,6 +79,9 @@ describe('LocationAutocompleteInputImpl — "Current location" (H-11)', () => {
     const option = await screen.findByText('Current location');
     await user.click(option);
 
+    // Immediately shows a locating state in the field instead of an empty, disabled input
+    expect(onChange.mock.calls.some(c => c[0]?.search === 'Locating…')).toBe(true);
+
     await waitFor(() => {
       const selected = onChange.mock.calls.map(c => c[0]).find(v => v?.selectedPlace);
       expect(selected).toBeTruthy();
@@ -105,12 +109,17 @@ describe('LocationAutocompleteInputImpl — "Current location" (H-11)', () => {
     const user = userEvent.setup();
     userLocation.mockRejectedValue({ code: 3, message: 'Timeout expired' });
     jest.spyOn(console, 'error').mockImplementation(() => {});
-    renderInput({ search: '', predictions: [], selectedPlace: null }, () => {});
+    const onChange = jest.fn();
+    renderInput({ search: '', predictions: [], selectedPlace: null }, onChange);
 
     await user.click(screen.getByPlaceholderText('Where?'));
     await user.click(await screen.findByText('Current location'));
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/couldn't get your location/);
+    // The "Locating…" text is cleared so the user can type an address instead
+    const last = onChange.mock.calls[onChange.mock.calls.length - 1][0];
+    expect(last.search).toBe('');
+    expect(last.selectedPlace).toBeNull();
     console.error.mockRestore();
   });
 });

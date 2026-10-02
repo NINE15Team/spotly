@@ -681,6 +681,7 @@
   "LoadableComponentErrorBoundaryPage.heading": "Oops, we couldn't fetch the page.",
   "LoadableComponentErrorBoundaryPage.landingPageLink": "landing page",
   "LocationAutocompleteInput.currentLocation": "Current location",
+  "LocationAutocompleteInput.currentLocationLocating": "Locating…",
   "LocationAutocompleteInput.currentLocationDenied": "Location access is blocked. Allow location for this site in your browser settings, or type an address.",
   "LocationAutocompleteInput.currentLocationUnavailable": "We couldn't get your location. Please try again or type an address.",
   "LocationAutocompleteInput.screenreader.search": "Search",

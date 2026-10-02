@@ -71,8 +71,12 @@ const LocationPredictionsList = props => {
         key={predictionId}
         id={predictionId}
         role="option"
+        // Note: React registers touchstart/touchmove as passive listeners, so calling
+        // preventDefault() in them is a no-op that only logs a console warning. The tap
+        // itself is finalised in onTouchEnd (non-passive), which does prevent the
+        // synthesized mouse events, and onMouseDown prevents the input from blurring
+        // when a mouse is used.
         onTouchStart={e => {
-          e.preventDefault();
           onSelectStart(getTouchCoordinates(e.nativeEvent));
         }}
         onMouseDown={e => {
@@ -80,7 +84,6 @@ const LocationPredictionsList = props => {
           onSelectStart();
         }}
         onTouchMove={e => {
-          e.preventDefault();
           onSelectMove(getTouchCoordinates(e.nativeEvent));
         }}
         onTouchEnd={e => {
@@ -199,7 +202,8 @@ class LocationAutocompleteInputImplementation extends Component {
     // city) — otherwise a renter has to clear the text before "Current location" appears,
     // which is a real hurdle on mobile.
     const isUntypedValue = !search || !!selectedPlace;
-    const showDefaultPredictions = isUntypedValue && !hasFetchedPredictions && useDefaultPredictions;
+    const showDefaultPredictions =
+      isUntypedValue && !hasFetchedPredictions && useDefaultPredictions;
     const geocoderVariant = getGeocoderVariant(config.maps.mapProvider);
 
     // A list of default predictions that can be shown when the user
@@ -314,8 +318,15 @@ class LocationAutocompleteInputImplementation extends Component {
     const isCurrentLocation =
       geocoder.getPredictionId(prediction) === geocoderVariant.CURRENT_LOCATION_ID;
 
+    // While we resolve the place, show what is happening in the field itself. For the
+    // device location this can take several seconds (permission prompt, GPS fix), and an
+    // empty, disabled field looked like the tap did nothing.
     this.props.input.onChange({
-      ...this.props.input,
+      ...currentValue(this.props),
+      search: isCurrentLocation
+        ? intl.formatMessage({ id: 'LocationAutocompleteInput.currentLocationLocating' })
+        : currentValue(this.props).search,
+      predictions: [],
       selectedPlace: null,
     });
 
@@ -358,7 +369,9 @@ class LocationAutocompleteInputImplementation extends Component {
           : null;
         this.setState({ fetchingPlaceDetails: false, currentLocationError });
         this.props.input.onChange({
-          ...this.props.input.value,
+          ...currentValue(this.props),
+          // Clear the "Locating…" text so the user can type an address instead.
+          search: isCurrentLocation ? '' : currentValue(this.props).search,
           selectedPlace: null,
         });
       });
@@ -604,10 +617,7 @@ class LocationAutocompleteInputImplementation extends Component {
           </LocationPredictionsList>
         ) : null}
         {this.state.currentLocationError ? (
-          <p
-            className={css.currentLocationError}
-            role="alert"
-          >
+          <p className={css.currentLocationError} role="alert">
             <FormattedMessage
               id={
                 this.state.currentLocationError === 'denied'

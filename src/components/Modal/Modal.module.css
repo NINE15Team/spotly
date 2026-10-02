@@ -80,6 +80,25 @@
   left: 0;
   right: 0;
 
+  /*
+   * The modal root is position: fixed, so its overflow can never scroll the document
+   * (the page root is also fixed while a modal is open). The scroll layer therefore has
+   * to be the scroll container itself: give it the full (real) viewport height and let
+   * the container grow with its content. Without this, anything below the first screen
+   * of a long modal (e.g. the availability schedule's "Save schedule" button) is
+   * unreachable on phones.
+   */
+  & .scrollLayer {
+    height: 100%;
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  & .container {
+    min-height: 100%;
+    height: auto;
+  }
+
   @media (--viewportMedium) {
     display: flex;
     flex-direction: column;
@@ -88,6 +107,16 @@
     right: 0;
     bottom: 0;
     left: 0;
+
+    & .scrollLayer {
+      height: auto;
+      min-height: 100vh;
+    }
+
+    & .container {
+      min-height: auto;
+      height: auto;
+    }
   }
 }
 
