@@ -34,7 +34,7 @@ const baseProps = {
   price: new Money(10000, 'USD'),
 };
 
-const getSubmitButton = () => screen.getByRole('button', { name: /Subscribe|loading/i });
+const getSubmitButton = () => screen.getByRole('button', { name: /Book|loading/i });
 
 describe('SubscriptionOrderForm', () => {
   const renderForm = (ui, options = {}) =>
@@ -43,13 +43,13 @@ describe('SubscriptionOrderForm', () => {
         'SubscriptionOrderForm.activeSubscriptionWarning':
           'You already have an active subscription for this listing. {link}',
         'SubscriptionOrderForm.viewSubscription': 'View your subscription',
-        'SubscriptionOrderForm.listingAlreadySubscribed': 'This listing is already subscribed.',
-        'SubscriptionOrderForm.ctaButton': 'Subscribe',
+        'SubscriptionOrderForm.listingAlreadySubscribed': 'This listing is already booked.',
+        'SubscriptionOrderForm.ctaButton': 'Book',
       },
       ...options,
     });
 
-  it('disables Subscribe while availability is being checked', () => {
+  it('disables Book while availability is being checked', () => {
     renderForm(
       <SubscriptionOrderForm {...baseProps} checkSubscriptionInProgress hasActiveSubscription={false} />
     );
@@ -57,7 +57,7 @@ describe('SubscriptionOrderForm', () => {
     expect(getSubmitButton()).toBeDisabled();
   });
 
-  it('disables Subscribe and shows own-subscription warning with link', () => {
+  it('disables Book and shows own-subscription warning with link', () => {
     renderForm(
       <SubscriptionOrderForm
         {...baseProps}
@@ -75,7 +75,7 @@ describe('SubscriptionOrderForm', () => {
     expect(getSubmitButton()).toBeDisabled();
   });
 
-  it('disables Subscribe and shows listing-taken message without a transaction link', () => {
+  it('disables Book and shows listing-taken message without a transaction link', () => {
     renderForm(
       <SubscriptionOrderForm
         {...baseProps}
@@ -85,12 +85,12 @@ describe('SubscriptionOrderForm', () => {
       />
     );
 
-    expect(screen.getByText('This listing is already subscribed.')).toBeInTheDocument();
+    expect(screen.getByText('This listing is already booked.')).toBeInTheDocument();
     expect(screen.queryByRole('link')).not.toBeInTheDocument();
     expect(getSubmitButton()).toBeDisabled();
   });
 
-  it('enables Subscribe when the listing is available', () => {
+  it('enables Book when the listing is available', () => {
     renderForm(
       <SubscriptionOrderForm
         {...baseProps}
@@ -100,6 +100,6 @@ describe('SubscriptionOrderForm', () => {
       />
     );
 
-    expect(screen.getByRole('button', { name: 'Subscribe' })).not.toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Book' })).not.toBeDisabled();
   });
 });

@@ -106,20 +106,39 @@ export const userLocation = () =>
 
     // Some defaults for user's current geolocation call
     // https://developer.mozilla.org/en-US/docs/Web/API/Geolocation/getCurrentPosition
-    // Note: without high accuracy, the given location might differ quite much.
-    //       We decided that true would be better default for a template app.
-    const options = {
+    //
+    // A high-accuracy GPS fix on a phone (especially iOS Safari, indoors) often takes
+    // longer than a few seconds, and the template's 5s/high-accuracy/no-cache defaults
+    // made "Current location" time out and silently fail. We first try a high-accuracy
+    // fix with a longer timeout, and if that times out or is unavailable we fall back to
+    // a coarse (network/Wi-Fi) fix, accepting a recently cached position. A denied
+    // permission is reported immediately — retrying would just re-prompt.
+    const highAccuracyOptions = {
       enableHighAccuracy: true,
-      timeout: 5000,
-      maximumAge: 0,
+      timeout: 10000,
+      maximumAge: 60 * 1000,
+    };
+    const coarseOptions = {
+      enableHighAccuracy: false,
+      timeout: 10000,
+      maximumAge: 5 * 60 * 1000,
     };
 
     const onSuccess = position =>
       resolve(new LatLng(position.coords.latitude, position.coords.longitude));
 
-    const onError = error => reject(error);
+    const onCoarseError = error => reject(error);
 
-    navigator.geolocation.getCurrentPosition(onSuccess, onError, options);
+    const onHighAccuracyError = error => {
+      const isPermissionDenied = error?.code === 1; // GeolocationPositionError.PERMISSION_DENIED
+      if (isPermissionDenied) {
+        reject(error);
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(onSuccess, onCoarseError, coarseOptions);
+    };
+
+    navigator.geolocation.getCurrentPosition(onSuccess, onHighAccuracyError, highAccuracyOptions);
   });
 
 /**

@@ -144,6 +144,8 @@ class LocationAutocompleteInputImplementation extends Component {
       highlightedIndex: -1, // -1 means no highlight
       fetchingPlaceDetails: false,
       fetchingPredictions: false,
+      // 'denied' | 'unavailable' | null — set when resolving "Current location" fails
+      currentLocationError: null,
     };
 
     // Ref to the input element.
@@ -189,10 +191,15 @@ class LocationAutocompleteInputImplementation extends Component {
   }
 
   currentPredictions() {
-    const { search, predictions: fetchedPredictions } = currentValue(this.props);
+    const { search, predictions: fetchedPredictions, selectedPlace } = currentValue(this.props);
     const { useDefaultPredictions = true, config } = this.props;
     const hasFetchedPredictions = fetchedPredictions && fetchedPredictions.length > 0;
-    const showDefaultPredictions = !search && !hasFetchedPredictions && useDefaultPredictions;
+    // Show the default suggestions ("Current location", popular cities) when the field is
+    // empty, and also when it holds an already-selected place (e.g. the pre-filled default
+    // city) — otherwise a renter has to clear the text before "Current location" appears,
+    // which is a real hurdle on mobile.
+    const isUntypedValue = !search || !!selectedPlace;
+    const showDefaultPredictions = isUntypedValue && !hasFetchedPredictions && useDefaultPredictions;
     const geocoderVariant = getGeocoderVariant(config.maps.mapProvider);
 
     // A list of default predictions that can be shown when the user
@@ -251,7 +258,7 @@ class LocationAutocompleteInputImplementation extends Component {
 
     // Clear highlighted prediction since the input value changed and
     // results will change as well
-    this.setState({ highlightedIndex: -1 });
+    this.setState({ highlightedIndex: -1, currentLocationError: null });
 
     if (!newValue) {
       // No need to fetch predictions on empty input
@@ -300,22 +307,37 @@ class LocationAutocompleteInputImplementation extends Component {
   // Select the prediction in the given item. This will fetch/read the
   // place details and set it as the selected place.
   selectPrediction(prediction) {
-    const currentLocationBoundsDistance = this.props.config.maps?.search
-      ?.currentLocationBoundsDistance;
+    const { config, intl } = this.props;
+    const currentLocationBoundsDistance = config.maps?.search?.currentLocationBoundsDistance;
+    const geocoder = this.getGeocoder();
+    const geocoderVariant = getGeocoderVariant(config.maps.mapProvider);
+    const isCurrentLocation =
+      geocoder.getPredictionId(prediction) === geocoderVariant.CURRENT_LOCATION_ID;
+
     this.props.input.onChange({
       ...this.props.input,
       selectedPlace: null,
     });
 
-    this.setState({ fetchingPlaceDetails: true });
+    this.setState({ fetchingPlaceDetails: true, currentLocationError: null });
 
-    this.getGeocoder()
+    geocoder
       .getPlaceDetails(prediction, currentLocationBoundsDistance)
-      .then(place => {
+      .then(resolvedPlace => {
         if (!this._isMounted) {
           // Ignore if component already unmounted
           return;
         }
+        // Geocoders return an empty address for the device's location. Downstream code
+        // treats an empty address as "nothing chosen" and falls back to a default city,
+        // so label it explicitly to keep the search bar and URL in sync with the results.
+        const place =
+          isCurrentLocation && !resolvedPlace.address
+            ? {
+                ...resolvedPlace,
+                address: intl.formatMessage({ id: 'LocationAutocompleteInput.currentLocation' }),
+              }
+            : resolvedPlace;
         this.setState({ fetchingPlaceDetails: false });
         this.props.input.onChange({
           search: place.address,
@@ -324,8 +346,17 @@ class LocationAutocompleteInputImplementation extends Component {
         });
       })
       .catch(e => {
-        this.setState({ fetchingPlaceDetails: false });
+        if (!this._isMounted) {
+          return;
+        }
         console.error(e);
+        // GeolocationPositionError.PERMISSION_DENIED === 1
+        const currentLocationError = isCurrentLocation
+          ? e?.code === 1
+            ? 'denied'
+            : 'unavailable'
+          : null;
+        this.setState({ fetchingPlaceDetails: false, currentLocationError });
         this.props.input.onChange({
           ...this.props.input.value,
           selectedPlace: null,
@@ -571,6 +602,20 @@ class LocationAutocompleteInputImplementation extends Component {
               useDarkText={useDarkText}
             />
           </LocationPredictionsList>
+        ) : null}
+        {this.state.currentLocationError ? (
+          <p
+            className={css.currentLocationError}
+            role="alert"
+          >
+            <FormattedMessage
+              id={
+                this.state.currentLocationError === 'denied'
+                  ? 'LocationAutocompleteInput.currentLocationDenied'
+                  : 'LocationAutocompleteInput.currentLocationUnavailable'
+              }
+            />
+          </p>
         ) : null}
       </div>
     );

@@ -23,26 +23,37 @@
   }
 }
 
+/*
+ * Overflow strategy (H-24): the row holds logo + 5 nowrap nav links + search + auth links.
+ * Between 1024px and ~1230px that doesn't fit at the Figma sizes, and letting the nav
+ * cluster shrink (min-width: 0) made the last link (FAQ) overflow into the search field.
+ * Instead, the nav never shrinks; the search field is the flexible element and is only
+ * shown once there is room for it (--viewportLargeWithPaddings, 1128px+).
+ */
 .left {
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 50px;
-  min-width: 0;
-  flex: 1 1 auto;
+  gap: 32px;
+  flex: 0 0 auto;
+
+  @media (--viewportLargeWithPaddings) {
+    gap: 50px;
+  }
 }
 
 .navLinks {
   display: none;
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   align-items: center;
-  justify-content: space-between;
-  gap: 24px;
-  min-width: 0;
-  max-width: 480px;
+  gap: 16px;
 
   @media (--viewportLarge) {
     display: flex;
+  }
+
+  @media (--viewportLargeWithPaddings) {
+    gap: 24px;
   }
 }
 
@@ -77,24 +88,29 @@
   }
 }
 
-/* Compact Figma search: 300×35, rgba(255,255,255,0.05), radius 5 */
+/* Compact Figma search: 300×35, rgba(255,255,255,0.05), radius 5.
+   Flexible between 160px and 300px so it absorbs the slack instead of the nav links. */
 .searchForm {
-  flex: 0 0 auto;
-  width: 220px;
+  display: none;
+  flex: 1 1 160px;
+  min-width: 160px;
   max-width: 300px;
   position: relative;
 
-  @media (--viewportLarge) {
-    width: 300px;
+  @media (--viewportLargeWithPaddings) {
+    display: block;
   }
 }
 
 .searchSpacer {
-  width: 220px;
+  display: none;
+  flex: 1 1 160px;
+  min-width: 160px;
+  max-width: 300px;
   height: 35px;
 
-  @media (--viewportLarge) {
-    width: 300px;
+  @media (--viewportLargeWithPaddings) {
+    display: block;
   }
 }
 

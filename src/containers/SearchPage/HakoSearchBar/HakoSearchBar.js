@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import classNames from 'classnames';
+import isEqual from 'lodash/isEqual';
 import { Form as FinalForm, Field } from 'react-final-form';
 
 import { FormattedMessage, useIntl } from '../../../util/reactIntl';
@@ -55,7 +56,13 @@ export const HakoSearchBar = props => {
   return (
     <section className={classNames(css.root, className)} aria-label="Search filters">
       <FinalForm
-        enableReinitialize
+        // The parent rebuilds `initialValues` (incl. a nested `location` object) on every
+        // render. react-final-form compares initialValues with shallowEqual by default, so a
+        // new object reference would re-initialize the form on every parent re-render (map
+        // hover, search progress, ...) and silently discard what the user has typed — the
+        // "Update does nothing" bug. Deep-compare so the form only resets when the URL-derived
+        // values actually change.
+        initialValuesEqual={isEqual}
         initialValues={{
           parkingOption: initialValues.parkingOption || DAY_PARKING_LISTING_TYPE,
           location: initialValues.location || null,

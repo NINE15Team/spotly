@@ -170,8 +170,11 @@ const searchListingsPayloadCreator = ({ searchParams, config }, thunkAPI) => {
     return { price: [minPrice, maxPrice].join(',') };
   };
 
-  const datesSearchParams = datesParam => {
+  const datesSearchParams = (datesParam, durationParam) => {
     const searchTZ = 'Etc/UTC';
+    // Hako: 'duration' is the requested number of hours for day parking (UI param).
+    const durationHours = parseInt(String(durationParam || '').replace(/\D/g, ''), 10);
+    const hasDurationHours = Number.isFinite(durationHours) && durationHours > 0;
     const datesFilter = config.search.defaultFilters.find(f => f.key === 'dates');
     const values = datesParam ? datesParam.split(',') : [];
     const hasValues = datesFilter && datesParam && values.length === 2;
@@ -215,7 +218,15 @@ const searchListingsPayloadCreator = ({ searchParams, config }, thunkAPI) => {
     // If partial range is needed, then we just make sure that the shortest time unit supported
     // is available within the range.
     // You might want to customize this to match with your time units (e.g. day: 1440 - 60)
-    const minDuration = isEntireRangeAvailable ? dayCount * day - hour : hour;
+    // Hako: a single-day search with a requested hour count must have at least that many
+    // hours available within the day, instead of the generic one-hour minimum.
+    const isSingleDay = hasValues && values[0] === values[1];
+    const minDuration =
+      isSingleDay && hasDurationHours
+        ? Math.min(durationHours * hour, day)
+        : isEntireRangeAvailable
+        ? dayCount * day - hour
+        : hour;
     return hasValidDates
       ? {
           start: getProlongedStart(startDate),
@@ -277,6 +288,9 @@ const searchListingsPayloadCreator = ({ searchParams, config }, thunkAPI) => {
     // Destructured out so it is never forwarded to the listings API.
     priceBy,
     dates,
+    // Hako UI-only param: requested hours for day parking. Folded into the dates
+    // availability query (minDuration) and never forwarded to the listings API.
+    duration,
     seats,
     sort,
     mapSearch,
@@ -287,7 +301,7 @@ const searchListingsPayloadCreator = ({ searchParams, config }, thunkAPI) => {
   // The params related to default filters are prepared one-by-one
   // We could consider moving them to the prepareAPIParams function too.
   const priceMaybe = priceSearchParams(price, priceBy);
-  const datesMaybe = datesSearchParams(dates);
+  const datesMaybe = datesSearchParams(dates, duration);
   const stockMaybe = stockFilters(datesMaybe);
   const seatsMaybe = seatsSearchParams(seats, datesMaybe);
   const sortMaybe = sortSearchParams(sort, searchParams?.keywords !== undefined);

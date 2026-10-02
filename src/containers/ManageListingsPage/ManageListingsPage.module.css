@@ -222,12 +222,17 @@
   background: var(--hakoWhite);
   color: var(--hakoPrimaryText);
   font-family: var(--fontFamily);
-  font-size: 13px;
+  /* 16px on phones so iOS Safari doesn't auto-zoom on focus (H-14) */
+  font-size: 16px;
   appearance: none;
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path fill='%230C161D' d='M1 1l5 5 5-5'/></svg>");
   background-repeat: no-repeat;
   background-position: right 10px center;
   cursor: pointer;
+
+  @media (--viewportMedium) {
+    font-size: 13px;
+  }
 }
 
 .listingCards {

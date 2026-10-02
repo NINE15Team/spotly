@@ -6,9 +6,7 @@ import { getListingsById } from '../../../ducks/marketplaceData.duck';
 import { useRouteConfiguration } from '../../../context/routeConfigurationContext';
 import { createResourceLocatorString } from '../../../util/routes';
 import { isOriginInUse } from '../../../util/search';
-import {
-  listingTypeForSearch,
-} from '../../../util/hakoListingTypes';
+import { listingTypeForSearch, isMonthlyListingType } from '../../../util/hakoListingTypes';
 import { Page, LayoutComposer } from '../../../components';
 import TopbarContainer from '../../TopbarContainer/TopbarContainer';
 import { useConfiguration } from '../../../context/configurationContext';
@@ -41,17 +39,28 @@ export const HakoLandingPage = () => {
   const { featuredListingIds, isFeaturedLocation } = useSelector(state => state.LandingPage);
   const featuredListings = useSelector(state => getListingsById(state, featuredListingIds));
 
-  const handleSearch = ({ mode, locationLabel, origin, bounds }) => {
+  const handleSearch = ({ mode, locationLabel, origin, bounds, dateLabel, hoursLabel }) => {
     const listingType = listingTypeForSearch(mode);
+    const isMonthly = isMonthlyListingType(listingType);
     const originMaybe = origin && isOriginInUse(config) ? { origin } : {};
     const boundsMaybe = bounds ? { bounds } : {};
     const addressMaybe = locationLabel ? { address: locationLabel } : {};
+
+    // Carry the hero's date & hours into the search URL using the same param shape
+    // HakoSearchBar writes (dates=YYYY-MM-DD,YYYY-MM-DD & duration=<hours>), so the
+    // results page prefills the bar and filters availability for the requested slot.
+    const dateISO = dateLabel && /^\d{4}-\d{2}-\d{2}$/.test(dateLabel) ? dateLabel : null;
+    const datesMaybe = dateISO ? { dates: `${dateISO},${dateISO}` } : {};
+    const durationHours = String(hoursLabel || '').replace(/\D/g, '');
+    const durationMaybe = !isMonthly && durationHours ? { duration: durationHours } : {};
 
     const searchParams = {
       pub_listingType: listingType,
       ...addressMaybe,
       ...boundsMaybe,
       ...originMaybe,
+      ...datesMaybe,
+      ...durationMaybe,
     };
     history.push(createResourceLocatorString('SearchPage', routeConfiguration, {}, searchParams));
   };

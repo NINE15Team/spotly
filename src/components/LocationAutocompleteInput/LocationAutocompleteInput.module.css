@@ -159,3 +159,19 @@ bottom of the container.
 .invert {
   filter: invert(80%);
 }
+
+/* Shown under the input when resolving "Current location" fails */
+.currentLocationError {
+  composes: marketplaceTinyFontStyles from global;
+  position: absolute;
+  left: 0;
+  top: 100%;
+  margin: 4px 0 0 0;
+  color: var(--colorFail);
+  background-color: var(--colorWhite);
+  border-radius: var(--borderRadius);
+  padding: 4px 8px;
+  box-shadow: var(--boxShadowPopup);
+  z-index: calc(var(--zIndexPopup) + 1);
+  white-space: normal;
+}

@@ -226,11 +226,17 @@
   background: transparent;
   color: var(--hakoWhite);
   font-family: var(--fontFamily);
-  font-size: 12px;
+  /* 16px on phones: iOS Safari auto-zooms the page when a focused form control has a
+     font-size under 16px (H-14). Desktop keeps the 12px from the design. */
+  font-size: 16px;
   line-height: normal;
   outline: none;
   cursor: pointer;
   color-scheme: dark;
+
+  @media (--viewportMedium) {
+    font-size: 12px;
+  }
 
   /* Override the global input:focus rule (marketplaceDefaults.css), which sets a
      white background on focus and would make this field's white text unreadable. */

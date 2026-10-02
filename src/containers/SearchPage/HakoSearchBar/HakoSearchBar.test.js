@@ -65,6 +65,40 @@ describe('HakoSearchBar', () => {
     expect(onSubmit).toHaveBeenCalled();
     expect(onSubmit.mock.calls[0][0].parkingOption).toBe('day-parking');
   });
+
+  // Regression: H-25 — parent re-renders passed a new (but equal) initialValues object and
+  // react-final-form reset the form, wiping the user's edits before they could hit Update.
+  it('keeps user edits when the parent re-renders with equivalent initialValues', async () => {
+    const user = userEvent.setup();
+    const onSubmit = jest.fn();
+    const buildInitialValues = () => ({
+      parkingOption: 'monthly-storage',
+      location: { search: 'Oakland', selectedPlace: { address: 'Oakland' } },
+      date: '',
+    });
+
+    const { rerender } = render(
+      <HakoSearchBar initialValues={buildInitialValues()} onSubmit={onSubmit} />,
+      { messages: searchBarMessages }
+    );
+
+    const dateInput = await screen.findByLabelText('Start date');
+    const future = new Date();
+    future.setDate(future.getDate() + 10);
+    const dateISO = future.toISOString().slice(0, 10);
+    await user.type(dateInput, dateISO);
+    expect(dateInput).toHaveValue(dateISO);
+
+    // Simulate a parent re-render (e.g. hovering a listing card) with a fresh object.
+    rerender(<HakoSearchBar initialValues={buildInitialValues()} onSubmit={onSubmit} />);
+
+    expect(screen.getByLabelText('Start date')).toHaveValue(dateISO);
+
+    await user.click(screen.getByText('Update').closest('button'));
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    expect(onSubmit.mock.calls[0][0].date).toBe(dateISO);
+    expect(onSubmit.mock.calls[0][0].parkingOption).toBe('monthly-storage');
+  });
 });
 
 describe('HakoPriceByToggle', () => {

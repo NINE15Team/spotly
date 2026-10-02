@@ -89,7 +89,9 @@
   appearance: none;
   background: transparent;
   font-family: var(--fontFamily);
-  font-size: 12px;
+  /* 16px on phones: iOS Safari auto-zooms the page when a focused form control has a
+     font-size under 16px (H-14). Desktop keeps the 12px from the design. */
+  font-size: 16px;
   line-height: normal;
   color: var(--hakoPrimaryText);
   outline: none;
@@ -97,6 +99,10 @@
   margin: 0;
   width: 100%;
   cursor: pointer;
+
+  @media (--viewportMedium) {
+    font-size: 12px;
+  }
 
   &::placeholder {
     color: var(--hakoSecondaryText);
@@ -146,9 +152,14 @@
   transform: translateY(-50%);
   color: var(--hakoSecondaryText);
   font-family: var(--fontFamily);
-  font-size: 12px;
+  /* Mirrors .input so the placeholder overlay matches the (16px on phones) input text. */
+  font-size: 16px;
   line-height: normal;
   pointer-events: none;
+
+  @media (--viewportMedium) {
+    font-size: 12px;
+  }
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

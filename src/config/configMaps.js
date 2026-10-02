@@ -26,7 +26,10 @@ export const search = {
 
   // Distance in meters for calculating the bounding box around the
   // current location.
-  currentLocationBoundsDistance: 1000,
+  // Hako: the template default (1 km) is too tight for parking/storage discovery while
+  // inventory is sparse — "Current location" often returned zero spots and looked broken.
+  // 5 km still reads as "near me" and the renter can zoom the map to widen/narrow it.
+  currentLocationBoundsDistance: 5000,
 
   // This affects location search.
   // These "default locations" can be edited in the

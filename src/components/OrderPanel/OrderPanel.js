@@ -644,6 +644,8 @@ const OrderPanel = props => {
             >
               {isBooking ? (
                 <FormattedMessage id="OrderPanel.ctaButtonMessageBooking" />
+              ) : isSubscription ? (
+                <FormattedMessage id="OrderPanel.ctaButtonMessageSubscription" />
               ) : isOutOfStock ? (
                 <FormattedMessage id="OrderPanel.ctaButtonMessageNoStock" />
               ) : isPurchase ? (
