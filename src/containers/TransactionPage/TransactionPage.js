@@ -924,11 +924,13 @@ export const TransactionPageComponent = props => {
   const pageHeading = isDataAvailable
     ? intl.formatMessage(
         {
-          id: `TransactionPage.${processName}.${transactionRole}.${stateData.processState}.title`,
+          id: `TransactionPage.${processName}.${transactionRole}.${stateData.titleStateKey ||
+            stateData.processState}.title`,
         },
         {
           customerName: customer?.attributes.profile.displayName,
           providerName: provider?.attributes.profile.displayName,
+          ...(stateData.titleValues || {}),
         }
       )
     : null;

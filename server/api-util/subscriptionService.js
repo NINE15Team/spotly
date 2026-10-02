@@ -79,6 +79,34 @@ const resolveListingForTransaction = async (apiData, listingRef) => {
   return { listing, monthlyAmount };
 };
 
+const unixToIso = seconds =>
+  typeof seconds === 'number' && Number.isFinite(seconds)
+    ? new Date(seconds * 1000).toISOString()
+    : null;
+
+const toIsoMaybe = value => {
+  if (!value) {
+    return null;
+  }
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+};
+
+// API versions from 2025-03-31 moved current_period_end from the subscription
+// onto each subscription item; support both shapes.
+const getStripePeriodEndIso = stripeSubscription => {
+  if (!stripeSubscription) {
+    return null;
+  }
+  const direct = unixToIso(stripeSubscription.current_period_end);
+  if (direct) {
+    return direct;
+  }
+  const items = stripeSubscription.items?.data || [];
+  const ends = items.map(item => item.current_period_end).filter(Number.isFinite);
+  return ends.length ? unixToIso(Math.max(...ends)) : null;
+};
+
 const getBookingFromTransactionResponse = apiData => {
   const transaction = apiData.data;
   const bookingRef = transaction?.relationships?.booking?.data;
@@ -367,9 +395,26 @@ const handleInvoicePaid = async (stripeSubscriptionId, invoice = null) => {
     return;
   }
 
+  // Idempotency: Stripe retries failed deliveries for days and operators can
+  // "Resend" from the dashboard. Each delivery would otherwise extend the
+  // booking by another month.
+  const metadata = transaction.attributes.metadata || {};
+  if (invoice?.id && metadata.lastRenewalInvoice?.invoiceId === invoice.id) {
+    log.info('invoice.paid: already processed, skipping', {
+      transactionId: transaction.id.uuid,
+      invoiceId: invoice.id,
+    });
+    return;
+  }
+
   // Persist the renewal invoice's tax breakdown (Stripe Tax automatic_tax) on
   // the Sharetribe transaction so records match what was actually charged.
-  if (invoice) {
+  // Also serves as the idempotency marker above, so it is written after the
+  // transition succeeds — a failed transition must stay retryable.
+  const recordInvoice = async () => {
+    if (!invoice) {
+      return;
+    }
     try {
       await updateTransactionMetadata(transaction.id, {
         lastRenewalInvoice: {
@@ -386,7 +431,7 @@ const handleInvoicePaid = async (stripeSubscriptionId, invoice = null) => {
         invoiceId: invoice.id,
       });
     }
-  }
+  };
 
   const state = getSubscriptionState(transaction);
 
@@ -402,12 +447,14 @@ const handleInvoicePaid = async (stripeSubscriptionId, invoice = null) => {
       transition: TRANSITIONS.REACTIVATE_SUBSCRIPTION,
       params: { bookingStart, bookingEnd: newEnd },
     });
+    await recordInvoice();
     log.info('Subscription reactivated after payment', { transactionId: transaction.id.uuid });
     return;
   }
 
   if (state === STATES.ACTIVE) {
     await extendSubscriptionPeriod(transaction);
+    await recordInvoice();
     log.info('Subscription period extended', { transactionId: transaction.id.uuid });
     return;
   }
@@ -511,8 +558,78 @@ const requestCancelAtPeriodEnd = async transactionId => {
     throw error;
   }
 
-  await cancelStripeSubscriptionAtPeriodEnd(stripeSubscriptionId);
-  return { cancelAtPeriodEnd: true, stripeSubscriptionId };
+  const stripeSubscription = await cancelStripeSubscriptionAtPeriodEnd(stripeSubscriptionId);
+
+  // Stripe is the source of truth for the end date; fall back to the booking
+  // end if the API response doesn't carry one.
+  const booking = getBookingFromTransactionResponse(txResponse.data);
+  const cancelAt =
+    unixToIso(stripeSubscription?.cancel_at) ||
+    getStripePeriodEndIso(stripeSubscription) ||
+    toIsoMaybe(booking?.attributes?.end) ||
+    null;
+
+  // Mirror the pending cancellation onto the transaction. The process state
+  // stays `active` until customer.subscription.deleted fires, so without this
+  // the UI has no way to show "ends on <date>" or hide the cancel button.
+  await updateTransactionMetadata(transaction.id, {
+    [METADATA_KEYS.CANCEL_AT_PERIOD_END]: true,
+    [METADATA_KEYS.CANCEL_AT]: cancelAt,
+  });
+
+  log.info('Subscription cancellation scheduled', {
+    transactionId: transaction.id.uuid,
+    stripeSubscriptionId,
+    cancelAt,
+  });
+
+  return { cancelAtPeriodEnd: true, cancelAt, stripeSubscriptionId };
+};
+
+/**
+ * Keep the pending-cancellation flag in sync with Stripe. Covers the customer
+ * resuming (or cancelling) via the Billing Portal, which never touches our
+ * /api/cancel-subscription endpoint.
+ */
+const handleSubscriptionUpdated = async stripeSubscription => {
+  const stripeSubscriptionId = stripeSubscription?.id;
+  if (!stripeSubscriptionId) {
+    return;
+  }
+
+  const transaction = await findTransactionByStripeSubscriptionId(stripeSubscriptionId);
+  if (!transaction || isSubscriptionFinal(transaction)) {
+    return;
+  }
+
+  const metadata = transaction.attributes.metadata || {};
+  // Either flag means Stripe will stop billing at a known point: cancel_at_period_end
+  // (our cancel endpoint / Billing Portal) or a bare cancel_at (Stripe dashboard
+  // "cancel on date"). Both should surface as a pending cancellation.
+  const stripeFlag =
+    !!stripeSubscription.cancel_at_period_end || typeof stripeSubscription.cancel_at === 'number';
+  const stripeCancelAt = stripeFlag
+    ? unixToIso(stripeSubscription.cancel_at) || getStripePeriodEndIso(stripeSubscription)
+    : null;
+
+  const currentFlag = !!metadata[METADATA_KEYS.CANCEL_AT_PERIOD_END];
+  const currentCancelAt = metadata[METADATA_KEYS.CANCEL_AT] || null;
+
+  if (currentFlag === stripeFlag && currentCancelAt === stripeCancelAt) {
+    return;
+  }
+
+  await updateTransactionMetadata(transaction.id, {
+    [METADATA_KEYS.CANCEL_AT_PERIOD_END]: stripeFlag,
+    [METADATA_KEYS.CANCEL_AT]: stripeCancelAt,
+  });
+
+  log.info('Subscription cancel-at-period-end synced from Stripe', {
+    transactionId: transaction.id.uuid,
+    stripeSubscriptionId,
+    cancelAtPeriodEnd: stripeFlag,
+    cancelAt: stripeCancelAt,
+  });
 };
 
 /**
@@ -543,6 +660,7 @@ module.exports = {
   handleInvoicePaid,
   handleInvoicePaymentFailed,
   handleSubscriptionDeleted,
+  handleSubscriptionUpdated,
   requestCancelAtPeriodEnd,
   checkForExistingSubscription,
 };

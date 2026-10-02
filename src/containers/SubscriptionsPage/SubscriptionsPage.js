@@ -33,12 +33,18 @@ import {
   cancelSubscriptionThunk,
   openBillingPortalThunk,
 } from './SubscriptionsPage.duck';
+import { getPendingCancellation } from '../TransactionPage/TransactionPage.stateDataSubscription';
 
 import css from './SubscriptionsPage.module.css';
 
-const getStatusMessageId = (processState, states) => {
+const getStatusMessageId = (processState, states, pendingCancellation) => {
   switch (processState) {
     case states.ACTIVE:
+      if (pendingCancellation) {
+        return pendingCancellation.cancelAt
+          ? 'SubscriptionsPage.statusCancelling'
+          : 'SubscriptionsPage.statusCancellingNoDate';
+      }
       return 'SubscriptionsPage.statusActive';
     case states.PAYMENT_OVERDUE:
       return 'SubscriptionsPage.statusPaymentOverdue';
@@ -69,9 +75,21 @@ const SubscriptionCard = props => {
   const listingTitle = listing?.attributes?.title || '';
   const slug = createSlug(listingTitle);
   const payinTotal = transaction.attributes.payinTotal;
-  const statusId = getStatusMessageId(processState, process.states);
+  const pendingCancellation = getPendingCancellation(transaction);
+  const statusId = getStatusMessageId(processState, process.states, pendingCancellation);
+  const statusValues = pendingCancellation?.cancelAt
+    ? {
+        cancelAt: intl.formatDate(pendingCancellation.cancelAt, {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        }),
+      }
+    : {};
   const canManage =
     processState === process.states.ACTIVE || processState === process.states.PAYMENT_OVERDUE;
+  // Cancel is a no-op once Stripe already has cancel_at_period_end set.
+  const canCancel = processState === process.states.ACTIVE && !pendingCancellation;
 
   return (
     <div className={css.card}>
@@ -81,7 +99,7 @@ const SubscriptionCard = props => {
         </NamedLink>
       </H3>
       <p className={css.cardMeta}>
-        <FormattedMessage id={statusId} />
+        <FormattedMessage id={statusId} values={statusValues} />
         {payinTotal ? (
           <>
             {' · '}
@@ -108,7 +126,7 @@ const SubscriptionCard = props => {
             >
               <FormattedMessage id="SubscriptionsPage.updatePayment" />
             </SecondaryButton>
-            {processState === process.states.ACTIVE ? (
+            {canCancel ? (
               <PrimaryButton inProgress={cancelInProgress} onClick={() => onCancel(transaction.id)}>
                 <FormattedMessage id="SubscriptionsPage.cancel" />
               </PrimaryButton>

@@ -5,6 +5,7 @@ const {
   handleInvoicePaid,
   handleInvoicePaymentFailed,
   handleSubscriptionDeleted,
+  handleSubscriptionUpdated,
 } = require('../api-util/subscriptionService');
 const { recordTaxTransactionFromPaymentIntent } = require('../api-util/tax');
 
@@ -69,6 +70,13 @@ module.exports = async (req, res) => {
         if (subscriptionId) {
           await handleInvoicePaymentFailed(subscriptionId);
         }
+        break;
+      }
+      case 'customer.subscription.updated': {
+        // Mirrors cancel_at_period_end onto transaction metadata so the UI
+        // stays correct if the customer cancels/resumes via the Billing Portal.
+        const subscription = event.data.object;
+        await handleSubscriptionUpdated(subscription);
         break;
       }
       case 'customer.subscription.deleted': {

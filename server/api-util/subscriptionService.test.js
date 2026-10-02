@@ -47,6 +47,7 @@ const {
   handleInvoicePaid,
   handleInvoicePaymentFailed,
   handleSubscriptionDeleted,
+  handleSubscriptionUpdated,
   requestCancelAtPeriodEnd,
   checkForExistingSubscription,
 } = require('./subscriptionService');
@@ -399,6 +400,57 @@ describe('declineSubscription', () => {
 
 // --- handleInvoicePaid -------------------------------------------------------
 describe('handleInvoicePaid', () => {
+  const invoice = { id: 'in_1', total: 1200, tax: 0, currency: 'usd', period_end: 1793602800 };
+
+  it('is idempotent: skips an invoice that was already processed (retry / Resend)', async () => {
+    integrationSdk.findTransactionByStripeSubscriptionId.mockResolvedValue({
+      id: { uuid: 'tx-1' },
+      attributes: {
+        lastTransition: TRANSITIONS.CONFIRM_SUBSCRIPTION,
+        metadata: { lastRenewalInvoice: { invoiceId: 'in_1' } },
+      },
+    });
+
+    await handleInvoicePaid('sub_123', invoice);
+
+    expect(integrationSdk.transitionTransaction).not.toHaveBeenCalled();
+    expect(integrationSdk.updateTransactionMetadata).not.toHaveBeenCalled();
+  });
+
+  it('records the invoice only after the extend transition succeeds', async () => {
+    integrationSdk.findTransactionByStripeSubscriptionId.mockResolvedValue({
+      id: { uuid: 'tx-1' },
+      attributes: { lastTransition: TRANSITIONS.CONFIRM_SUBSCRIPTION, metadata: {} },
+    });
+    mockShowTransaction(buildTransaction());
+
+    await handleInvoicePaid('sub_123', invoice);
+
+    expect(integrationSdk.transitionTransaction).toHaveBeenCalledWith(
+      expect.objectContaining({ transition: TRANSITIONS.EXTEND_SUBSCRIPTION })
+    );
+    expect(integrationSdk.updateTransactionMetadata).toHaveBeenCalledWith(
+      { uuid: 'tx-1' },
+      { lastRenewalInvoice: expect.objectContaining({ invoiceId: 'in_1' }) }
+    );
+    const transitionOrder = integrationSdk.transitionTransaction.mock.invocationCallOrder[0];
+    const metadataOrder = integrationSdk.updateTransactionMetadata.mock.invocationCallOrder[0];
+    expect(transitionOrder).toBeLessThan(metadataOrder);
+  });
+
+  it('does not mark the invoice processed when the transition fails', async () => {
+    integrationSdk.findTransactionByStripeSubscriptionId.mockResolvedValue({
+      id: { uuid: 'tx-1' },
+      attributes: { lastTransition: TRANSITIONS.CONFIRM_SUBSCRIPTION, metadata: {} },
+    });
+    mockShowTransaction(buildTransaction());
+    integrationSdk.transitionTransaction.mockRejectedValueOnce(new Error('flex down'));
+
+    await expect(handleInvoicePaid('sub_123', invoice)).rejects.toThrow('flex down');
+
+    expect(integrationSdk.updateTransactionMetadata).not.toHaveBeenCalled();
+  });
+
   it('extends the period when the subscription is active', async () => {
     integrationSdk.findTransactionByStripeSubscriptionId.mockResolvedValue({
       id: { uuid: 'tx-1' },
@@ -549,7 +601,60 @@ describe('requestCancelAtPeriodEnd', () => {
     const result = await requestCancelAtPeriodEnd({ uuid: 'tx-1' });
 
     expect(subscriptionStripe.cancelStripeSubscriptionAtPeriodEnd).toHaveBeenCalledWith('sub_123');
-    expect(result).toEqual({ cancelAtPeriodEnd: true, stripeSubscriptionId: 'sub_123' });
+    expect(result).toEqual({ cancelAtPeriodEnd: true, cancelAt: null, stripeSubscriptionId: 'sub_123' });
+  });
+
+  it('persists the pending cancellation on transaction metadata using Stripe cancel_at', async () => {
+    buildShowForCancel(TRANSITIONS.CONFIRM_SUBSCRIPTION);
+    const cancelAtUnix = Math.floor(Date.UTC(2026, 10, 2, 12, 0, 0) / 1000);
+    subscriptionStripe.cancelStripeSubscriptionAtPeriodEnd.mockResolvedValueOnce({
+      id: 'sub_123',
+      cancel_at_period_end: true,
+      cancel_at: cancelAtUnix,
+    });
+
+    const result = await requestCancelAtPeriodEnd({ uuid: 'tx-1' });
+
+    expect(integrationSdk.updateTransactionMetadata).toHaveBeenCalledWith(
+      { uuid: 'tx-1' },
+      {
+        [METADATA_KEYS.CANCEL_AT_PERIOD_END]: true,
+        [METADATA_KEYS.CANCEL_AT]: '2026-11-02T12:00:00.000Z',
+      }
+    );
+    expect(result.cancelAt).toBe('2026-11-02T12:00:00.000Z');
+  });
+
+  it('falls back to the booking end when Stripe returns no cancel_at', async () => {
+    const bookingEnd = new Date(Date.UTC(2026, 10, 2, 12, 0, 0));
+    integrationSdk.showTransaction.mockResolvedValue({
+      data: {
+        data: {
+          id: { uuid: 'tx-1' },
+          attributes: {
+            lastTransition: TRANSITIONS.CONFIRM_SUBSCRIPTION,
+            metadata: { [METADATA_KEYS.STRIPE_SUBSCRIPTION_ID]: 'sub_123' },
+          },
+          relationships: { booking: { data: { id: { uuid: 'booking-1' }, type: 'booking' } } },
+        },
+        included: [
+          {
+            id: { uuid: 'booking-1' },
+            type: 'booking',
+            attributes: { start: new Date(Date.UTC(2026, 9, 2)), end: bookingEnd },
+          },
+        ],
+      },
+    });
+    subscriptionStripe.cancelStripeSubscriptionAtPeriodEnd.mockResolvedValueOnce({});
+
+    const result = await requestCancelAtPeriodEnd({ uuid: 'tx-1' });
+
+    expect(result.cancelAt).toBe(bookingEnd.toISOString());
+    expect(integrationSdk.updateTransactionMetadata).toHaveBeenCalledWith(
+      { uuid: 'tx-1' },
+      expect.objectContaining({ [METADATA_KEYS.CANCEL_AT]: bookingEnd.toISOString() })
+    );
   });
 
   it('throws when there is no Stripe subscription on the transaction', async () => {
@@ -586,7 +691,7 @@ describe('requestCancelAtPeriodEnd', () => {
     const result = await requestCancelAtPeriodEnd({ uuid: 'tx-1' });
 
     expect(subscriptionStripe.cancelStripeSubscriptionAtPeriodEnd).toHaveBeenCalledWith('sub_123');
-    expect(result).toEqual({ cancelAtPeriodEnd: true, stripeSubscriptionId: 'sub_123' });
+    expect(result).toEqual({ cancelAtPeriodEnd: true, cancelAt: null, stripeSubscriptionId: 'sub_123' });
   });
 
   it.each([
@@ -602,6 +707,126 @@ describe('requestCancelAtPeriodEnd', () => {
 
     await expect(requestCancelAtPeriodEnd({ uuid: 'tx-1' })).rejects.toThrow(/cannot be cancelled/);
     expect(subscriptionStripe.cancelStripeSubscriptionAtPeriodEnd).not.toHaveBeenCalled();
+  });
+});
+
+// --- handleSubscriptionUpdated ----------------------------------------------
+describe('handleSubscriptionUpdated', () => {
+  const cancelAtUnix = Math.floor(Date.UTC(2026, 10, 2, 12, 0, 0) / 1000);
+
+  it('writes the pending-cancellation flag when Stripe reports cancel_at_period_end', async () => {
+    integrationSdk.findTransactionByStripeSubscriptionId.mockResolvedValue({
+      id: { uuid: 'tx-1' },
+      attributes: { lastTransition: TRANSITIONS.CONFIRM_SUBSCRIPTION, metadata: {} },
+    });
+
+    await handleSubscriptionUpdated({
+      id: 'sub_123',
+      cancel_at_period_end: true,
+      cancel_at: cancelAtUnix,
+    });
+
+    expect(integrationSdk.updateTransactionMetadata).toHaveBeenCalledWith(
+      { uuid: 'tx-1' },
+      {
+        [METADATA_KEYS.CANCEL_AT_PERIOD_END]: true,
+        [METADATA_KEYS.CANCEL_AT]: '2026-11-02T12:00:00.000Z',
+      }
+    );
+  });
+
+  it('treats a bare cancel_at (Stripe dashboard "cancel on date") as pending', async () => {
+    integrationSdk.findTransactionByStripeSubscriptionId.mockResolvedValue({
+      id: { uuid: 'tx-1' },
+      attributes: { lastTransition: TRANSITIONS.CONFIRM_SUBSCRIPTION, metadata: {} },
+    });
+
+    await handleSubscriptionUpdated({
+      id: 'sub_123',
+      cancel_at_period_end: false,
+      cancel_at: cancelAtUnix,
+    });
+
+    expect(integrationSdk.updateTransactionMetadata).toHaveBeenCalledWith(
+      { uuid: 'tx-1' },
+      {
+        [METADATA_KEYS.CANCEL_AT_PERIOD_END]: true,
+        [METADATA_KEYS.CANCEL_AT]: '2026-11-02T12:00:00.000Z',
+      }
+    );
+  });
+
+  it('reads current_period_end from subscription items on newer API versions', async () => {
+    integrationSdk.findTransactionByStripeSubscriptionId.mockResolvedValue({
+      id: { uuid: 'tx-1' },
+      attributes: { lastTransition: TRANSITIONS.CONFIRM_SUBSCRIPTION, metadata: {} },
+    });
+
+    await handleSubscriptionUpdated({
+      id: 'sub_123',
+      cancel_at_period_end: true,
+      cancel_at: null,
+      items: { data: [{ current_period_end: cancelAtUnix }] },
+    });
+
+    expect(integrationSdk.updateTransactionMetadata).toHaveBeenCalledWith(
+      { uuid: 'tx-1' },
+      expect.objectContaining({ [METADATA_KEYS.CANCEL_AT]: '2026-11-02T12:00:00.000Z' })
+    );
+  });
+
+  it('clears the flag when the customer resumes via the Billing Portal', async () => {
+    integrationSdk.findTransactionByStripeSubscriptionId.mockResolvedValue({
+      id: { uuid: 'tx-1' },
+      attributes: {
+        lastTransition: TRANSITIONS.CONFIRM_SUBSCRIPTION,
+        metadata: {
+          [METADATA_KEYS.CANCEL_AT_PERIOD_END]: true,
+          [METADATA_KEYS.CANCEL_AT]: '2026-11-02T12:00:00.000Z',
+        },
+      },
+    });
+
+    await handleSubscriptionUpdated({ id: 'sub_123', cancel_at_period_end: false, cancel_at: null });
+
+    expect(integrationSdk.updateTransactionMetadata).toHaveBeenCalledWith(
+      { uuid: 'tx-1' },
+      { [METADATA_KEYS.CANCEL_AT_PERIOD_END]: false, [METADATA_KEYS.CANCEL_AT]: null }
+    );
+  });
+
+  it('is a no-op when metadata already matches Stripe', async () => {
+    integrationSdk.findTransactionByStripeSubscriptionId.mockResolvedValue({
+      id: { uuid: 'tx-1' },
+      attributes: {
+        lastTransition: TRANSITIONS.CONFIRM_SUBSCRIPTION,
+        metadata: {
+          [METADATA_KEYS.CANCEL_AT_PERIOD_END]: true,
+          [METADATA_KEYS.CANCEL_AT]: '2026-11-02T12:00:00.000Z',
+        },
+      },
+    });
+
+    await handleSubscriptionUpdated({
+      id: 'sub_123',
+      cancel_at_period_end: true,
+      cancel_at: cancelAtUnix,
+    });
+
+    expect(integrationSdk.updateTransactionMetadata).not.toHaveBeenCalled();
+  });
+
+  it('is a no-op for final transactions and unknown subscriptions', async () => {
+    integrationSdk.findTransactionByStripeSubscriptionId.mockResolvedValueOnce({
+      id: { uuid: 'tx-1' },
+      attributes: { lastTransition: TRANSITIONS.CANCEL_SUBSCRIPTION, metadata: {} },
+    });
+    await handleSubscriptionUpdated({ id: 'sub_123', cancel_at_period_end: true });
+
+    integrationSdk.findTransactionByStripeSubscriptionId.mockResolvedValueOnce(null);
+    await handleSubscriptionUpdated({ id: 'sub_404', cancel_at_period_end: true });
+
+    expect(integrationSdk.updateTransactionMetadata).not.toHaveBeenCalled();
   });
 });
 

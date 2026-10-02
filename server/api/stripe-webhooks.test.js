@@ -9,6 +9,7 @@ jest.mock('../api-util/subscriptionService', () => ({
   handleInvoicePaid: jest.fn(),
   handleInvoicePaymentFailed: jest.fn(),
   handleSubscriptionDeleted: jest.fn(),
+  handleSubscriptionUpdated: jest.fn(),
 }));
 
 const { getStripe, isStripeWebhookConfigured } = require('../api-util/stripeClient');
@@ -17,6 +18,7 @@ const {
   handleInvoicePaid,
   handleInvoicePaymentFailed,
   handleSubscriptionDeleted,
+  handleSubscriptionUpdated,
 } = require('../api-util/subscriptionService');
 
 const stripeWebhooks = require('./stripe-webhooks');
@@ -130,6 +132,19 @@ describe('POST /api/stripe-webhooks', () => {
     await stripeWebhooks(makeReq(), res);
 
     expect(handleSubscriptionDeleted).toHaveBeenCalledWith('sub_1');
+  });
+
+  it('syncs cancel_at_period_end on customer.subscription.updated', async () => {
+    const subscription = { id: 'sub_1', cancel_at_period_end: true, cancel_at: 1762084800 };
+    constructEvent.mockReturnValue({
+      type: 'customer.subscription.updated',
+      data: { object: subscription },
+    });
+    const res = makeRes();
+
+    await stripeWebhooks(makeReq(), res);
+
+    expect(handleSubscriptionUpdated).toHaveBeenCalledWith(subscription);
   });
 
   it('returns 500 when a handler throws', async () => {

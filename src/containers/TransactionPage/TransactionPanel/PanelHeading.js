@@ -31,6 +31,10 @@ const PanelHeading = props => {
     rootClassName,
     processName,
     processState,
+    // Optional display-only override for the title key (e.g. a pending
+    // cancellation that is still `active` in the process graph).
+    titleStateKey,
+    titleValues = {},
     showExtraInfo,
     showPriceOnMobile,
     price,
@@ -53,14 +57,15 @@ const PanelHeading = props => {
   const titleClasses = classNames(rootClassName || defaultRootClassName, className);
   const listingLink = createListingLink(listingId, listingTitle, listingDeleted);
   const breakline = <br />;
+  const titleKey = titleStateKey || processState;
 
   return (
     <>
       <H1 className={titleClasses}>
         <span className={css.mainTitle}>
           <FormattedMessage
-            id={`TransactionPage.${processName}.${transactionRole}.${processState}.title`}
-            values={{ customerName, providerName, breakline }}
+            id={`TransactionPage.${processName}.${transactionRole}.${titleKey}.title`}
+            values={{ customerName, providerName, breakline, ...titleValues }}
           />
         </span>
       </H1>

@@ -4,13 +4,22 @@ import {
   TX_TRANSITION_ACTOR_PROVIDER as PROVIDER,
   getProcess,
 } from '../../transactions/transaction';
-import { getStateDataForSubscriptionProcess } from './TransactionPage.stateDataSubscription';
+import {
+  ACTIVE_CANCELLING_STATE_KEY,
+  getPendingCancellation,
+  getStateDataForSubscriptionProcess,
+} from './TransactionPage.stateDataSubscription';
 
 const process = getProcess('subscription-rental');
 const states = process.states;
 const processName = 'subscription-rental';
 
 const buildProcessInfo = processState => ({ processName, processState, states });
+
+const buildTransaction = metadata => ({
+  id: { uuid: 'tx-1' },
+  attributes: { processName, lastTransition: 'transition/confirm-subscription', metadata },
+});
 
 const buildHandlers = () => ({
   cancelInProgress: false,
@@ -58,6 +67,105 @@ describe('getStateDataForSubscriptionProcess (TransactionPage)', () => {
       expect(result.showActionButtons).toBe(false);
       expect(result.primaryButtonProps).toBeNull();
       expect(result.secondaryButtonProps).toBeNull();
+    });
+
+    it('does not override the title when no cancellation is pending', () => {
+      const txInfo = {
+        transaction: buildTransaction({}),
+        transactionRole: CUSTOMER,
+        intl: fakeIntl,
+        subscriptionHandlers: buildHandlers(),
+      };
+      const result = getStateDataForSubscriptionProcess(txInfo, buildProcessInfo(states.ACTIVE));
+
+      expect(result.titleStateKey).toBeUndefined();
+      expect(result.titleValues).toBeUndefined();
+    });
+  });
+
+  describe('[ACTIVE, CUSTOMER] with pending cancellation (metadata.cancelAtPeriodEnd)', () => {
+    it('hides the cancel button, keeps the portal, and overrides the title with the end date', () => {
+      const txInfo = {
+        transaction: buildTransaction({
+          cancelAtPeriodEnd: true,
+          cancelAt: '2026-11-02T12:00:00.000Z',
+        }),
+        transactionRole: CUSTOMER,
+        intl: fakeIntl,
+        subscriptionHandlers: buildHandlers(),
+      };
+      const result = getStateDataForSubscriptionProcess(txInfo, buildProcessInfo(states.ACTIVE));
+
+      // Process state is unchanged — still active in the graph.
+      expect(result.processState).toBe(states.ACTIVE);
+      expect(result.titleStateKey).toBe(ACTIVE_CANCELLING_STATE_KEY);
+      expect(result.titleValues).toEqual({ cancelAt: '2026-11-02' });
+
+      expect(result.showActionButtons).toBe(true);
+      expect(result.primaryButtonProps.buttonText).toBe(
+        'TransactionPage.subscription-rental.customer.updatePaymentMethod'
+      );
+      expect(result.secondaryButtonProps).toBeUndefined();
+      expect(result.showWaiverStatusPanel).toBe(true);
+    });
+
+    it('falls back to the no-date title when cancelAt is missing or invalid', () => {
+      const txInfo = {
+        transaction: buildTransaction({ cancelAtPeriodEnd: true, cancelAt: 'not-a-date' }),
+        transactionRole: CUSTOMER,
+        intl: fakeIntl,
+        subscriptionHandlers: buildHandlers(),
+      };
+      const result = getStateDataForSubscriptionProcess(txInfo, buildProcessInfo(states.ACTIVE));
+
+      expect(result.titleStateKey).toBe(`${ACTIVE_CANCELLING_STATE_KEY}-no-date`);
+      expect(result.titleValues).toEqual({ cancelAt: null });
+    });
+
+    it('shows no buttons at all when only the portal handler is missing', () => {
+      const txInfo = {
+        transaction: buildTransaction({ cancelAtPeriodEnd: true }),
+        transactionRole: CUSTOMER,
+        intl: fakeIntl,
+        subscriptionHandlers: { ...buildHandlers(), onOpenBillingPortal: undefined },
+      };
+      const result = getStateDataForSubscriptionProcess(txInfo, buildProcessInfo(states.ACTIVE));
+
+      expect(result.showActionButtons).toBe(false);
+      expect(result.primaryButtonProps).toBeNull();
+    });
+
+    it('[ACTIVE, PROVIDER] also gets the end-date title', () => {
+      const txInfo = {
+        transaction: buildTransaction({
+          cancelAtPeriodEnd: true,
+          cancelAt: '2026-11-02T12:00:00.000Z',
+        }),
+        transactionRole: PROVIDER,
+        intl: fakeIntl,
+        subscriptionHandlers: {},
+      };
+      const result = getStateDataForSubscriptionProcess(txInfo, buildProcessInfo(states.ACTIVE));
+
+      expect(result.titleStateKey).toBe(ACTIVE_CANCELLING_STATE_KEY);
+      expect(result.titleValues).toEqual({ cancelAt: '2026-11-02' });
+      expect(result.showActionButtons).toBeUndefined();
+    });
+  });
+
+  describe('getPendingCancellation', () => {
+    it('returns null when the flag is absent or false', () => {
+      expect(getPendingCancellation(buildTransaction({}))).toBeNull();
+      expect(getPendingCancellation(buildTransaction({ cancelAtPeriodEnd: false }))).toBeNull();
+      expect(getPendingCancellation(undefined)).toBeNull();
+    });
+
+    it('parses cancelAt into a Date', () => {
+      const result = getPendingCancellation(
+        buildTransaction({ cancelAtPeriodEnd: true, cancelAt: '2026-11-02T12:00:00.000Z' })
+      );
+      expect(result.cancelAt).toBeInstanceOf(Date);
+      expect(result.cancelAt.toISOString()).toBe('2026-11-02T12:00:00.000Z');
     });
   });
 

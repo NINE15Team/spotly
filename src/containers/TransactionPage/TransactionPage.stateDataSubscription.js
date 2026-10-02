@@ -5,12 +5,54 @@ import {
   ConditionalResolver,
 } from '../../transactions/transaction';
 
+// Written by the server (requestCancelAtPeriodEnd / customer.subscription.updated
+// webhook) when Stripe has cancel_at_period_end set. The process state stays
+// `active` until period end, so this is the only signal that a cancellation is
+// pending.
+const METADATA_CANCEL_AT_PERIOD_END = 'cancelAtPeriodEnd';
+const METADATA_CANCEL_AT = 'cancelAt';
+
+// Display-only pseudo state used for translation keys. Not a process state.
+export const ACTIVE_CANCELLING_STATE_KEY = 'active-cancelling';
+
+export const getPendingCancellation = transaction => {
+  const metadata = transaction?.attributes?.metadata || {};
+  if (!metadata[METADATA_CANCEL_AT_PERIOD_END]) {
+    return null;
+  }
+  const raw = metadata[METADATA_CANCEL_AT];
+  const cancelAt = raw ? new Date(raw) : null;
+  return { cancelAt: cancelAt && !Number.isNaN(cancelAt.getTime()) ? cancelAt : null };
+};
+
 /**
  * State data for subscription-rental on TransactionPage.
  */
 export const getStateDataForSubscriptionProcess = (txInfo, processInfo) => {
-  const { transactionRole, subscriptionHandlers = {}, intl } = txInfo;
+  const { transaction, transactionRole, subscriptionHandlers = {}, intl } = txInfo;
   const _ = CONDITIONAL_RESOLVER_WILDCARD;
+
+  const pendingCancellation = getPendingCancellation(transaction);
+  const isCancelling = !!pendingCancellation;
+  const cancelAtFormatted =
+    pendingCancellation?.cancelAt && intl
+      ? intl.formatDate(pendingCancellation.cancelAt, {
+          month: 'long',
+          day: 'numeric',
+          year: 'numeric',
+        })
+      : null;
+
+  // Heading override while a cancellation is scheduled. Falls back to the
+  // generic "ends at period end" copy if the date is missing.
+  const cancellingHeading = isCancelling
+    ? {
+        titleStateKey: cancelAtFormatted
+          ? ACTIVE_CANCELLING_STATE_KEY
+          : `${ACTIVE_CANCELLING_STATE_KEY}-no-date`,
+        titleValues: { cancelAt: cancelAtFormatted },
+      }
+    : {};
 
   const {
     cancelInProgress,
@@ -98,14 +140,28 @@ export const getStateDataForSubscriptionProcess = (txInfo, processInfo) => {
       showActionButtons: !!portalButtonProps,
       primaryButtonProps: portalButtonProps,
     }))
-    .cond([states.ACTIVE, CUSTOMER], () => ({
-      processName,
-      processState,
-      showDetailCardHeadings: true,
-      showActionButtons: !!(cancelButtonProps || portalButtonProps),
-      primaryButtonProps: cancelButtonProps,
-      secondaryButtonProps: portalButtonProps,
-    }))
+    .cond([states.ACTIVE, CUSTOMER], () => {
+      // Once cancellation is scheduled there is nothing left to cancel; only
+      // the billing portal (where the customer can resume) remains useful.
+      if (isCancelling) {
+        return {
+          processName,
+          processState,
+          ...cancellingHeading,
+          showDetailCardHeadings: true,
+          showActionButtons: !!portalButtonProps,
+          primaryButtonProps: portalButtonProps,
+        };
+      }
+      return {
+        processName,
+        processState,
+        showDetailCardHeadings: true,
+        showActionButtons: !!(cancelButtonProps || portalButtonProps),
+        primaryButtonProps: cancelButtonProps,
+        secondaryButtonProps: portalButtonProps,
+      };
+    })
     .cond([states.PAYMENT_CONFIRMED, CUSTOMER], () => ({
       processName,
       processState,
@@ -124,6 +180,7 @@ export const getStateDataForSubscriptionProcess = (txInfo, processInfo) => {
     .cond([states.ACTIVE, PROVIDER], () => ({
       processName,
       processState,
+      ...cancellingHeading,
       showDetailCardHeadings: true,
     }))
     .cond([states.PAYMENT_OVERDUE, PROVIDER], () => ({

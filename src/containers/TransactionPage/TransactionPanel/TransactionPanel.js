@@ -269,6 +269,8 @@ export class TransactionPanelComponent extends Component {
             <PanelHeading
               processName={stateData.processName}
               processState={stateData.processState}
+              titleStateKey={stateData.titleStateKey}
+              titleValues={stateData.titleValues}
               showExtraInfo={allowShowingExtraInfo(stateData.showExtraInfo, transactionPartyInfo)}
               showPriceOnMobile={showPrice}
               price={listing?.attributes?.price}

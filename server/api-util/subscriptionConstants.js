@@ -88,6 +88,12 @@ const METADATA_KEYS = {
   STRIPE_CUSTOMER_ID: 'stripeCustomerId',
   STRIPE_SUBSCRIPTION_ID: 'stripeSubscriptionId',
   STRIPE_PRICE_ID: 'stripePriceId',
+  // Set when the customer requests cancellation. The Sharetribe state stays
+  // `active` until Stripe ends the subscription at period end, so this flag is
+  // the only signal the UI has that a cancellation is pending.
+  CANCEL_AT_PERIOD_END: 'cancelAtPeriodEnd',
+  // ISO-8601 timestamp of when the subscription will end (Stripe cancel_at).
+  CANCEL_AT: 'cancelAt',
 };
 
 const isSubscriptionProcess = processAlias => {
