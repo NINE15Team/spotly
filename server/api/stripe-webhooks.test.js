@@ -131,7 +131,7 @@ describe('POST /api/stripe-webhooks', () => {
 
     await stripeWebhooks(makeReq(), res);
 
-    expect(handleSubscriptionDeleted).toHaveBeenCalledWith('sub_1');
+    expect(handleSubscriptionDeleted).toHaveBeenCalledWith('sub_1', { id: 'sub_1' });
   });
 
   it('syncs cancel_at_period_end on customer.subscription.updated', async () => {

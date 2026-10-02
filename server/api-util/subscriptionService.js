@@ -539,8 +539,11 @@ const handleInvoicePaymentFailed = async stripeSubscriptionId => {
   }
 };
 
-const handleSubscriptionDeleted = async stripeSubscriptionId => {
-  const transaction = await findTransactionByStripeSubscriptionId(stripeSubscriptionId);
+const handleSubscriptionDeleted = async (stripeSubscriptionId, stripeSubscription = null) => {
+  const transaction = await findTransactionByStripeSubscriptionId(
+    stripeSubscriptionId,
+    stripeSubscription
+  );
   if (!transaction) {
     log.warn('customer.subscription.deleted: no transaction', { stripeSubscriptionId });
     return;
@@ -622,8 +625,15 @@ const requestCancelAtPeriodEnd = async transactionId => {
     toIsoMaybe(booking?.attributes?.end) ||
     null;
 
+  // Re-read before recording: Stripe may already have delivered
+  // customer.subscription.updated and the webhook may have written the flag.
+  // Comparing against the pre-Stripe snapshot would make us fire the intent
+  // transition (and emails) a second time.
+  const freshTx = await showTransaction(transaction.id);
+  const freshTransaction = freshTx?.data?.data || transaction;
+
   await recordCancellationIntent({
-    transaction,
+    transaction: freshTransaction,
     cancelAtPeriodEnd: true,
     cancelAt,
     source: 'customer',
@@ -732,6 +742,16 @@ const handleSubscriptionUpdated = async stripeSubscription => {
     return;
   }
 
+  // At period end Stripe flips status → 'canceled' and clears
+  // cancel_at_period_end on the same object, and may deliver that `updated`
+  // event before (or instead of) `deleted`. Treating it as a resume would email
+  // both parties "subscription resumed" seconds before the real cancel.
+  // Terminal statuses are handleSubscriptionDeleted's business.
+  const TERMINAL_STRIPE_STATUSES = ['canceled', 'incomplete_expired'];
+  if (TERMINAL_STRIPE_STATUSES.includes(stripeSubscription.status)) {
+    return;
+  }
+
   const transaction = await findTransactionByStripeSubscriptionId(
     stripeSubscriptionId,
     stripeSubscription
@@ -745,8 +765,14 @@ const handleSubscriptionUpdated = async stripeSubscription => {
   // "cancel on date"). Both should surface as a pending cancellation.
   const stripeFlag =
     !!stripeSubscription.cancel_at_period_end || typeof stripeSubscription.cancel_at === 'number';
+
+  // Same fallback chain as the endpoint, so a Stripe payload without a period
+  // end doesn't downgrade an already-known date to null.
+  const existingCancelAt = (transaction.attributes.metadata || {})[METADATA_KEYS.CANCEL_AT] || null;
   const stripeCancelAt = stripeFlag
-    ? unixToIso(stripeSubscription.cancel_at) || getStripePeriodEndIso(stripeSubscription)
+    ? unixToIso(stripeSubscription.cancel_at) ||
+      getStripePeriodEndIso(stripeSubscription) ||
+      existingCancelAt
     : null;
 
   const result = await recordCancellationIntent({

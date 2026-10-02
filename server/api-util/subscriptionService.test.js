@@ -695,6 +695,42 @@ describe('requestCancelAtPeriodEnd', () => {
     expect(integrationSdk.updateTransactionMetadata).not.toHaveBeenCalled();
   });
 
+  it('re-reads the transaction after the Stripe call so a webhook that already recorded the request wins', async () => {
+    const stale = {
+      id: { uuid: 'tx-1' },
+      attributes: {
+        lastTransition: TRANSITIONS.CONFIRM_SUBSCRIPTION,
+        metadata: { [METADATA_KEYS.STRIPE_SUBSCRIPTION_ID]: 'sub_123' },
+      },
+    };
+    const fresh = {
+      id: { uuid: 'tx-1' },
+      attributes: {
+        lastTransition: TRANSITIONS.REQUEST_CANCELLATION,
+        metadata: {
+          [METADATA_KEYS.STRIPE_SUBSCRIPTION_ID]: 'sub_123',
+          [METADATA_KEYS.CANCEL_AT_PERIOD_END]: true,
+          [METADATA_KEYS.CANCEL_AT]: '2026-11-02T12:00:00.000Z',
+        },
+      },
+    };
+    integrationSdk.showTransaction
+      .mockResolvedValueOnce({ data: { data: stale } })
+      .mockResolvedValueOnce({ data: { data: fresh } });
+    subscriptionStripe.cancelStripeSubscriptionAtPeriodEnd.mockResolvedValueOnce({
+      id: 'sub_123',
+      cancel_at_period_end: true,
+      cancel_at: Math.floor(Date.UTC(2026, 10, 2, 12, 0, 0) / 1000),
+    });
+
+    const result = await requestCancelAtPeriodEnd({ uuid: 'tx-1' });
+
+    expect(result.cancelAtPeriodEnd).toBe(true);
+    expect(integrationSdk.showTransaction).toHaveBeenCalledTimes(2);
+    expect(integrationSdk.transitionTransaction).not.toHaveBeenCalled();
+    expect(integrationSdk.updateTransactionMetadata).not.toHaveBeenCalled();
+  });
+
   it('still succeeds (metadata written) when the intent transition fails', async () => {
     buildShowForCancel(TRANSITIONS.CONFIRM_SUBSCRIPTION);
     integrationSdk.transitionTransaction.mockRejectedValueOnce(new Error('unknown transition'));
@@ -883,6 +919,49 @@ describe('handleSubscriptionUpdated', () => {
         },
       })
     );
+  });
+
+  it('ignores the terminal status=canceled update (does not fire a bogus resume)', async () => {
+    mockTransactionForSubscription({
+      id: { uuid: 'tx-1' },
+      attributes: {
+        lastTransition: TRANSITIONS.REQUEST_CANCELLATION,
+        metadata: {
+          [METADATA_KEYS.CANCEL_AT_PERIOD_END]: true,
+          [METADATA_KEYS.CANCEL_AT]: '2026-11-02T12:00:00.000Z',
+        },
+      },
+    });
+
+    // Stripe clears cancel_at_period_end on the same object when it cancels.
+    await handleSubscriptionUpdated({
+      id: 'sub_123',
+      status: 'canceled',
+      cancel_at_period_end: false,
+      cancel_at: null,
+    });
+
+    expect(integrationSdk.transitionTransaction).not.toHaveBeenCalled();
+    expect(integrationSdk.updateTransactionMetadata).not.toHaveBeenCalled();
+  });
+
+  it('keeps the known cancelAt when the Stripe payload has no period end', async () => {
+    mockTransactionForSubscription({
+      id: { uuid: 'tx-1' },
+      attributes: {
+        lastTransition: TRANSITIONS.REQUEST_CANCELLATION,
+        metadata: {
+          [METADATA_KEYS.CANCEL_AT_PERIOD_END]: true,
+          [METADATA_KEYS.CANCEL_AT]: '2026-11-02T12:00:00.000Z',
+        },
+      },
+    });
+
+    await handleSubscriptionUpdated({ id: 'sub_123', cancel_at_period_end: true, cancel_at: null });
+
+    // Nothing changed → no write, no transition.
+    expect(integrationSdk.updateTransactionMetadata).not.toHaveBeenCalled();
+    expect(integrationSdk.transitionTransaction).not.toHaveBeenCalled();
   });
 
   it('fires resume-subscription when the portal un-cancels', async () => {

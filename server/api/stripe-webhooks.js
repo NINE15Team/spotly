@@ -81,7 +81,7 @@ module.exports = async (req, res) => {
       }
       case 'customer.subscription.deleted': {
         const subscription = event.data.object;
-        await handleSubscriptionDeleted(subscription.id);
+        await handleSubscriptionDeleted(subscription.id, subscription);
         break;
       }
       default:
