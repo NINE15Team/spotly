@@ -478,6 +478,19 @@ textarea {
   font-size: 16px;
 }
 
+/* iOS Safari zooms the page when a focused form control has a font-size under 16px (H-14).
+   Component styles shrink inputs to 12-15px from the viewportMedium breakpoint up (Figma
+   desktop sizes), which also applies to iPads and phones in landscape. Keep every form
+   control at 16px on touch devices regardless of width; mouse/desktop keeps the design sizes.
+   !important is needed to beat the component-level class selectors. */
+@media (hover: none) and (pointer: coarse) {
+  select,
+  input,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
 select {
   /* Dimensions */
   display: block;
