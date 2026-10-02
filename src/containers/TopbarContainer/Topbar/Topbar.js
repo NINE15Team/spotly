@@ -228,7 +228,15 @@ const TopbarComponent = props => {
     ? 'sales'
     : 'orders';
 
-  const { mobilemenu, mobilesearch, keywords, address, origin, bounds } = parse(location.search, {
+  const {
+    mobilemenu,
+    mobilesearch,
+    keywords,
+    address,
+    origin,
+    bounds,
+    pub_listingType: listingTypeInUrl,
+  } = parse(location.search, {
     latlng: ['origin'],
     latlngBounds: ['bounds'],
   });
@@ -380,6 +388,7 @@ const TopbarComponent = props => {
           showSearchForm={showSearchForm}
           showCreateListingsLink={showCreateListingsLink}
           inboxTab={topbarInboxTab}
+          listingTypeInUrl={listingTypeInUrl}
         />
       </div>
       <Modal

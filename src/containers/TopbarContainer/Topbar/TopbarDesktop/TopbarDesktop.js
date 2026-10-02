@@ -15,9 +15,16 @@ import {
 
 import TopbarSearchForm from '../TopbarSearchForm/TopbarSearchForm';
 import HakoLogo from '../HakoLogo';
-import { DAY_LISTING_TYPES, MONTHLY_LISTING_TYPES } from '../../../../util/hakoListingTypes';
+import {
+  DAY_LISTING_TYPES,
+  MONTHLY_LISTING_TYPES,
+  isMonthlyListingType,
+} from '../../../../util/hakoListingTypes';
 
 import css from './TopbarDesktop.module.css';
+
+const isSearchPage = currentPage =>
+  currentPage === 'SearchPage' || currentPage === 'SearchPageWithListingType';
 
 const HAKO_NAV_LINKS = [
   {
@@ -26,8 +33,11 @@ const HAKO_NAV_LINKS = [
     defaultMessage: 'Day Parking',
     name: 'SearchPage',
     to: { search: `?pub_listingType=${DAY_LISTING_TYPES.join(',')}` },
-    match: ({ currentPage }) =>
-      currentPage === 'LandingPage' || currentPage === 'SearchPage' || !currentPage,
+    // Active on the landing page and on any search that is not a monthly-storage search.
+    match: ({ currentPage, isMonthlySearch }) =>
+      currentPage === 'LandingPage' ||
+      !currentPage ||
+      (isSearchPage(currentPage) && !isMonthlySearch),
   },
   {
     id: 'monthly-storage',
@@ -35,7 +45,7 @@ const HAKO_NAV_LINKS = [
     defaultMessage: 'Monthly Storage',
     name: 'SearchPage',
     to: { search: `?pub_listingType=${MONTHLY_LISTING_TYPES.join(',')}` },
-    match: () => false,
+    match: ({ currentPage, isMonthlySearch }) => isSearchPage(currentPage) && isMonthlySearch,
   },
   {
     id: 'post-listing',
@@ -154,10 +164,11 @@ const ProfileMenu = ({ currentPage, currentUser, onLogout, showManageListingsLin
   );
 };
 
-const HakoNavLinks = ({ currentPage }) => (
+const HakoNavLinks = ({ currentPage, listingTypeInUrl }) => (
   <div className={css.navLinks} role="navigation" aria-label="Primary">
     {HAKO_NAV_LINKS.map(link => {
-      const isActive = link.match({ currentPage });
+      const isMonthlySearch = isMonthlyListingType(listingTypeInUrl);
+      const isActive = link.match({ currentPage, isMonthlySearch });
       return (
         <NamedLink
           key={link.id}
@@ -193,6 +204,7 @@ const TopbarDesktop = props => {
     showSearchForm,
     showCreateListingsLink,
     inboxTab,
+    listingTypeInUrl,
   } = props;
   const [mounted, setMounted] = useState(false);
 
@@ -242,7 +254,7 @@ const TopbarDesktop = props => {
     >
       <div className={css.left}>
         <HakoLogo marketplaceName={marketplaceName} layout="desktop" />
-        <HakoNavLinks currentPage={currentPage} />
+        <HakoNavLinks currentPage={currentPage} listingTypeInUrl={listingTypeInUrl} />
       </div>
 
       {searchFormMaybe}

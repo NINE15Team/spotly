@@ -117,6 +117,28 @@ class GeocoderMapbox {
   }
 
   /**
+   * Human-readable place name for coordinates (neighborhood / locality level).
+   *
+   * @param {LatLng} latlng
+   * @return {Promise<string>} place name, or '' if nothing was found
+   */
+  reverseGeocode(latlng) {
+    // Promise.resolve().then(...) so a synchronous failure (e.g. SDK not loaded yet)
+    // becomes a rejection the caller can fall back from.
+    return Promise.resolve()
+      .then(() =>
+        this.getClient()
+          .geocoding.reverseGeocode({
+            query: [latlng.lng, latlng.lat],
+            limit: 1,
+            types: ['neighborhood', 'locality', 'place'],
+          })
+          .send()
+      )
+      .then(response => response.body?.features?.[0]?.place_name || '');
+  }
+
+  /**
    * Get the ID of the given prediction.
    */
   getPredictionId(prediction) {
@@ -145,11 +167,17 @@ class GeocoderMapbox {
   getPlaceDetails(prediction, currentLocationBoundsDistance) {
     if (this.getPredictionId(prediction) === CURRENT_LOCATION_ID) {
       return userLocation().then(latlng => {
-        return {
+        const place = {
           address: '',
           origin: latlng,
           bounds: locationBounds(latlng, currentLocationBoundsDistance),
         };
+        // Reverse-geocode so the field shows where the user actually is
+        // ("Mission District, San Francisco, CA") instead of a generic label.
+        // Best effort: if it fails, the caller falls back to the "Current location" label.
+        return this.reverseGeocode(latlng)
+          .then(address => ({ ...place, address: address || '' }))
+          .catch(() => place);
       });
     }
 

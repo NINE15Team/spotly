@@ -63,6 +63,35 @@ class GeocoderGoogleMaps {
   }
 
   /**
+   * Human-readable place name for coordinates (neighborhood / locality level).
+   *
+   * @param {LatLng} latlng
+   * @return {Promise<string>} formatted address, or '' if nothing was found
+   */
+  reverseGeocode(latlng) {
+    return new Promise((resolve, reject) => {
+      // Inside the executor a synchronous throw (e.g. library not loaded) rejects the promise.
+      const geocoder = new window.google.maps.Geocoder();
+      geocoder.geocode(
+        {
+          location: { lat: latlng.lat, lng: latlng.lng },
+          // Prefer an area-level name over a street address
+          result_type: ['neighborhood', 'sublocality', 'locality'],
+        },
+        (results, status) => {
+          if (status === 'OK' && results?.length > 0) {
+            resolve(results[0].formatted_address || '');
+          } else if (status === 'ZERO_RESULTS') {
+            resolve('');
+          } else {
+            reject(new Error(`Reverse geocoding failed: ${status}`));
+          }
+        }
+      );
+    });
+  }
+
+  /**
    * Get the ID of the given prediction.
    */
   getPredictionId(prediction) {
@@ -96,11 +125,16 @@ class GeocoderGoogleMaps {
   getPlaceDetails(prediction, currentLocationBoundsDistance) {
     if (this.getPredictionId(prediction) === CURRENT_LOCATION_ID) {
       return userLocation().then(latlng => {
-        return {
+        const place = {
           address: '',
           origin: latlng,
           bounds: googleMapsUtil.locationBounds(latlng, currentLocationBoundsDistance),
         };
+        // Reverse-geocode so the field shows where the user actually is instead of a
+        // generic label. Best effort: on failure the caller falls back to "Current location".
+        return this.reverseGeocode(latlng)
+          .then(address => ({ ...place, address: address || '' }))
+          .catch(() => place);
       });
     }
 

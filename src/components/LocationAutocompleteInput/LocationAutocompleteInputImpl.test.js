@@ -41,6 +41,21 @@ const installMapboxStub = () => {
   };
 };
 
+// Mapbox SDK stub: reverse geocoding resolves to the given place name (or fails when null).
+const installMapboxSdkStub = placeName => {
+  window.mapboxSdk = () => ({
+    geocoding: {
+      reverseGeocode: () => ({
+        send: () =>
+          placeName === null
+            ? Promise.reject(new Error('reverse geocoding down'))
+            : Promise.resolve({ body: { features: placeName ? [{ place_name: placeName }] : [] } }),
+      }),
+    },
+  });
+  window.mapboxgl.accessToken = 'test-token';
+};
+
 const renderInput = (value, onChange) =>
   render(
     <LocationAutocompleteInputImpl
@@ -69,9 +84,32 @@ describe('LocationAutocompleteInputImpl — "Current location" (H-11)', () => {
     expect(await screen.findByText('Current location')).toBeInTheDocument();
   });
 
-  it('labels the selected place "Current location" instead of leaving the address empty', async () => {
+  it('shows the reverse-geocoded place name for the device location', async () => {
     const user = userEvent.setup();
     userLocation.mockResolvedValue(new LatLng(37.77, -122.42));
+    installMapboxSdkStub('Mission District, San Francisco, California, United States');
+    const onChange = jest.fn();
+    renderInput({ search: '', predictions: [], selectedPlace: null }, onChange);
+
+    await user.click(screen.getByPlaceholderText('Where?'));
+    await user.click(await screen.findByText('Current location'));
+
+    await waitFor(() => {
+      const selected = onChange.mock.calls.map(c => c[0]).find(v => v?.selectedPlace);
+      expect(selected).toBeTruthy();
+      expect(selected.search).toBe('Mission District, San Francisco, California, United States');
+      expect(selected.selectedPlace.address).toBe(
+        'Mission District, San Francisco, California, United States'
+      );
+      expect(selected.selectedPlace.origin).toBeInstanceOf(LatLng);
+      expect(selected.selectedPlace.bounds).toBeInstanceOf(LatLngBounds);
+    });
+  });
+
+  it('falls back to the "Current location" label when reverse geocoding fails', async () => {
+    const user = userEvent.setup();
+    userLocation.mockResolvedValue(new LatLng(37.77, -122.42));
+    installMapboxSdkStub(null);
     const onChange = jest.fn();
     renderInput({ search: '', predictions: [], selectedPlace: null }, onChange);
 

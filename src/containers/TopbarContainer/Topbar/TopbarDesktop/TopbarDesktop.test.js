@@ -50,6 +50,38 @@ describe('TopbarDesktop Hako header', () => {
     expect(dayParking.className).toMatch(/navLinkActive/);
   });
 
+  it('highlights Day Parking on a day-parking search', () => {
+    render(
+      <TopbarDesktop
+        {...baseProps}
+        currentPage="SearchPage"
+        listingTypeInUrl="hourly-rental,day-parking,daily-rental"
+      />
+    );
+    expect(screen.getByRole('link', { name: 'TopbarDesktop.dayParking' }).className).toMatch(
+      /navLinkActive/
+    );
+    expect(
+      screen.getByRole('link', { name: 'TopbarDesktop.monthlyStorage' }).className
+    ).not.toMatch(/navLinkActive/);
+  });
+
+  it('highlights Monthly Storage (not Day Parking) on a monthly-storage search', () => {
+    render(
+      <TopbarDesktop
+        {...baseProps}
+        currentPage="SearchPage"
+        listingTypeInUrl="monthly-subscription,monthly-storage"
+      />
+    );
+    expect(screen.getByRole('link', { name: 'TopbarDesktop.monthlyStorage' }).className).toMatch(
+      /navLinkActive/
+    );
+    expect(screen.getByRole('link', { name: 'TopbarDesktop.dayParking' }).className).not.toMatch(
+      /navLinkActive/
+    );
+  });
+
   it('uses a compact search field with Hako placeholder copy', () => {
     render(<TopbarDesktop {...baseProps} />);
     const input = screen.getByTestId('keyword-search');
