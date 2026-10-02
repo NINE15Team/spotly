@@ -12,9 +12,35 @@ jest.mock('react-router-dom', () => ({
   useHistory: () => ({ push: mockPush }),
 }));
 
+jest.mock('../../../components/LocationAutocompleteInput/resolveTypedPlace', () => ({
+  __esModule: true,
+  default: jest.fn(),
+}));
+const resolveTypedPlace = require('../../../components/LocationAutocompleteInput/resolveTypedPlace')
+  .default;
+
 describe('HakoLandingPage', () => {
   beforeEach(() => {
     mockPush.mockClear();
+    resolveTypedPlace.mockReset();
+    resolveTypedPlace.mockResolvedValue(null);
+  });
+
+  // Regression: H-25 — the pre-filled "San Francisco" has no bounds, so the results page
+  // opened on a world map with nothing in it.
+  it('geocodes a location without bounds so the results are centred on it', async () => {
+    const user = userEvent.setup();
+    resolveTypedPlace.mockResolvedValue({
+      address: 'San Francisco, California, United States',
+      bounds: { ne: { lat: 37.9, lng: -122.3 }, sw: { lat: 37.6, lng: -122.6 } },
+    });
+    render(<HakoLandingPage />);
+
+    await user.click(await screen.findByRole('button', { name: 'HakoLanding.hero.search' }));
+
+    await waitFor(() => expect(mockPush).toHaveBeenCalledTimes(1));
+    expect(resolveTypedPlace).toHaveBeenCalledWith(expect.anything(), 'San Francisco');
+    expect(mockPush.mock.calls[0][0]).toContain('bounds=');
   });
 
   // Regression: H-03 — hero date/hours were dropped when navigating to search results.
@@ -38,7 +64,7 @@ describe('HakoLandingPage', () => {
     await user.selectOptions(hoursSelect, '5');
     await user.click(screen.getByRole('button', { name: 'HakoLanding.hero.search' }));
 
-    expect(mockPush).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(mockPush).toHaveBeenCalledTimes(1));
     const url = mockPush.mock.calls[0][0];
     expect(url).toMatch(/pub_listingType=[^&]*day-parking/);
     expect(url).toContain(`dates=${dateISO}%2C${dateISO}`);
@@ -54,7 +80,7 @@ describe('HakoLandingPage', () => {
     );
     await user.click(screen.getByRole('button', { name: 'HakoLanding.hero.search' }));
 
-    expect(mockPush).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(mockPush).toHaveBeenCalledTimes(1));
     const url = mockPush.mock.calls[0][0];
     expect(url).toMatch(/pub_listingType=[^&]*monthly-storage/);
     expect(url).toMatch(/dates=\d{4}-\d{2}-\d{2}%2C\d{4}-\d{2}-\d{2}/);

@@ -15,6 +15,7 @@ import { makeGetListingsByIdSelector } from '../../ducks/marketplaceData.duck';
 import { manageDisableScrolling, isScrollingDisabled } from '../../ducks/ui.duck';
 
 import { Page } from '../../components';
+import resolveTypedPlace from '../../components/LocationAutocompleteInput/resolveTypedPlace';
 import TopbarContainer from '../../containers/TopbarContainer/TopbarContainer';
 import FooterContainer from '../../containers/FooterContainer/FooterContainer';
 
@@ -211,7 +212,7 @@ export class SearchPageComponent extends Component {
     });
   }
 
-  handleSearchBarSubmit(values = {}) {
+  async handleSearchBarSubmit(values = {}) {
     const { history, routeConfiguration, location, config } = this.props;
     const routes = routeConfiguration;
     const { routeName, pathParams } = getSearchPageResourceLocatorStringParams(routes, location);
@@ -229,10 +230,16 @@ export class SearchPageComponent extends Component {
     };
 
     const locationValue = values.location;
-    const selectedPlace = locationValue?.selectedPlace;
-    const address =
-      selectedPlace?.address ||
-      (typeof locationValue === 'string' ? locationValue.trim() : locationValue?.search?.trim());
+    const typedAddress =
+      typeof locationValue === 'string' ? locationValue.trim() : locationValue?.search?.trim();
+    let selectedPlace = locationValue?.selectedPlace;
+    // Text typed without picking a suggestion has no bounds; searching with the address alone
+    // keeps the previous map viewport and results. Geocode it so the search really updates.
+    if (typedAddress && !selectedPlace?.bounds && !selectedPlace?.origin) {
+      const resolvedPlace = await resolveTypedPlace(config, typedAddress);
+      selectedPlace = resolvedPlace || selectedPlace;
+    }
+    const address = selectedPlace?.address || typedAddress;
     const { origin, bounds } = selectedPlace || {};
     const originMaybe = origin && isOriginInUse(config) ? { origin } : {};
     const boundsMaybe = bounds ? { bounds } : {};
