@@ -39,14 +39,12 @@ describe('ContactPage', () => {
       'info@hakoparking.com'
     );
 
-    expect(enquiry.subject).toBe('Hako enquiry: Billing & account');
-    expect(enquiry.body).toContain('Name: Jane Doe');
-    expect(enquiry.body).toContain('Email: jane@example.com');
-    expect(enquiry.body).toContain('Subject: Billing & account');
-    expect(enquiry.body).toContain('My card was charged twice.');
+    // Matches the Gearly format: raw category as subject, "From:" line then message.
+    expect(enquiry.subject).toBe('Billing & account');
+    expect(enquiry.body).toBe('From: Jane Doe <jane@example.com>\n\nMy card was charged twice.');
 
     expect(enquiry.href).toContain('mailto:info%40hakoparking.com');
-    expect(enquiry.href).toContain(encodeURIComponent('Hako enquiry: Billing & account'));
+    expect(enquiry.href).toContain(encodeURIComponent('Billing & account'));
     expect(enquiry.href).toContain(encodeURIComponent('My card was charged twice.'));
   });
 

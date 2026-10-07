@@ -40,20 +40,16 @@ const subjectLabel = value =>
 
 /**
  * Turn submitted form values into the pieces of a mailto: handoff.
+ *
+ * Format deliberately mirrors Gearly: the subject is the selected category
+ * verbatim, and the body is a "From:" line followed by the message.
  */
 export const composeEnquiry = (values = {}, to = CONTACT_EMAIL) => {
   const { name = '', email = '', subject = '', message = '' } = values;
   const label = subjectLabel(subject);
 
-  const mailSubject = `Hako enquiry: ${label}`;
-  const mailBody = [
-    `Name: ${name}`,
-    `Email: ${email}`,
-    `Subject: ${label}`,
-    '',
-    'Message:',
-    message,
-  ].join('\n');
+  const mailSubject = label;
+  const mailBody = [`From: ${name} <${email}>`, '', message].join('\n');
 
   const href = to
     ? `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(
