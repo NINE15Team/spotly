@@ -8,6 +8,7 @@ import { createResourceLocatorString } from '../../../util/routes';
 import { isOriginInUse } from '../../../util/search';
 import { listingTypeForSearch, isMonthlyListingType } from '../../../util/hakoListingTypes';
 import { Page, LayoutComposer } from '../../../components';
+import resolveTypedPlace from '../../../components/LocationAutocompleteInput/resolveTypedPlace';
 import TopbarContainer from '../../TopbarContainer/TopbarContainer';
 import { useConfiguration } from '../../../context/configurationContext';
 
@@ -39,7 +40,24 @@ export const HakoLandingPage = () => {
   const { featuredListingIds, isFeaturedLocation } = useSelector(state => state.LandingPage);
   const featuredListings = useSelector(state => getListingsById(state, featuredListingIds));
 
-  const handleSearch = ({ mode, locationLabel, origin, bounds, dateLabel, hoursLabel }) => {
+  const handleSearch = async ({
+    mode,
+    locationLabel,
+    origin: selectedOrigin,
+    bounds: selectedBounds,
+    dateLabel,
+    hoursLabel,
+  }) => {
+    let origin = selectedOrigin;
+    let bounds = selectedBounds;
+    // The hero is pre-filled with a plain city name (and users may type without picking a
+    // suggestion), so there are no bounds. Geocode it, otherwise the results page opens on a
+    // world map with no results.
+    if (locationLabel && !bounds && !origin) {
+      const resolvedPlace = await resolveTypedPlace(config, locationLabel);
+      origin = resolvedPlace?.origin;
+      bounds = resolvedPlace?.bounds;
+    }
     const listingType = listingTypeForSearch(mode);
     const isMonthly = isMonthlyListingType(listingType);
     const originMaybe = origin && isOriginInUse(config) ? { origin } : {};
