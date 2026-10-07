@@ -15,7 +15,7 @@ _None yet_ — Playwright visual baselines exist but need a running app + side-b
 - **Homepage** — custom sections from full `get_design_context` (tokens, assets, copy). Not yet screenshot-verified in browser.
 - **Shared chrome** — design tokens, dark Topbar, global HakoFooter, ListingCard token restyle.
 - **FAQ `/faq`** — Restyled from screenshots: SUPPORT hero, mint accordion sections, dark “Still have questions?” CTA. Answer bodies still interim.
-- **Contact `/contact`** — Restyled from screenshots: SUPPORT image hero, mint form section, green Send Message. Submit is still local-only (no API).
+- **Contact `/contact`** — Restyled from screenshots: SUPPORT image hero, mint form section, green Send Message. Submit opens the customer's own mail client with the enquiry pre-filled (`mailto:` handoff to `REACT_APP_HAKO_CONTACT_EMAIL`), with copyable-text fallback when no mail client responds. Deliberately matches Gearly — there is still **no server-side email delivery and no stored record** of enquiries; that would need a mail provider, verified sending domain, `/contact` endpoint and spam protection.
 - **Search `/s`** — Hako layout from user screenshots (top search bar, filter sidebar, map above horizontal cards, footer). Not yet pixel-verified vs Figma MCP.
 - **Listing details** — Hako layout from user screenshot (breadcrumbs, gallery, host bar, amenities chips, vehicle restrictions, about, map note, sticky booking card). Not yet pixel-verified vs Figma MCP.
 - **Merchant listings `/listings`** — Hako Your listings page (filters, sort, status cards, Post CTA). Stats use placeholders until analytics exist.
